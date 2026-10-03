@@ -17,6 +17,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # file-backed DB across processes - tests needing that must set DATABASE_URL.
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
+# Content-guard inspection (src/content_guard.py) runs at the
+# untrusted_context_message boundary, which the suite exercises from many
+# unrelated tests. Leave it off by default so those tests stay fast and
+# deterministic; the guard's own tests enable it explicitly via monkeypatch, and
+# this setdefault means an operator can still force it on with a real env var.
+os.environ.setdefault("ODYSSEUS_CONTENT_GUARD", "false")
+
 # Pre-import real heavy modules BEFORE any test file's module-level stubs can
 # replace them with MagicMock. Some test files (e.g. test_llm_core_sanitize_*)
 # stub sqlalchemy/core.database at module scope with `if mod not in sys.modules`,

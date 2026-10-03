@@ -26,6 +26,17 @@ markdown
 # content is untrusted (LLM output over crawled pages) and report pages run
 # under a relaxed CSP, so the rendered HTML is allowlist-sanitized.
 nh3
+# Hostile-text inspection at the untrusted-content boundary
+# (src/content_guard.py, wired via src/prompt_security.py). Detects invisible
+# characters, bidi controls, homoglyph substitution, Unicode tag characters and
+# encoded payloads across web results, fetched pages, emails, memories, skills
+# and raw tool output. Apache-2.0, no required dependencies.
+#
+# The optional [promptguard] extra adds the semantic classifier that catches
+# instruction-injection intent with no structural signature. It lives in
+# requirements-optional.txt so this stays dependency-free: without it the
+# structural pass still runs and the guard reports semantic_available=false.
+textguard==1.0.0
 # Calendar .ics import/export (routes/calendar_routes.py).
 icalendar
 # Recurrence rule expansion for calendar events (routes/calendar_routes.py).

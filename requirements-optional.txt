@@ -44,3 +44,22 @@ PyMuPDF
 # [all]/Azure/audio extras (cloud + heavy). Pinned to a release >30 days old per
 # the dependency-age discussion in issue #485.
 markitdown[docx,pptx,xlsx,xls]==0.1.6
+
+# PromptGuard v2 semantic detection for the content guard (src/content_guard.py).
+# Catches instruction-injection intent that has no structural signature — a
+# classifier score rather than a character-pattern match — which the always-on
+# structural pass cannot see. Both are needed: in live testing an injected
+# instruction scored critical (0.90) with zero structural findings, while a
+# homoglyph/base64 payload scored 0.0017 ("clean") semantically.
+#
+# Pulls transformers (Apache-2.0); onnxruntime is already a core dependency via
+# fastembed. Also needs a signed ~280 MB model pack, fetched and verified on
+# first use:
+#
+#   textguard models fetch promptguard2
+#
+# Costs roughly 250 ms per inspected item versus ~1 ms for the structural pass.
+# Without this extra the guard still runs structurally and reports
+# semantic_available=false at GET /api/content-guard/status — nothing else
+# changes, so a host that skips it loses coverage, not function.
+textguard[promptguard]==1.0.0

@@ -60,6 +60,17 @@ External content that reaches the LLM is treated as untrusted via `src/prompt_se
 
 **Untrusted surfaces that must go through this wrapper:** web search results, fetched URLs, emails (read), saved memories, skill text, notes, and any tool output sourced from outside the server. Injecting untrusted content directly into the system role is a security bug.
 
+### Content Guard (inspection at the same boundary)
+
+Because every untrusted surface already funnels through `untrusted_context_message`, that function is also where content is *inspected*. `src/content_guard.py` runs TextGuard over each blob and records what it finds:
+
+- **Structural pass** (always available, ~1 ms for a typical page) — invisible characters, bidi controls, homoglyph/confusable substitution, Unicode tag characters, and encoded payloads.
+- **Semantic pass** (PromptGuard v2 via ONNX, ~250 ms) — classifier score for instruction-injection intent, which catches attacks with no structural signature. Needs the `textguard[promptguard]` extra plus a signed model pack; degrades away independently.
+
+Findings go to `src/content_guard_sink.py`, a bounded in-memory store, and are surfaced to admins at `GET /api/content-guard/findings`. They are **not** added to the prompt: `UNTRUSTED_CONTEXT_POLICY` tells the model not to mention guard wording or injection warnings, so prompt-visible findings would be both suppressed and a leak risk. The generic `UNTRUSTED_CONTEXT_HEADER` remains the only safety framing the model sees.
+
+This is detection and visibility, not prevention. A flagged blob still reaches the model — the header's instruction not to follow embedded instructions is unchanged, and findings let an operator see what arrived. Blocking or withholding flagged content would need an approval flow, which does not exist yet. The guard is fail-soft throughout: an absent dependency, missing model pack, or scan error disables inspection rather than breaking chat, email, or research.
+
 ## Security Headers
 
 `core/middleware.py:SecurityHeadersMiddleware` sets headers on every response:

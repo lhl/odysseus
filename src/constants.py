@@ -106,6 +106,76 @@ SEARXNG_INSTANCE = os.getenv("SEARXNG_INSTANCE", "http://localhost:8080")
 CLEANUP_ENABLED = os.getenv("CLEANUP_ENABLED", "True").lower() == "true"
 CLEANUP_INTERVAL_HOURS = int(os.getenv("CLEANUP_INTERVAL_HOURS", "24"))
 
+# Content guard — TextGuard inspection of untrusted content.
+#
+# Every external source (web results, fetched pages, emails, transcripts,
+# memories, skills, MCP descriptions, tool output) is inspected at the
+# src.prompt_security.untrusted_context_message boundary. Findings go to
+# src/content_guard_sink.py, never into the prompt. All of it is optional and
+# fails soft: without textguard installed, or with the guard disabled, the
+# content path is unchanged.
+
+
+def _read_positive_int_env(name: str, default: int) -> int:
+    """Read a positive-integer env var, failing fast on a bad value.
+
+    Matches src/upload_limits.read_byte_limit_env: an invalid value is a
+    configuration error and should surface at import rather than silently
+    falling back to a default that hides the typo.
+    """
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+    if value < 1:
+        raise ValueError(f"{name} must be greater than 0")
+    return value
+
+
+def _read_choice_env(name: str, default: str, choices: tuple) -> str:
+    """Read an env var constrained to a fixed set of values."""
+    raw = (os.getenv(name) or "").strip().lower()
+    if not raw:
+        return default
+    if raw not in choices:
+        raise ValueError(f"{name} must be one of: {', '.join(choices)}")
+    return raw
+
+
+CONTENT_GUARD_ENABLED = os.getenv("ODYSSEUS_CONTENT_GUARD", "True").lower() == "true"
+# The semantic (PromptGuard) pass costs ~250 ms per item versus ~1 ms for the
+# structural pass, so it can be disabled independently on constrained hosts.
+CONTENT_GUARD_SEMANTIC_ENABLED = (
+    os.getenv("ODYSSEUS_CONTENT_GUARD_SEMANTIC", "True").lower() == "true"
+)
+# textguard rewrite preset. "default" scans and normalises lightly; "strict"
+# additionally strips invisible/bidi/ANSI characters; "ascii" transliterates.
+CONTENT_GUARD_PRESET = _read_choice_env(
+    "ODYSSEUS_CONTENT_GUARD_PRESET", "default", ("default", "strict", "ascii")
+)
+# Cap on the prefix inspected per item. Structural scanning is ~0.75 ms/KB, so
+# the default bounds one inspection at roughly 150 ms; the web fetch soft cap is
+# 2 MB and the hard cap 20 MB, which would otherwise cost 1.5-15 s per page.
+CONTENT_GUARD_MAX_SCAN_CHARS = _read_positive_int_env(
+    "ODYSSEUS_CONTENT_GUARD_MAX_SCAN_CHARS", 200_000
+)
+# Explicit PromptGuard model-pack directory. Empty falls back to textguard's own
+# XDG location (~/.local/share/textguard/models/promptguard2).
+CONTENT_GUARD_PROMPTGUARD_MODEL_PATH = os.getenv("ODYSSEUS_CONTENT_GUARD_MODEL_PATH", "")
+# Retained findings in the in-memory sink, and the excerpt cap for each finding.
+CONTENT_GUARD_SINK_MAX_RECORDS = _read_positive_int_env(
+    "ODYSSEUS_CONTENT_GUARD_SINK_MAX_RECORDS", 200
+)
+CONTENT_GUARD_EXCERPT_MAX_CHARS = 200
+# Verdict cache size, keyed by content digest. The agent loop rebuilds its
+# message list every round, so the same tool result is re-wrapped (and would be
+# re-scanned) on each round; this makes repeats free and keeps the sink to one
+# record per distinct blob.
+CONTENT_GUARD_CACHE_SIZE = _read_positive_int_env("ODYSSEUS_CONTENT_GUARD_CACHE_SIZE", 256)
+
 # Auth policy
 PASSWORD_MIN_LENGTH = 8
 

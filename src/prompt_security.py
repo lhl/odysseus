@@ -75,10 +75,19 @@ def untrusted_context_message(
     caller-derived text is placed in the pre-guard trusted framing zone.
     The source label and the body content are both placed *inside* the
     guarded block where the LLM treats them as untrusted data.
+
+    Content is also inspected by the content guard (src/content_guard.py), which
+    records findings to a sink for display. Findings are deliberately NOT added
+    to the message: UNTRUSTED_CONTEXT_POLICY instructs the model not to mention
+    guard wording, so prompt-visible findings would be both suppressed and a
+    leak risk. The inspection is fail-soft — see that module.
     """
     safe_label = _sanitize_label(label)
     text = "" if content is None else str(content)
     text = _escape_guard_markers(text)
+
+    _inspect_untrusted(safe_label, text)
+
     metadata: Dict[str, Any] = {
         "trusted": False,
         "source": label,
@@ -97,3 +106,24 @@ def untrusted_context_message(
         ),
         "metadata": metadata,
     }
+
+
+def _inspect_untrusted(label: str, text: str) -> None:
+    """Run the content guard over one untrusted blob. Never raises.
+
+    No owner is recorded: this function sits below the request layer and has no
+    user in scope. ``provenance_origin`` is deliberately not reused as one — it
+    is a provenance category (e.g. "external"), not an account, and labelling
+    findings with it would corrupt the sink's owner filter. Callers that do know
+    the user can call ``src.content_guard.inspect_untrusted`` directly.
+
+    Imported lazily so this module keeps working when the optional textguard
+    dependency is absent, and so the import cost is not paid by callers that
+    only build guard-free messages.
+    """
+    try:
+        from src.content_guard import inspect_untrusted
+
+        inspect_untrusted(label, text)
+    except Exception:  # pragma: no cover - inspection must never break the path
+        pass

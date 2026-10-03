@@ -125,6 +125,8 @@ Core (`requirements.txt`) and optional (`requirements-optional.txt`):
 | pyotp | MIT |
 | qrcode\[pil] | BSD-3-Clause |
 | croniter | MIT |
+| textguard *(content guard — untrusted-content inspection)* | Apache-2.0 |
+| transformers *(optional — content guard semantic pass, via `textguard[promptguard]`; onnxruntime already present via fastembed)* | Apache-2.0 |
 | pytest / pytest-asyncio | MIT / Apache-2.0 |
 | duckduckgo-search (optional) | MIT |
 | markitdown (optional — Office/EPUB text extraction) | MIT |
