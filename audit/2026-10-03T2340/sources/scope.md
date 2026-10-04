@@ -1,101 +1,110 @@
 # What is under audit
 
-This audit reviews https://github.com/odysseus-dev/odysseus at `2992bf6d368a`, checked out at `/home/lhl/github/lhl/odysseus`.
+This audit reviews https://github.com/odysseus-dev/odysseus at `2992bf6d368a`.
 
-Self-hosted AI workspace: a FastAPI backend and a large first-party front end covering chat, an agent loop with a tool surface, email, calendar, documents and RAG, memory, research, model serving, and MCP. Python 3.11+ with a stdlib-plus-FastAPI backend.
+Odysseus is a self-hosted, multi-user AI workspace: a FastAPI backend and a first-party
+JavaScript front end covering chat, an agent loop with a tool surface, email, calendar, documents
+and RAG, memory, research, model serving, and MCP. An operator runs it from the Docker compose
+files or a native install, and accounts on one instance share that process.
 
-Describe the repository here in a short paragraph: what it ships, who runs it, and which
-of its surfaces carry the most consequence if they are wrong. This is the paragraph a
-reader uses to decide whether a finding matters, so name the real product boundary rather
-than the directory layout.
+Four surfaces carry the most consequence if they are wrong:
+
+- **Authentication and per-user isolation.** Sessions, API tokens, privileges, and the owner
+  filter on every stored record.
+- **The agent tool surface.** A model can run shell commands, read and write files, fetch URLs
+  and call the app's own API.
+- **Credential storage.** Password hashes, TOTP secrets, session tokens and provider API keys
+  live in JSON files and one SQLite database under the data directory.
+- **Outbound requests.** Web fetch, search, webhooks, CalDAV and MCP reach hosts a user or a
+  model names.
 
 ## Sections
 
-The run is divided into 58 sections. Each one is a section file under
-`sources/sections/`, and each states its own coverage.
+The run is divided into 58 sections. Each is one file under `sources/sections/`, named by
+its stem, and each states its own coverage. `run.toml` lists the paths assigned to each section.
 
-1. `repository-root` — Repository root and project policy
-2. `build-install-deploy` — Build, install, launcher, CI and containers
-3. `specs` — Specifications
-4. `scripts` — Operational scripts
-5. `core-auth-session` — core: auth, sessions, middleware, models
-6. `core-data-platform` — core: database, atomic IO, constants, platform
-7. `src-agent-loop` — src: agent loop, runs, approvals and gates
-8. `src-llm-core` — src: LLM interaction, endpoints, model capability
-9. `src-tools-parse-exec` — src: tool parsing and execution
-10. `src-tools-capabilities-policy` — src: tool capabilities, policy and MCP builtins
-11. `src-tools-schema-index` — src: tool schemas, index and implementations
-12. `src-tools-builtin-actions` — src: scheduled built-in actions
-13. `src-agent-tools` — src: agent tool implementations
-14. `src-security` — src: prompt security, secrets, URL safety, limits
-15. `src-chat-session` — src: chat processing, context and sessions
-16. `src-memory-rag` — src: memory, RAG, embeddings and settings
-17. `src-documents` — src: documents, uploads, PDF and office
-18. `src-email-integrations` — src: email, calendar and integrations
-19. `src-research-scheduling` — src: research, scheduling and background work
-20. `src-mcp` — src: MCP management and OAuth
-21. `src-platform` — src: config, runtime, health and remaining modules
-22. `routes-email` — routes: email
-23. `routes-cookbook` — routes: cookbook
-24. `routes-chat-session` — routes: chat and session
-25. `routes-models` — routes: model serving
-26. `routes-shell` — routes: shell and code execution
-27. `routes-gallery-document` — routes: gallery and documents
-28. `routes-skills-calendar-task` — routes: skills, calendar, tasks
-29. `routes-rest-auth-admin` — routes: auth, API tokens, admin and provider sign-in
-30. `routes-rest-agent-admin` — routes: assistant, codex, MCP and workspace
-31. `routes-rest-notes-contacts-history` — routes: notes, contacts and history
-32. `routes-rest-memory-personal-research` — routes: memory, personal files and research
-33. `routes-rest-media-files` — routes: uploads, embeddings, presets and preferences
-34. `routes-rest-integrations-misc` — routes: webhooks, vault, compare, hardware fit and shims
-35. `services-search` — services: search
-36. `services-memory` — services: memory
-37. `services-research` — services: research and docs
-38. `services-hwfit` — services: hardware fit
-39. `services-media` — services: shell, STT, TTS, faces, youtube
-40. `static-js-editor` — static: image editor
-41. `static-js-compare` — static: model comparison UI
-42. `static-js-chat` — static: chat, sessions and composer UI
-43. `static-js-documents-email` — static: documents, notes, email, calendar UI
-44. `static-js-cookbook-settings-models` — static: cookbook, settings, models UI
-45. `static-js-research-memory-rag` — static: research, memory and search UI
-46. `static-js-rest` — static: remaining first-party JS
-47. `static-assets-vendored` — static: vendored libraries, fonts, icons, CSS
-48. `mcp-servers` — Bundled MCP servers
-49. `companion-and-swift` — Companion apps and Swift clients
-50. `website` — Project website
-51. `tests-harness` — tests: harness, standards and helpers
-52. `tests-security` — tests: security, guard and prompt-injection
-53. `tests-email-calendar` — tests: email, calendar and webhooks
-54. `tests-cookbook-models` — tests: cookbook, models and providers
-55. `tests-llm-tools` — tests: LLM, tools and agent loop
-56. `tests-session-chat-memory` — tests: session, chat, memory and RAG
-57. `tests-documents-media` — tests: documents, uploads, gallery and media
-58. `tests-rest` — tests: remaining test modules
-
-`src-tools` (10,435 lines) was split into the four `src-tools-*` sections at
-numbers 9–12 during the review pass, because one pass over all eleven files
-would have been too large to review with the evidence standard the rest of the
-run holds. The four sub-sections are listed in the order they should be
-reviewed; a path appears in exactly one of them.
+| # | Section | Stem |
+| ---: | --- | --- |
+| 1 | Repository root and project policy | `repository-root` |
+| 2 | Build, install, launcher, CI and containers | `build-install-deploy` |
+| 3 | Specifications | `specs` |
+| 4 | Operational scripts | `scripts` |
+| 5 | core: auth, sessions, middleware, models | `core-auth-session` |
+| 6 | core: database, atomic IO, constants, platform | `core-data-platform` |
+| 7 | src: agent loop, runs, approvals and gates | `src-agent-loop` |
+| 8 | src: LLM interaction, endpoints, model capability | `src-llm-core` |
+| 9 | src: tool parsing and execution | `src-tools-parse-exec` |
+| 10 | src: tool capabilities, policy and MCP builtins | `src-tools-capabilities-policy` |
+| 11 | src: tool schemas, index and implementations | `src-tools-schema-index` |
+| 12 | src: scheduled built-in actions | `src-tools-builtin-actions` |
+| 13 | src: agent tool implementations | `src-agent-tools` |
+| 14 | src: prompt security, secrets, URL safety, limits | `src-security` |
+| 15 | src: chat processing, context and sessions | `src-chat-session` |
+| 16 | src: memory, RAG, embeddings and settings | `src-memory-rag` |
+| 17 | src: documents, uploads, PDF and office | `src-documents` |
+| 18 | src: email, calendar and integrations | `src-email-integrations` |
+| 19 | src: research, scheduling and background work | `src-research-scheduling` |
+| 20 | src: MCP management and OAuth | `src-mcp` |
+| 21 | src: config, runtime, health and remaining modules | `src-platform` |
+| 22 | routes: email | `routes-email` |
+| 23 | routes: cookbook | `routes-cookbook` |
+| 24 | routes: chat and session | `routes-chat-session` |
+| 25 | routes: model serving | `routes-models` |
+| 26 | routes: shell and code execution | `routes-shell` |
+| 27 | routes: gallery and documents | `routes-gallery-document` |
+| 28 | routes: skills, calendar, tasks | `routes-skills-calendar-task` |
+| 29 | routes: auth, API tokens, admin and provider sign-in | `routes-rest-auth-admin` |
+| 30 | routes: assistant, codex, MCP and workspace | `routes-rest-agent-admin` |
+| 31 | routes: notes, contacts and history | `routes-rest-notes-contacts-history` |
+| 32 | routes: memory, personal files and research | `routes-rest-memory-personal-research` |
+| 33 | routes: uploads, embeddings, presets and preferences | `routes-rest-media-files` |
+| 34 | routes: webhooks, vault, compare, hardware fit and shims | `routes-rest-integrations-misc` |
+| 35 | services: search | `services-search` |
+| 36 | services: memory | `services-memory` |
+| 37 | services: research and docs | `services-research` |
+| 38 | services: hardware fit | `services-hwfit` |
+| 39 | services: shell, STT, TTS, faces, youtube | `services-media` |
+| 40 | static: image editor | `static-js-editor` |
+| 41 | static: model comparison UI | `static-js-compare` |
+| 42 | static: chat, sessions and composer UI | `static-js-chat` |
+| 43 | static: documents, notes, email, calendar UI | `static-js-documents-email` |
+| 44 | static: cookbook, settings, models UI | `static-js-cookbook-settings-models` |
+| 45 | static: research, memory and search UI | `static-js-research-memory-rag` |
+| 46 | static: remaining first-party JS | `static-js-rest` |
+| 47 | static: vendored libraries, fonts, icons, CSS | `static-assets-vendored` |
+| 48 | Bundled MCP servers | `mcp-servers` |
+| 49 | Companion apps and Swift clients | `companion-and-swift` |
+| 50 | Project website | `website` |
+| 51 | tests: harness, standards and helpers | `tests-harness` |
+| 52 | tests: security, guard and prompt-injection | `tests-security` |
+| 53 | tests: email, calendar and webhooks | `tests-email-calendar` |
+| 54 | tests: cookbook, models and providers | `tests-cookbook-models` |
+| 55 | tests: LLM, tools and agent loop | `tests-llm-tools` |
+| 56 | tests: session, chat, memory and RAG | `tests-session-chat-memory` |
+| 57 | tests: documents, uploads, gallery and media | `tests-documents-media` |
+| 58 | tests: remaining test modules | `tests-rest` |
 
 ## How this run was scoped
 
-The sections above were proposed by `./audit.py discover` from the repository's own
-directory structure, then edited. Sizes are counted from the working tree at the snapshot.
-A directory named in an area's `exclude` list is counted by its own area, so no line is
-counted twice.
+`./audit.py discover` proposed the sections from the directory structure, and the list was then
+edited. A path belongs to exactly one section.
 
-State here what the division is for. If two sections could be confused, say which one owns
-the boundary between them. If a section covers a vendored or generated tree, say so and say
-why it is still in scope.
+- **Two sections were split during the review.** `src-tools` (10,435 lines) became the four
+  `src-tools-*` sections and `routes-rest` became the six `routes-rest-*` sections, because one
+  pass over either could not hold the evidence standard.
+- **Two trees are listed for coverage and are not first-party code.**
+  `services/hwfit/data/*.json` is a generated model catalogue of about 35,000 lines, and
+  `static/lib/` holds minified third-party bundles. A finding there is about the pin or the
+  provenance, not about the upstream project.
+- **A boundary between two sections is stated in each section's Overview**, which names the
+  neighbouring section that owns the code on the other side.
 
 ## The release boundary
 
-State what this repository ships and what it inherits. If it vendors, pins, or patches
-third-party source, say so here: a finding in pinned third-party code is a finding about
-the pin or the patch, not about the upstream project.
+The repository has no Makefile or package script, so its gates are the GitHub Actions jobs.
 
-If there is a local gate and a continuous-integration gate, name both and say which one
-covers what. `./audit.py table odysseus/2026-10-03T2340 gates` lists the commands it detected and
-which of them each gate reaches.
+| Gate | What it runs | Run by this audit |
+| --- | --- | --- |
+| `ci.yml`, job `check` | `compileall` over every source root, `node --check` over the first-party JavaScript, then the full `pytest` suite. Runs on push and pull request. | Subsets only; each section's Coverage records them. |
+| Other CI jobs | CodeQL, a secret scan, container scanning, a dependency review and a workflow-security audit. | No. They need network access or credentials. |
+| `docker-publish.yml` | Publishes the image on push to `dev` and `main`. It does not depend on the `check` job. | No. No image was built. |

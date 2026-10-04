@@ -1,239 +1,42 @@
 # Coverage boundaries
 
-This is a first pass. Of the 58 section files in this run, **fifteen** have been reviewed:
-`src-security.md` (7 findings), `src-agent-loop.md` (7 findings), `src-agent-tools.md`
-(9 findings), `routes-shell.md` (7 findings), `src-tools-builtin-actions.md`
-(5 findings), `src-tools-parse-exec.md` (5 findings),
-`src-tools-schema-index.md` (6 findings), `src-tools-capabilities-policy.md` (1 finding),
-`core-auth-session.md` (5 findings), `core-data-platform.md` (6 findings),
-`src-platform.md` (4 findings), `routes-rest-auth-admin.md` (4 findings), `routes-rest-agent-admin.md` (4 findings), and
-`routes-rest-notes-contacts-history.md` (3 findings), and
-`routes-rest-memory-personal-research.md` (3 findings), 76 total (3 high,
-32 medium, 41 low). The other
-43 are still the scaffolded stub — they contain no coverage claim and no findings, so nothing in
-them has been checked. This section states the boundary once.
-
-```
-$ python3 -c "<strip HTML comments, look for '### ['>"
-sections with real findings : 14
-  src-security.md
-  src-agent-loop.md
-  src-agent-tools.md
-  routes-shell.md
-  src-tools-builtin-actions.md
-  src-tools-parse-exec.md
-  src-tools-schema-index.md
-  src-tools-capabilities-policy.md
-  core-auth-session.md
-  core-data-platform.md
-  src-platform.md
-  routes-rest-auth-admin.md
-  routes-rest-agent-admin.md
-  routes-rest-notes-contacts-history.md
-  routes-rest-memory-personal-research.md
-sections still stubs        : 43
-```
+What this run did not read or run, what the re-review covered, and which suspected defects were
+checked and rejected. Each section's own Coverage statement is the record for that section; this
+page states the boundary for the run.
 
 ## Not covered
 
-- **23 of 58 sections, unreviewed.** Thirty-five section files hold findings:
-  `src-security`, `src-agent-loop`, `src-agent-tools`, `src-tools-builtin-actions`,
-  `src-tools-parse-exec`, `src-tools-schema-index`, `src-tools-capabilities-policy`,
-  `src-platform`, `src-memory-rag`, `src-research-scheduling`, `src-llm-core`,
-  `src-chat-session`, `src-documents`, `src-email-integrations`, `src-mcp`,
-  `core-auth-session`,
-  `core-data-platform`, `routes-shell`, `routes-rest-auth-admin`, `routes-rest-agent-admin`,
-  `routes-rest-notes-contacts-history`, `routes-rest-memory-personal-research`,
-  `routes-rest-media-files`, `routes-rest-integrations-misc`, `routes-models`,
-  `routes-chat-session`, `routes-gallery-document`, `routes-skills-calendar-task`,
-  `routes-cookbook`, `routes-email`, `services-search`, `services-memory`,
-  `services-research`, `services-hwfit` and `services-media`. Every other
-  section file is
-  still the template. That is the whole repository outside the `src` security guards, the agent
-  loop, the tool implementations and dispatcher, the retrieval index, capability and policy
-  tables, the shared runtime, the memory/RAG stores, the research and scheduling pipeline, the
-  LLM call core and context discovery, the conversation store, compaction and search, the
-  document pipeline and its tidy actions, the CalDAV, webhook, integration and thread-parser
-  stores, the MCP manager and its OAuth pieces, the search service and its providers, the memory
-  extractor, skill format, skill store and bundle importer, the research service, its handler copy
-  and the docs facade, the hardware probe, the model catalogue and its ranking, and the Hugging
-  Face discovery paths, the YouTube handler, the speech services and the shell facade, the
-  auth/session and database core, the shell and code-execution router, the model-serving
-  registry, the core chat and session routes, the gallery, document, skills, calendar, task,
-  cookbook and email
-  routes, and all six
-  reviewed `routes-rest-*` surfaces — every `src-*` section among them. Every `core-*`, `routes-*`,
-  `src-*` and `services-*` section is now reviewed. What remains is
-  `repository-root`,
-  `build-install-deploy`, `specs`, `scripts`, `website`, the eight
-  `static-*`, the eight `tests-*`,
-  `mcp-servers` and `companion-and-swift`.
-  All 1573 assigned paths are listed in `run.toml`; a path is not covered
-  because it appears there.
-- **The dispatcher and the routes the tools call.** `src-agent-tools.md` covers what each tool
-  does once it is reached. `src-tools-parse-exec.md` now covers the dispatcher and the
-  file-confinement helpers (`_resolve_tool_path` / `_resolve_search_root` / `vet_workspace`),
-  `src-tools-capabilities-policy.md` covers the capability and policy tables
-  (`src/tool_capabilities.py`, `src/tool_policy.py`, `src/tool_security.py`) and the built-in
-  MCP registration (`src/builtin_mcp.py`), and `src-tools-schema-index.md` covers the schema
-  list, the native-call converter, the retrieval index and the `do_*` facade — but the route
-  handlers the tools
-  call are assigned to the `routes-*` sections, so
-  whether a tool's request is accepted and scoped by its route is checked only where a finding
-  cites the route. `src-tools-builtin-actions.md` reviews
-  `src/builtin_actions.py` only, not the dispatcher those actions enter through.
-- **The consumers of the agent loop.** `src-agent-loop.md` covers the loop's own decisions. The
-  route that builds the initial message list and persists events (`routes/chat_routes.py`,
-  `routes/chat_helpers.py`) and the capability tables (`src/tool_capabilities.py`,
-  `src/tool_policy.py`) are assigned to other sections; `src-tools-capabilities-policy.md` now
-  covers the tables themselves, but not the routes that supply them, so whether each loop
-  decision is honored downstream is not checked here. `src-tools-builtin-actions.md` reads the
-  scheduled actions that call back into the same database and mail surfaces; it does not read the
-  scheduler that invokes them (`src/task_scheduler.py`, assigned to
-  `src-research-scheduling`) except where a finding cites it.
-- **The largest unreviewed files.** `run.toml`'s `notes` flags two as generated or vendored rather
-  than first-party: `services/hwfit/data/*.json` (a ~35k-line model catalogue) and `static/lib/`
-  (minified third-party bundles). They should be skimmed for provenance, not read as code.
-- **`src/outbound_fetch.py` below line 44** — about 270 lines holding the pinned transport, the
-  capped fetch, and the redirect handling. The address guard at the top of the file was read; the
-  machinery that acts on its verdict was not. This is the most consequential gap in the section
-  that *was* reviewed, because a guard is only as good as the code that consults it, and the
-  `SECURITY` finding in `src-security.md` sits exactly on that boundary.
-- **Callers of the reviewed guards.** `src-security.md` establishes what the guards do, not whether
-  every caller reaches them correctly. The agent tool surface, the route handlers, and the search
-  service are assigned to other sections and were not read.
+| Area | Sections | State on 2026-10-04 |
+| --- | --- | --- |
+| Backend: `core`, `src`, `routes`, `services` | 35 | Reviewed. |
+| First-party JavaScript | 7 `static-js-*` | Unread. No coverage statement, no findings. |
+| Tests | 8 `tests-*` | Unread. No coverage statement, no findings. |
+| Root, build, specifications, scripts, MCP servers, companion apps, website, vendored assets | 8 | Under review. Read each section's Coverage for what it covers. |
+
+A path listed in `run.toml` is assigned to a section. It is covered only when that section's
+Coverage says it was read.
+
+Gaps inside the reviewed sections:
+
+- **Tool-to-route boundaries.** The tool sections establish what each agent tool sends, and the
+  route sections establish what each handler does. Whether a route accepts and scopes a given
+  tool's request was checked only where a finding cites both sides.
+- **`src/outbound_fetch.py` below line 44.** About 270 lines hold the pinned transport, the capped
+  fetch and the redirect handling. The address guard at the top of the file was read; the code
+  that acts on its verdict was not. The carrier-grade NAT finding in `src-security` sits on this
+  boundary.
+- **Callers of the security guards.** `src-security` establishes what the guards do. Whether every
+  caller reaches them was checked only inside the sections that read those callers.
+- **Generated and vendored files.** `services/hwfit/data/*.json` and `static/lib/` were checked
+  for provenance, not read as code.
 
 ## Not run
 
-No build or deployment was run as part of this pass. The gate results quoted in this
-audit come from reading `.github/workflows/ci.yml` and the manifests, not from observing a run.
-The one exception is `src-tools-capabilities-policy.md`, which ran that section's own gate
-suites — 240 tests over seven files — to check the policy partitions it had just read; the
-result is recorded in the section's coverage statement. `src-tools-schema-index.md` ran the
-three suites that pin its own surface (`tests/test_tool_index_schema_parity.py`,
-`tests/test_tool_rag_keyword_hints.py`, `tests/test_tool_implementations_shim.py`) — 10 passed —
-plus the throwaway probes its findings quote. `core-auth-session.md` ran the three suites that
-pin its surface (`tests/test_session_manager_cleanup.py`, `tests/test_log_safety.py`,
-`tests/test_auth_session_revocation.py`) — 15 passed. `core-data-platform.md` ran nine suites over
-the surface it read (`tests/test_atomic_io.py`, `tests/test_app_db_permissions.py`,
-`tests/test_memory_store_unreadable_no_wipe.py`, `tests/test_prefs_atomic_write.py`,
-`tests/test_database_utcnow.py`, `tests/test_sqlite_foreign_keys.py`,
-`tests/test_update_database_script.py`, `tests/test_api_key_file_permissions.py`,
-`tests/test_security_regressions.py`) — 148 passed. `src-platform.md` ran thirteen suites over the
-surface it read (`tests/test_readiness.py`, `tests/test_user_time.py`, `tests/test_strip_think.py`,
-`tests/test_strip_reasoning_prose_dataloss.py`, `tests/test_service_health_collect.py`,
-`tests/test_service_health_chromadb.py`, `tests/test_service_health_email.py`,
-`tests/test_service_health_ntfy.py`, `tests/test_service_health_providers.py`,
-`tests/test_service_health_search.py`, `tests/test_app_initializer_memory_vector_degraded.py`,
-`tests/test_runtime_paths.py`, `tests/test_agent_state_dir_confinement.py`) — 141 passed.
-`routes-rest-auth-admin.md` ran twenty-seven suites over the surface it read
-(`tests/test_api_token_routes.py`, `tests/test_api_token_user_route_gate.py`,
-`tests/test_device_flow_routes.py`, `tests/test_copilot_routes.py`,
-`tests/test_admin_wipe_gallery.py`, `tests/test_admin_wipe_routes_shim.py`,
-`tests/test_backup_cli_security.py`, `tests/test_backup_import_cross_user_dedup.py`,
-`tests/test_backup_import_skills.py`, `tests/test_backup_import_skills_dedup.py`,
-`tests/test_auth_policy.py`, `tests/test_auth_regressions.py`,
-`tests/test_auth_require_privilege_nondict.py`, `tests/test_auth_root_path.py`,
-`tests/test_auth_session_revocation.py`, `tests/test_rename_user_case_insensitive.py`,
-`tests/test_rename_user_owner_sync.py`, `tests/test_rename_user_token_cache.py`,
-`tests/test_delete_user_invalidates_token_cache.py`, `tests/test_delete_user_revokes_api_tokens.py`,
-`tests/test_setup_admin_user.py`, `tests/test_rate_limiter.py`, `tests/test_totp_failclosed.py`,
-`tests/test_route_validators.py`, `tests/test_integrations_store_shape.py`,
-`tests/test_cors_preflight.py`, `tests/test_reserved_username_admin_escalation.py`) — 203 passed.
-`routes-rest-agent-admin.md` ran twenty-one suites over the surface it read
-(`tests/test_codex_cookbook_admin_gate.py`, `tests/test_codex_ssh_host_validation.py`,
-`tests/test_mcp_oauth.py`, `tests/test_mcp_routes_shim.py`, `tests/test_mcp_manager.py`,
-`tests/test_manage_mcp_command_allowlist.py`, `tests/test_mcp_add_server_args_validation.py`,
-`tests/test_mcp_cache_invalidation.py`, `tests/test_mcp_reconnect_args.py`,
-`tests/test_mcp_memory_owner_scope.py`, `tests/test_mcp_param_hint_hardening.py`,
-`tests/test_mcp_email_decode_header_spaces.py`, `tests/test_mcp_common_truncate.py`,
-`tests/test_mcp_dependency_compatibility.py`, `tests/test_multiple_mcp_servers_timeout.py`,
-`tests/test_mcp_tool_params_in_prompt.py`, `tests/test_builtin_mcp_bg_tasks.py`,
-`tests/test_builtin_mcp_npx_cache.py`, `tests/test_builtin_mcp_pythonpath.py`,
-`tests/test_workspace_confine.py`, `tests/test_merge_last_assistant_rows.py`) — 170 passed.
-`routes-rest-notes-contacts-history.md` ran the twenty-two suites matching its modules
-(`test_contacts_add_null_name.py`, `test_contacts_carddav_security.py`,
-`test_contacts_import_nonstring.py`, `test_contacts_routes_shim.py`,
-`test_contacts_vcard_parse.py`, `test_history_compact_tool_calls.py`,
-`test_history_db_fallback_hidden.py`, `test_history_display_model_hydration.py`,
-`test_history_order_by_timestamp_regression.py`, `test_history_routes_shim.py`,
-`test_history_topics_owner_scope.py`, `test_manage_notes_owner_gate.py`,
-`test_note_reminder_email_oauth.py`, `test_note_reminder_fire_scope.py`,
-`test_note_routes_shim.py`, `test_notes_dom_xss_helpers.py`, `test_notes_fail_closed_auth.py`,
-`test_notes_search_reset_on_reopen_js.py`, `test_notes_select_esc_listener_js.py`,
-`test_notes_update_due_date.py`, `test_notes_z_order_js.py` and `test_tool_rag_contacts_domain.py`)
-— 75 passed.
-`routes-rest-memory-personal-research.md` ran the sixteen suites matching its modules
-(`tests/test_memory_owner_isolation.py`, `tests/test_memory_routes_session_owner.py`,
-`tests/test_memory_routes_shim.py`, `tests/test_personal_delete_file_confinement.py`,
-`tests/test_personal_dir_symlink_escape.py`, `tests/test_personal_remove_dir_confinement.py`,
-`tests/test_personal_upload_isolation.py`, `tests/test_personal_upload_privilege.py`,
-`tests/test_research_endpoint_owner_scope.py`, `tests/test_research_owner_scope_routes.py`,
-`tests/test_research_report_read.py`, `tests/test_research_routes_path_confinement.py`,
-`tests/test_research_routes_shim.py`, `tests/test_research_session_id_validation.py`,
-`tests/test_memory_bullet_extraction.py` and `tests/test_memory_store_unreadable_no_wipe.py`) —
-129 passed.
-`routes-rest-media-files.md` ran the suites matching its modules (uploads, content detection,
-embeddings, preferences, presets, drafts, signatures and speech) — **231 passed, 1 skipped**; the
-section lists them. `src-research-scheduling.md` ran thirty-eight suites over its eleven files (the
-background-job store, the research handler and engine, the scheduler, cleanup, the cookbook serve
-reaper, the teacher-escalation and visual-report generators) — **168 passed**.
-`routes-rest-integrations-misc.md` ran the fifty-seven suites matching its modules (webhook, hwfit,
-compare, vault, diagnostics, search and cleanup) — **253 passed**.
-`routes-models.md` ran the fifty-four suites matching `ls tests | grep -iE 'model|endpoint|ready'` —
-**714 passed**.
-`routes-chat-session.md` ran the fifty-five suites matching `ls tests | grep -iE 'chat|session'` —
-**1 failed, 289 passed**. The failure is not a broken product path: it is the order-dependent
-test named in that section's third finding, and it is reproducible only as a file pair (the two
-files together fail; `tests/test_session_list_owner_scope.py` alone passes).
-`routes-gallery-document.md` ran the forty-six suites matching
-`ls tests | grep -iE 'gallery|document|image'` — **182 passed**.
-`routes-skills-calendar-task.md` ran the sixty-six suites matching
-`ls tests | grep -iE 'skill|calendar|task|ics'` — **319 passed**.
-`routes-cookbook.md` ran the twenty-six suites matching `ls tests | grep -iE 'cookbook'` plus
-`tests/test_task_cookbook_admin_gate.py` — **229 passed, 1 skipped**.
-`routes-email.md` ran the forty-three suites matching `ls tests | grep -iE 'email|mail|imap|smtp'`
-— **269 passed**.
-`src-llm-core.md` ran the forty-four suites matching this surface (the `test_llm_core_*` files plus
-the model-context, capability, endpoint-resolver, context-compactor, copilot and subscription
-suites) in their natural order — **604 passed**; run in a non-alphabetical order the same 44 hang in
-`tests/test_foreground_model_routing.py:2257` → `src/agent_loop.py:5572` → `_strip_think_blocks`,
-which is that section's neighbour's leak, not a defect in the CI order.
-`src-chat-session.md` ran the sixty-four suites matching
-`ls tests | grep -iE 'chat|session|context|topic|compactor|request_models|assistant_log'` — **1
-failed, 523 passed**, where the failure is the same order-dependent pair `routes-chat-session.md`
-already reports, plus its four compactor suites (**41 passed**) and six neighbouring budget suites
-(**25 passed**).
-`src-documents.md` ran the forty-eight suites matching
-`ls tests | grep -iE 'upload|document|markitdown|pdf|office|attachment|generated_image'` — **217
-passed, 2 skipped**, the skips being the optional `markitdown` and `python-magic` imports.
-`src-email-integrations.md` ran the thirty-two suites matching
-`ls tests | grep -iE 'caldav|integrations|webhook|youtube|email_thread|carddav'` — **163 passed**.
-`src-mcp.md` ran the eighteen suites matching `ls tests | grep -iE 'mcp'` plus
-`tests/test_plan_mode.py` — **127 passed**.
-`services-search.md` ran two sets: the thirty-three suites importing the module
-(`grep -rl "services\.search\|src\.search\|services/search\|src/search" tests/*.py` plus
-`tests/test_search_query_nonstring.py`) — **230 passed** — and the wider
-`ls tests | grep -iE 'search|searxng|ddg|og_image|analytics|query|ranking|content'` set — 73 files,
-**391 passed, 1 skipped**. The 74th file of that set, `tests/test_owned_document_query.py`, fails
-collection inside the batch (`src.agent_tools` is not a package) and passes alone; its subject is
-the document tools, so it is recorded and not reported.
-`services-memory.md` ran the forty-nine suites matching `ls tests | grep -iE 'memory|skill'` —
-**205 passed**.
-`services-research.md` ran the forty-one suites matching
-`ls tests | grep -iE 'research|docs|report'` — **245 passed**.
-`services-hwfit.md` ran the twenty suites matching this module — **126 passed**.
-`services-media.md` ran the twenty-three suites matching
-`ls tests | grep -iE 'shell|stt|tts|youtube|face|kokoro|speech|audio'` — **150 passed**.
-No other
-suite was run.
-
-Commands that *were* run are the small ones a finding cites — address-classifier comparisons, a
-concurrency probe, an expression that raises. Each is recorded with its result under `Evidence` in
-the finding that rests on it. The two shell findings that needed a process tree were checked with
-throwaway scripts under `/tmp` that mirror `_create_shell`'s call shape; their output is quoted in
-`routes-shell.md`, and they are not part of the target tree. Anything that could not be settled that
-way says so in the finding.
+- **No build or deployment.** No image was built and no instance was started.
+- **Not the full test suite.** Each section ran the suites that cover the code it read. The suite
+  names, counts and results are under **Checks run** in that section's Coverage.
+- **No CI job.** Gate behaviour quoted in this audit comes from reading
+  `.github/workflows/ci.yml` and the manifests, not from observing a run.
 
 Line numbers refer to `2992bf6d368a`. Use the quoted code to find a line after the code changes.
 
@@ -1148,6 +951,25 @@ closed it.
   URL is a fixed template and the command is an argv list with no shell.
 - **"`format_transcript_for_context` raises on a segment without text."** No: segments are built by
   the same module with both keys, and a non-dict guard is pinned by a suite.
+- **"The service worker caches API or authenticated responses and can serve another user's or a
+  logged-out user's content."** No: it returns early for any `/api/` path or non-GET request, and the
+  only HTML it caches for a navigation is `/`, which is built from the static shell whose sole
+  template placeholder is the nonce.
+- **"Logout should purge the service-worker cache but does not."** True that only activation deletes
+  caches, but nothing user-scoped is ever cached, so there is nothing for a logout to purge.
+- **"The shells use inline event handlers or `javascript:` URLs that the nonce policy would block."**
+  No: the only match is `action="javascript:void(0);"` on a hidden form.
+- **"`style.css` or the shells pull remote CSS, fonts or bundles."** No: there is no `@import`, every
+  `url()` is a local font or a data URI, and the only remote script is the Pyodide one that is
+  reported.
+- **"The content-security policy is absent on static responses."** No: the middleware sets it on
+  every response, and the probe shows it on the worker and on each static HTML page.
+- **"The variant pages are unreachable in a deployment."** No: `/static` is auth-exempt and all three
+  return 200 without a session, which is why they are reported.
+- **"The KaTeX fonts are incomplete because the stylesheet lists woff and ttf fallbacks."** No: all
+  20 referenced woff2 files exist and the fallbacks are unreachable for a woff2-capable browser.
+- **"`PANEL_PRECACHE` has the same drift as the first-paint list."** No: a suite walks the lazy editor
+  graph and passes; only the shell list drifts.
 
 ## Unresolved state
 
@@ -1169,80 +991,21 @@ import order.
 
 ## How to extend this audit
 
-`PROMPT.md` is the assignment a reviewer executes. It gives the finding schema, the evidence rules,
-the section files, and the stopping point.
+`PROMPT.md` is the assignment a reviewer executes. It gives the finding schema, the evidence
+rules, the section files and the stopping point.
 
-Coverage should proceed in this order, most consequential first:
+Remaining coverage, most consequential first:
 
-1. **The tool-surface sections and the memory layer are now reviewed.** `src-tools-parse-exec`,
-   `src-tools-capabilities-policy`, `src-tools-schema-index`, `src-agent-tools` and
-   `src-agent-loop` together cover the schema list, the converter, the retrieval index, the
-   policy tables, the parsers, the dispatcher and the loop. `src-memory-rag` now covers the stores
-   and lanes that surface retrieves through; its six findings are a concurrent memory write that
-   loses entries and can leave the store unreadable, a re-index path that never removes a changed
-   file's previous chunks, a failing embedding collection reported as an empty healthy lane,
-   non-atomic personal-docs state files, unbounded full-collection scans, and a private encoder
-   that can disagree with the collection it is meant to serve. What remains around that surface is
-   the scheduler that invokes the built-in actions (`src-research-scheduling`). `src-platform` (the
-   settings and secrets the policy reads) is now reviewed. The guards in `src-security.md` and the
-   decisions in `src-agent-loop.md` are only worth what their callers make of them: both `SECURITY`
-   findings rated high in this run are guards that hold everywhere except on one path that
-   mattered.
-2. **`core-data-platform` and `src-platform` are now reviewed.** The remaining credential and
-   authorization surfaces: the two Fernet stores found in `src-security` are only half the
-   picture, and the `RACE` finding would be much stronger or weaker depending on whether anything
-   else writes keys — `src-platform` checked the third candidate and found that
-   `APIKeyManager.save` has no production caller, so it is not a second writer. `core-auth-session`
-   is reviewed (its five findings are the global 100-row
-   session cache that can hide a second user's sidebar, a no-op `save_sessions` whose callers'
-   in-memory field writes are overwritten on the next read, a dead cleanup method that raises and
-   rolls back, a log redactor that passes scheme-less URLs through with their userinfo, and a
-   password-only session-issuing method on the auth class). `core-data-platform` is reviewed too
-   (its six findings are the shared JSON writer leaving `auth.json` and `settings.json` at the
-   umask default, a transcript-FTS backfill that is quadratic on every startup, a non-atomic
-   rewrite of `memory.json`/`user_prefs.json` in the hourly owner sweep, an unusable
-   `bulk_insert_messages`, the fail-open import guard that skips the three encryption migrations,
-   and plaintext MCP env vars). `src-platform` is reviewed as well (its four findings are a dead
-   pydantic settings tree that can still stop the server from starting on a stray `SECURITY_*` /
-   `DATA_*` / `LLM_*` value, a startup log that claims a Brave key was loaded from a store nothing
-   writes, an empty `ODYSSEUS_DATA_DIR` that moves every store next to the working directory, and
-   the documented-but-unread `CLEANUP_*` knobs). `routes-rest-auth-admin` is the first route
-   section reviewed (its four findings are the login/signup/setup limiter keyed on a socket peer
-   the documented Docker deployment makes identical for every client, an admin create-user path
-   that hashes the password on the event loop, a token list that shows rows the revoke endpoint
-   refuses, and three admin JSON endpoints that 500 on a non-object body), and
-   `routes-rest-agent-admin` is the second (its four findings are the Codex and Claude email-send
-   endpoint that reports a message queued while the delivery call is attached to a discarded
-   `BackgroundTasks` object, the MCP OAuth client secret written verbatim to the application log,
-   a cookbook stop endpoint that kills any tmux session by name including untracked ones, and an
-   adopt endpoint that 500s on a non-numeric port). `routes-rest-notes-contacts-history` is the
-   third (its three findings are a vCard export that drops every stored postal address, contacts
-   handlers that run synchronous CardDAV requests on the event loop, and nine notes and history
-   endpoints that answer 500 to a JSON array or string where their typed siblings answer 422),
-   and `routes-rest-memory-personal-research` is the fourth (its three findings are the missing
-   `can_manage_memory` privilege gate on memory edit, pin, delete and audit, a research library that
-   silently omits a saved partial report whose statistics are null, and a library listing that
-   parses every stored report on the event loop before applying the result limit).
-   `routes-rest-media-files` is the fifth (its three findings are a shared bearer-owned
-   preferences/drafts/signatures bucket that every delegated token can read and mutate, speech,
-   vision and upload work run on the request event loop, and three raw-JSON endpoints that raise on
-   a non-object body).
-   What the policy layer
-   reads and the credential routes do are now covered; the next surfaces are the remaining route
-   sections.
-3. **The rest of `routes-rest`, then the other route sections.** `routes-rest` was split into six
-   sub-sections during this pass; `routes-rest-auth-admin`, `routes-rest-agent-admin`,
-   `routes-rest-notes-contacts-history`, `routes-rest-memory-personal-research`,
-   `routes-rest-media-files` and `routes-rest-integrations-misc` are reviewed. Then
-   `routes-email`, `routes-cookbook`, `routes-chat-session`, `routes-models`,
-   `routes-gallery-document` and `routes-skills-calendar-task`, which are also under review. The
-   widest route surface, and the ones that consume `settings_scrub`, `upload_limits`, and the URL
-   guards.
-4. **The remaining `src-*` and `services-*` sections**, then `tests-*` (which is where the missing
-   cross-classifier test would go), then `static-*`, which is the largest surface and the least
-   likely to hold a backend trust-boundary defect.
+1. **`tests-*`.** Establishes whether the suite asserts the negative cases the backend findings
+   rely on, and settles the stale test premise under [Unresolved state](#unresolved-state).
+2. **`static-js-*`.** The largest unread surface. It decides the cross-site scripting and
+   client-side authorization questions this run leaves open.
+3. **Re-review of the findings not yet re-derived.** See
+   [Re-review, 2026-10-04](#re-review-2026-10-04) for what was covered.
+4. **`src/outbound_fetch.py` below line 44**, and the tool-to-route boundaries listed under
+   [Not covered](#not-covered).
 
-Record the new pass as follows:
+Record a new pass as follows:
 
 1. Update `sources/header.md` with the new audit date, snapshot, and counts.
 2. Refresh each section's coverage statement to match what was read.
