@@ -1,0 +1,367 @@
+name = "odysseus"
+description = "Self-hosted AI workspace: a FastAPI backend and a large first-party front end covering chat, an agent loop with a tool surface, email, calendar, documents and RAG, memory, research, model serving, and MCP. Python 3.11+ with a stdlib-plus-FastAPI backend."
+repo_url = "https://github.com/odysseus-dev/odysseus"
+primary_language = "python"
+repo_path = "/home/lhl/github/lhl/odysseus"
+
+notes = "Odysseus has no Makefile or package.json, so the gate table detects no invocable targets; the real gates are the GitHub Actions jobs in .github/workflows/ci.yml. `check` is the syntax and test job: compileall over every source root, node --check over the first-party JS, then the full pytest suite. CI also runs CodeQL, a secret scan, container scanning, a dependency review, and a workflow-security audit; those need network or credentials and are not local gates. Two paths are generated or vendored rather than written: services/hwfit/data/*.json is a 35k-line model catalogue, and static/lib/ holds minified third-party bundles (docx, mermaid, highlight, KaTeX). They are listed for coverage and should not be read as first-party code."
+
+# The keys above describe the repository; this table records the snapshot.
+# This file is the run's only configuration; editing it changes the run.
+[run]
+tool_version = 1
+created_at = "2026-10-03T14:40:16+00:00"
+audit_date = "2026-10-03"
+commit = "2992bf6d368a11472323e47d3bfed91e79cefc6b"
+
+# Values the secret gate reads as credentials but that are not.
+[secrets.allow]
+"_token_cache" = "attribute name assigned in app.py; the same string is a fragment of tests/test_token_cache_*.py and tests/*_token_cache_*.py paths listed for coverage, not a credential"
+"api_key_manager" = "module name (src/api_key_manager.py) and a fragment of tests/test_api_key_manager_*.py paths listed for coverage, not a credential"
+"odysseus-theme" = "localStorage key in static/js/theme.js; the same string is the scripts/odysseus-theme script path listed for coverage, not a credential"
+"manage_tokens" = "agent tool name in the TOOL_HANDLERS registry and the tool-name map in src/tool_parsing.py; the secret pattern reads the map entry as a token assignment, not a credential"
+"access_token" = "OAuth field name; routes/chatgpt_subscription_routes.py:26 reads tokens.get(\"access_token\") and core/database.py:565 names the column, so the pattern reads the literal field name as a credential"
+"refresh_token" = "OAuth field name; routes/chatgpt_subscription_routes.py:27 reads tokens.get(\"refresh_token\") and core/database.py:566 names the column, so the pattern reads the literal field name as a credential"
+"oauth_tokens" = "MCP server column name (core/database.py:584) and the test fixture attribute in tests/test_mcp_oauth.py:90; the pattern reads the literal column name as a credential"
+"brave_api_key" = "settings key name (src/settings.py:91) read by services/search/providers.py:296 as config.get(\"brave_api_key\"); the pattern reads the literal key name as a credential"
+"SameSite=Lax" = "cookie attribute value in the prose at companion/routes.py:172; the secret pattern reads `credential: SameSite=Lax` as an assignment, not a credential"
+"req.hf_token" = "attribute reference (the ServeRequest field) at routes/cookbook_routes.py:1084 and :1977, quoted in the cookbook section's evidence; the pattern reads the attribute name as a credential value, not a credential"
+"sess.headers" = "attribute reference (the request-header dict on a chat session) at routes/webhook/webhook_routes.py:372 and :383, quoted in the src-llm-core section's evidence; the pattern reads the attribute name as a credential value after matching `if api_key:` and the next line, not a credential"
+
+[gates]
+check = "python -m compileall -q app.py core routes src services scripts tests && python -m pytest -q"
+release = "docker compose config"
+
+[[areas]]
+label = "Repository root and build surface"
+roots = ["ACKNOWLEDGMENTS.md", "CONTRIBUTING.md", "README.md", "ROADMAP.md", "SECURITY.md", "THREAT_MODEL.md", "app.py", "setup.py", "launcher.py", "build-macos-app.sh", "install-service.sh", "start-macos.sh", "update_windows.bat", "docker", ".github", "licenses"]
+
+[[areas]]
+label = "core"
+roots = ["core"]
+
+[[areas]]
+label = "src"
+roots = ["src"]
+
+[[areas]]
+label = "routes"
+roots = ["routes"]
+
+[[areas]]
+label = "services"
+roots = ["services"]
+
+[[areas]]
+label = "static"
+roots = ["static"]
+
+[[areas]]
+label = "tests"
+roots = ["tests"]
+
+[[areas]]
+label = "specs and scripts"
+roots = ["specs", "scripts"]
+
+[[areas]]
+label = "Other tracked trees"
+roots = ["mcp_servers", "companion", "swift", "integrations", "website", "data"]
+
+[[sections]]
+stem = "repository-root"
+title = "Repository root and project policy"
+paths = ["ACKNOWLEDGMENTS.md", "CONTRIBUTING.md", "LICENSE", "README.md", "ROADMAP.md", "SECURITY.md", "THREAT_MODEL.md"]
+
+[[sections]]
+stem = "build-install-deploy"
+title = "Build, install, launcher, CI and containers"
+paths = [".dockerignore", ".env.example", ".gitattributes", ".github/CODEOWNERS", ".github/ISSUE_TEMPLATE/bug_report.yml", ".github/ISSUE_TEMPLATE/config.yml", ".github/ISSUE_TEMPLATE/feature_request.yml", ".github/dependabot.yml", ".github/pull_request_review_template.md", ".github/pull_request_template.md", ".github/scripts/check-issue-description.js", ".github/scripts/check-pr-description.js", ".github/scripts/focused_test_guidance.py", ".github/workflows/ci.yml", ".github/workflows/codeql.yml", ".github/workflows/container-scan.yml", ".github/workflows/container-trivy.yml", ".github/workflows/dependency-review.yml", ".github/workflows/deploy-pages.yml", ".github/workflows/docker-publish.yml", ".github/workflows/issue-description-check.yml", ".github/workflows/pr-description-check.yml", ".github/workflows/secret-scan.yml", ".github/workflows/workflow-security.yml", ".gitignore", "Dockerfile", "Odysseus.spec", "app.py", "assets/branding/odysseus-browser.jpg", "assets/branding/odysseus-wordmark.png", "assets/branding/odysseus.jpg", "build-macos-app.sh", "build-windows-portable.ps1", "config/searxng/settings.yml", "docker-compose.gpu-amd.yml", "docker-compose.gpu-nvidia.yml", "docker-compose.yml", "docker/build-realesrgan-wheels.sh", "docker/entrypoint.sh", "docker/gpu.amd.yml", "docker/gpu.nvidia.yml", "docker/host-docker.yml", "install-service.sh", "launch-windows.ps1", "launcher.py", "licenses/DeepResearch-Apache-2.0.txt", "licenses/KaTeX-MIT-LICENSE.txt", "licenses/Mermaid-MIT-LICENSE.txt", "licenses/OpenDyslexic-OFL.txt", "licenses/llmfit-MIT-LICENSE.txt", "licenses/opencode-MIT-LICENSE.txt", "odysseus-ui.service", "package-lock.json", "package.json", "pyproject.toml", "requirements-optional.txt", "requirements.txt", "setup.py", "start-macos.sh", "update_windows.bat"]
+
+[[sections]]
+stem = "specs"
+title = "Specifications"
+paths = ["specs/_readme.md", "specs/agent-tools.md", "specs/auth-security.md", "specs/calendar-tasks-notes.md", "specs/chat.md", "specs/compare.md", "specs/context-building.md", "specs/cookbook-hwfit.md", "specs/documents-rag-uploads.md", "specs/email-contacts.md", "specs/frontend.md", "specs/gallery-editor-media.md", "specs/integrations.md", "specs/llm-models.md", "specs/memory-skills.md", "specs/model-capability-canonical.md", "specs/model-providers/_readme.md", "specs/model-providers/anthropic.md", "specs/model-providers/atlas-cloud.md", "specs/model-providers/azure-openai.md", "specs/model-providers/bedrock.md", "specs/model-providers/cerebras.md", "specs/model-providers/chatgpt-subscription.md", "specs/model-providers/cloudflare-workers-ai.md", "specs/model-providers/cohere.md", "specs/model-providers/deepseek.md", "specs/model-providers/fireworks.md", "specs/model-providers/github-copilot.md", "specs/model-providers/github-models.md", "specs/model-providers/google.md", "specs/model-providers/groq.md", "specs/model-providers/hugging-face.md", "specs/model-providers/llama-cpp.md", "specs/model-providers/lm-studio.md", "specs/model-providers/local-compatible-engines.md", "specs/model-providers/minimax.md", "specs/model-providers/mistral.md", "specs/model-providers/moonshot-kimi.md", "specs/model-providers/nvidia-nim.md", "specs/model-providers/ollama.md", "specs/model-providers/openai-compatible.md", "specs/model-providers/openai.md", "specs/model-providers/opencode.md", "specs/model-providers/openrouter.md", "specs/model-providers/perplexity.md", "specs/model-providers/sglang.md", "specs/model-providers/siliconflow.md", "specs/model-providers/together.md", "specs/model-providers/venice.md", "specs/model-providers/vllm.md", "specs/model-providers/xai.md", "specs/model-providers/zai.md", "specs/model-quirks.md", "specs/persistence.md", "specs/research.md", "specs/runtime.md", "specs/search.md", "specs/settings-admin.md", "specs/shell-mcp.md", "specs/speech.md", "specs/testing-devops.md"]
+
+[[sections]]
+stem = "scripts"
+title = "Operational scripts"
+paths = ["scripts/_completion/odysseus.bash", "scripts/_completion/odysseus.zsh", "scripts/_lib/__init__.py", "scripts/_lib/cli.py", "scripts/add_hwfit_models.py", "scripts/agent_migration_manifest.py", "scripts/backfill_model_release_dates.py", "scripts/check-docker-amd-gpu.sh", "scripts/check-docker-gpu.sh", "scripts/claim_ownerless.py", "scripts/demo_email/demo_account.py", "scripts/demo_email/manage.sh", "scripts/demo_email/seed_demo_emails.py", "scripts/diffusion_server.py", "scripts/encode_previews.sh", "scripts/fix_paths.py", "scripts/hf_download.py", "scripts/import_from_vllm_recipes.py", "scripts/index_documents.py", "scripts/migrate_faiss_to_chroma.py", "scripts/migrate_searxng_settings.py", "scripts/mlx_image_server.py", "scripts/odysseus", "scripts/odysseus-backup", "scripts/odysseus-calendar", "scripts/odysseus-contacts", "scripts/odysseus-cookbook", "scripts/odysseus-docs", "scripts/odysseus-gallery", "scripts/odysseus-logs", "scripts/odysseus-mail", "scripts/odysseus-mcp", "scripts/odysseus-memory", "scripts/odysseus-notes", "scripts/odysseus-personal", "scripts/odysseus-preset", "scripts/odysseus-research", "scripts/odysseus-sessions", "scripts/odysseus-signature", "scripts/odysseus-skills", "scripts/odysseus-tasks", "scripts/odysseus-theme", "scripts/odysseus-webhook", "scripts/pr_blocker_audit.py", "scripts/update_database.py"]
+
+[[sections]]
+stem = "core-auth-session"
+title = "core: auth, sessions, middleware, models"
+paths = ["core/auth.py", "core/log_safety.py", "core/middleware.py", "core/models.py", "core/session_manager.py"]
+
+[[sections]]
+stem = "core-data-platform"
+title = "core: database, atomic IO, constants, platform"
+paths = ["core/__init__.py", "core/atomic_io.py", "core/constants.py", "core/database.py", "core/exceptions.py", "core/platform_compat.py"]
+
+[[sections]]
+stem = "src-agent-loop"
+title = "src: agent loop, runs, approvals and gates"
+paths = ["src/action_intents.py", "src/agent_loop.py", "src/agent_runs.py", "src/goal_based_extractor.py", "src/interactive_gate.py", "src/task_action_policy.py", "src/tool_approval_scopes.py", "src/tool_approvals.py"]
+
+[[sections]]
+stem = "src-llm-core"
+title = "src: LLM interaction, endpoints, model capability"
+paths = ["src/ai_interaction.py", "src/chatgpt_subscription.py", "src/copilot.py", "src/endpoint_resolver.py", "src/foreground_model_routing.py", "src/image_model_ids.py", "src/llm_core.py", "src/model_capabilities.py", "src/model_capability_readers/__init__.py", "src/model_capability_readers/base.py", "src/model_capability_readers/generic_openai.py", "src/model_capability_readers/google.py", "src/model_capability_readers/google_ai_studio_mapping.py", "src/model_capability_readers/llamacpp.py", "src/model_capability_readers/lmstudio.py", "src/model_capability_readers/ollama.py", "src/model_capability_readers/openai.py", "src/model_capability_readers/openrouter.py", "src/model_context.py", "src/model_discovery.py"]
+
+# `src-tools` (10,435 lines) was split during the review pass into four
+# sub-sections, listed here in review order. The split is recorded in
+# `sources/scope.md`; each sub-section carries its own coverage statement.
+[[sections]]
+stem = "src-tools-parse-exec"
+title = "src: tool parsing and execution"
+paths = ["src/tool_parsing.py", "src/tool_execution.py"]
+
+[[sections]]
+stem = "src-tools-capabilities-policy"
+title = "src: tool capabilities, policy and MCP builtins"
+paths = ["src/tool_capabilities.py", "src/tool_policy.py", "src/tool_security.py", "src/tool_utils.py", "src/builtin_mcp.py"]
+
+[[sections]]
+stem = "src-tools-schema-index"
+title = "src: tool schemas, index and implementations"
+paths = ["src/tool_schemas.py", "src/tool_index.py", "src/tool_implementations.py"]
+
+[[sections]]
+stem = "src-tools-builtin-actions"
+title = "src: scheduled built-in actions"
+paths = ["src/builtin_actions.py"]
+
+[[sections]]
+stem = "src-agent-tools"
+title = "src: agent tool implementations"
+paths = ["src/agent_tools/__init__.py", "src/agent_tools/admin_tools.py", "src/agent_tools/bg_job_tools.py", "src/agent_tools/coding_tools.py", "src/agent_tools/document_tools.py", "src/agent_tools/filesystem_tools.py", "src/agent_tools/interaction_tools.py", "src/agent_tools/model_interaction_tools.py", "src/agent_tools/session_tools.py", "src/agent_tools/subprocess_tools.py", "src/agent_tools/web_tools.py", "src/tools/__init__.py", "src/tools/_common.py", "src/tools/calendar.py", "src/tools/contacts.py", "src/tools/cookbook.py", "src/tools/image.py", "src/tools/notes.py", "src/tools/research.py", "src/tools/search.py", "src/tools/system.py", "src/tools/vault.py"]
+
+[[sections]]
+stem = "src-security"
+title = "src: prompt security, secrets, URL safety, limits"
+paths = ["src/api_key_manager.py", "src/auth_helpers.py", "src/host_docker_access.py", "src/outbound_fetch.py", "src/owner_identity.py", "src/prompt_security.py", "src/rate_limiter.py", "src/secret_storage.py", "src/settings_scrub.py", "src/tls_overrides.py", "src/upload_limits.py", "src/url_safety.py", "src/url_security.py"]
+
+[[sections]]
+stem = "src-chat-session"
+title = "src: chat processing, context and sessions"
+paths = ["src/assistant_log.py", "src/chat_handler.py", "src/chat_helpers.py", "src/chat_processor.py", "src/context_budget.py", "src/context_compactor.py", "src/request_models.py", "src/session_actions.py", "src/session_image_cleanup.py", "src/session_search.py", "src/topic_analyzer.py"]
+
+[[sections]]
+stem = "src-memory-rag"
+title = "src: memory, RAG, embeddings and settings"
+paths = ["src/chroma_client.py", "src/embedding_lanes.py", "src/embeddings.py", "src/index_walk.py", "src/memory.py", "src/memory_provider.py", "src/memory_vector.py", "src/personal_docs.py", "src/preset_manager.py", "src/rag_manager.py", "src/rag_singleton.py", "src/rag_vector.py", "src/settings.py"]
+
+[[sections]]
+stem = "src-documents"
+title = "src: documents, uploads, PDF and office"
+paths = ["src/attachment_refs.py", "src/document_actions.py", "src/document_processor.py", "src/generated_images.py", "src/markitdown_runtime.py", "src/office_doc.py", "src/pdf_form_doc.py", "src/pdf_forms.py", "src/pdf_runtime.py", "src/upload_handler.py"]
+
+[[sections]]
+stem = "src-email-integrations"
+title = "src: email, calendar and integrations"
+paths = ["src/caldav_sync.py", "src/caldav_writeback.py", "src/email_thread_parser.py", "src/integrations.py", "src/webhook_manager.py", "src/youtube_handler.py"]
+
+[[sections]]
+stem = "src-research-scheduling"
+title = "src: research, scheduling and background work"
+paths = ["src/bg_jobs.py", "src/bg_monitor.py", "src/cleanup_service.py", "src/cookbook_serve_lifecycle.py", "src/deep_research.py", "src/research_handler.py", "src/research_utils.py", "src/task_endpoint.py", "src/task_scheduler.py", "src/teacher_escalation.py", "src/visual_report.py"]
+
+[[sections]]
+stem = "src-mcp"
+title = "src: MCP management and OAuth"
+paths = ["src/mcp_manager.py", "src/mcp_oauth.py"]
+
+[[sections]]
+stem = "src-platform"
+title = "src: config, runtime, health and remaining modules"
+paths = ["src/app_helpers.py", "src/app_initializer.py", "src/config.py", "src/constants.py", "src/database.py", "src/event_bus.py", "src/exceptions.py", "src/optional_deps.py", "src/readiness.py", "src/reminder_personas.py", "src/runtime_paths.py", "src/search/__init__.py", "src/search/analytics.py", "src/search/cache.py", "src/search/content.py", "src/search/core.py", "src/search/providers.py", "src/search/query.py", "src/search/ranking.py", "src/service_health.py", "src/text_helpers.py", "src/user_time.py"]
+
+[[sections]]
+stem = "routes-email"
+title = "routes: email"
+paths = ["routes/email_helpers.py", "routes/email_pollers.py", "routes/email_routes.py"]
+
+[[sections]]
+stem = "routes-cookbook"
+title = "routes: cookbook"
+paths = ["routes/cookbook_helpers.py", "routes/cookbook_routes.py"]
+
+[[sections]]
+stem = "routes-chat-session"
+title = "routes: chat and session"
+paths = ["routes/chat_helpers.py", "routes/chat_routes.py", "routes/session_routes.py"]
+
+[[sections]]
+stem = "routes-models"
+title = "routes: model serving"
+paths = ["routes/model_routes.py"]
+
+[[sections]]
+stem = "routes-shell"
+title = "routes: shell and code execution"
+paths = ["routes/shell_routes.py"]
+
+[[sections]]
+stem = "routes-gallery-document"
+title = "routes: gallery and documents"
+paths = ["routes/document/__init__.py", "routes/document/document_helpers.py", "routes/document/document_routes.py", "routes/gallery/__init__.py", "routes/gallery/gallery_helpers.py", "routes/gallery/gallery_routes.py"]
+
+[[sections]]
+stem = "routes-skills-calendar-task"
+title = "routes: skills, calendar, tasks"
+paths = ["routes/calendar_routes.py", "routes/skills_routes.py", "routes/task/__init__.py", "routes/task/task_routes.py"]
+
+[[sections]]
+stem = "routes-rest-auth-admin"
+title = "routes: auth, API tokens, admin and provider sign-in"
+paths = ["routes/__init__.py", "routes/_validators.py", "routes/auth_routes.py", "routes/api_token_routes.py", "routes/backup_routes.py", "routes/device_flow.py", "routes/admin_wipe/__init__.py", "routes/admin_wipe/admin_wipe_routes.py", "routes/admin_wipe_routes.py", "routes/chatgpt_subscription_routes.py", "routes/copilot_routes.py"]
+
+[[sections]]
+stem = "routes-rest-agent-admin"
+title = "routes: assistant, codex, MCP and workspace"
+paths = ["routes/assistant_routes.py", "routes/codex_routes.py", "routes/mcp/__init__.py", "routes/mcp/mcp_routes.py", "routes/mcp_routes.py", "routes/workspace_routes.py"]
+
+[[sections]]
+stem = "routes-rest-notes-contacts-history"
+title = "routes: notes, contacts and history"
+paths = ["routes/note/__init__.py", "routes/note/note_routes.py", "routes/note_routes.py", "routes/contacts/__init__.py", "routes/contacts/contacts_routes.py", "routes/contacts_routes.py", "routes/history/__init__.py", "routes/history/history_routes.py", "routes/history_routes.py"]
+
+[[sections]]
+stem = "routes-rest-memory-personal-research"
+title = "routes: memory, personal files and research"
+paths = ["routes/memory/__init__.py", "routes/memory/memory_routes.py", "routes/memory_routes.py", "routes/personal_routes.py", "routes/research/__init__.py", "routes/research/research_routes.py", "routes/research_routes.py"]
+
+[[sections]]
+stem = "routes-rest-media-files"
+title = "routes: uploads, embeddings, presets and preferences"
+paths = ["routes/upload_routes.py", "routes/embedding_routes.py", "routes/editor_draft_routes.py", "routes/signature_routes.py", "routes/preset_routes.py", "routes/prefs_routes.py", "routes/font_routes.py", "routes/emoji_routes.py", "routes/tts_routes.py", "routes/stt_routes.py", "routes/cookbook_output.py"]
+
+[[sections]]
+stem = "routes-rest-integrations-misc"
+title = "routes: webhooks, vault, compare, hardware fit and shims"
+paths = ["routes/webhook/__init__.py", "routes/webhook/webhook_routes.py", "routes/webhook_routes.py", "routes/hwfit_routes.py", "routes/compare/__init__.py", "routes/compare/compare_routes.py", "routes/compare_routes.py", "routes/vault/__init__.py", "routes/vault/vault_routes.py", "routes/vault_routes.py", "routes/diagnostics_routes.py", "routes/search/__init__.py", "routes/search/search_routes.py", "routes/search_routes.py", "routes/cleanup/__init__.py", "routes/cleanup/cleanup_routes.py", "routes/cleanup_routes.py", "routes/document_helpers.py", "routes/document_routes.py", "routes/gallery_helpers.py", "routes/gallery_routes.py", "routes/task_routes.py"]
+
+[[sections]]
+stem = "services-search"
+title = "services: search"
+paths = ["services/search/__init__.py", "services/search/analytics.py", "services/search/cache.py", "services/search/content.py", "services/search/core.py", "services/search/providers.py", "services/search/query.py", "services/search/ranking.py", "services/search/service.py"]
+
+[[sections]]
+stem = "services-memory"
+title = "services: memory"
+paths = ["services/memory/__init__.py", "services/memory/memory.py", "services/memory/memory_extractor.py", "services/memory/memory_vector.py", "services/memory/service.py", "services/memory/skill_extractor.py", "services/memory/skill_format.py", "services/memory/skill_importer.py", "services/memory/skills.py"]
+
+[[sections]]
+stem = "services-research"
+title = "services: research and docs"
+paths = ["services/docs/__init__.py", "services/docs/service.py", "services/research/__init__.py", "services/research/research_handler.py", "services/research/service.py"]
+
+[[sections]]
+stem = "services-hwfit"
+title = "services: hardware fit"
+paths = ["services/hwfit/__init__.py", "services/hwfit/data/hf_models.json", "services/hwfit/data/mlx_community_models.json", "services/hwfit/fit.py", "services/hwfit/hardware.py", "services/hwfit/hf_discovery.py", "services/hwfit/image_models.py", "services/hwfit/models.py", "services/hwfit/profiles.py"]
+
+[[sections]]
+stem = "services-media"
+title = "services: shell, STT, TTS, faces, youtube"
+paths = ["services/__init__.py", "services/faces/__init__.py", "services/shell/__init__.py", "services/shell/service.py", "services/stt/__init__.py", "services/stt/stt_service.py", "services/tts/__init__.py", "services/tts/tts_service.py", "services/youtube/__init__.py", "services/youtube/youtube_handler.py"]
+
+[[sections]]
+stem = "static-js-editor"
+title = "static: image editor"
+paths = ["static/js/editor/ai-inpaint.js", "static/js/editor/ai-models.js", "static/js/editor/ai-rembg.js", "static/js/editor/ai-tool-runner.js", "static/js/editor/ai-tools-misc.js", "static/js/editor/build/controls.js", "static/js/editor/build/popups.js", "static/js/editor/build/right-panel.js", "static/js/editor/build/toolbar.js", "static/js/editor/build/topbar.js", "static/js/editor/build/transform-popup.js", "static/js/editor/canvas-coords.js", "static/js/editor/canvas-events.js", "static/js/editor/canvas-transforms.js", "static/js/editor/checkerboard.js", "static/js/editor/clipboard-and-drop.js", "static/js/editor/composite-helpers.js", "static/js/editor/filters/blur.js", "static/js/editor/filters/edge-feather.js", "static/js/editor/fx/adj-popup.js", "static/js/editor/fx/filter-string.js", "static/js/editor/fx/histogram.js", "static/js/editor/fx/pixel-pass.js", "static/js/editor/harmonize-masks.js", "static/js/editor/history-panel.js", "static/js/editor/keyboard-shortcuts.js", "static/js/editor/layer-helpers.js", "static/js/editor/layer-panel.js", "static/js/editor/mask-utils.js", "static/js/editor/shortcuts-popover.js", "static/js/editor/slider-ux.js", "static/js/editor/snap.js", "static/js/editor/state.js", "static/js/editor/stroke-pipeline.js", "static/js/editor/stroke-tool-sliders.js", "static/js/editor/tools/clone.js", "static/js/editor/tools/crop.js", "static/js/editor/tools/flood-fill.js", "static/js/editor/tools/lasso-mask.js", "static/js/editor/tools/lasso.js", "static/js/editor/tools/move.js", "static/js/editor/tools/stroke.js", "static/js/editor/tools/transform-drag.js", "static/js/editor/tools/transform-handles.js", "static/js/editor/tools/transform-session.js", "static/js/editor/tools/wand.js", "static/js/editor/wire-import.js", "static/js/editor/wire-inpaint-controls.js", "static/js/editor/wire-merge-buttons.js", "static/js/editor/wire-selection-controls.js", "static/js/editor/wire-topbar-menus.js", "static/js/editor/wire-topbar-overflow.js", "static/js/editor/wire-topbar.js"]
+
+[[sections]]
+stem = "static-js-compare"
+title = "static: model comparison UI"
+paths = ["static/js/compare/icons.js", "static/js/compare/index.js", "static/js/compare/models.js", "static/js/compare/panes.js", "static/js/compare/probe.js", "static/js/compare/scoreboard.js", "static/js/compare/selector.js", "static/js/compare/state.js", "static/js/compare/stream.js", "static/js/compare/vote.js"]
+
+[[sections]]
+stem = "static-js-chat"
+title = "static: chat, sessions and composer UI"
+paths = ["static/js/assistant.js", "static/js/chat.js", "static/js/chatModelProvenance.js", "static/js/chatRenderer.js", "static/js/chatStream.js", "static/js/chatStreamErrors.js", "static/js/composerArrowUpRecall.js", "static/js/liveThinkingThrottle.js", "static/js/sessions.js", "static/js/slashAutocomplete.js", "static/js/slashCommands.js", "static/js/streamingRenderer.js", "static/js/streamingSegmenter.js"]
+
+[[sections]]
+stem = "static-js-documents-email"
+title = "static: documents, notes, email, calendar UI"
+paths = ["static/js/calendar.js", "static/js/calendar/reminders.js", "static/js/calendar/utils.js", "static/js/document.js", "static/js/documentLibrary.js", "static/js/emailInbox.js", "static/js/emailLibrary.js", "static/js/emailLibrary/replyRecipients.js", "static/js/emailLibrary/signatureFold.js", "static/js/emailLibrary/state.js", "static/js/emailLibrary/utils.js", "static/js/emailShared.js", "static/js/gallery.js", "static/js/galleryEditor.js", "static/js/notes.js", "static/js/signature.js"]
+
+[[sections]]
+stem = "static-js-cookbook-settings-models"
+title = "static: cookbook, settings, models UI"
+paths = ["static/js/admin.js", "static/js/cookbook-deps-recipes.js", "static/js/cookbook-diagnosis.js", "static/js/cookbook-hwfit.js", "static/js/cookbook.js", "static/js/cookbookDownload.js", "static/js/cookbookPorts.js", "static/js/cookbookProgressSignal.js", "static/js/cookbookRunning.js", "static/js/cookbookSchedule.js", "static/js/cookbookServe.js", "static/js/model/matchKey.js", "static/js/modelPicker.js", "static/js/modelSort.js", "static/js/models.js", "static/js/presets.js", "static/js/providerDeviceFlow.js", "static/js/providers.js", "static/js/settings/dom.js", "static/js/settings/lifecycle.js", "static/js/settings/navigation.js", "static/js/settings/registry.js", "static/js/settings/search.js", "static/js/settings/sidebar.js"]
+
+[[sections]]
+stem = "static-js-research-memory-rag"
+title = "static: research, memory and search UI"
+paths = ["static/js/memory.js", "static/js/rag.js", "static/js/research/jobs.js", "static/js/research/panel.js", "static/js/researchSynapse.js", "static/js/search-chat.js", "static/js/search.js"]
+
+[[sections]]
+stem = "static-js-rest"
+title = "static: remaining first-party JS"
+paths = ["static/js/MODULE_SUMMARY.md", "static/js/a11y.js", "static/js/appConfig.js", "static/js/censor.js", "static/js/codeRunner.js", "static/js/color/hex.js", "static/js/colorPicker.js", "static/js/dragSort.js", "static/js/emojiPicker.js", "static/js/emojiShortcodes.js", "static/js/escMenuStack.js", "static/js/fileHandler.js", "static/js/group.js", "static/js/init.js", "static/js/keyboard-shortcuts.js", "static/js/langIcons.js", "static/js/markdown.js", "static/js/markdown/tableRow.js", "static/js/modalManager.js", "static/js/modalSnap.js", "static/js/package.json", "static/js/panels.js", "static/js/platform.js", "static/js/section-management.js", "static/js/settings.js", "static/js/sidebar-layout.js", "static/js/skills.js", "static/js/spinner.js", "static/js/startupShell.js", "static/js/storage.js", "static/js/tasks.js", "static/js/theme.js", "static/js/tileManager.js", "static/js/toolWindowZOrder.js", "static/js/tourAutoplay.js", "static/js/tourHints.js", "static/js/tts-ai.js", "static/js/ui.js", "static/js/ui_visibility.js", "static/js/util/ordinal.js", "static/js/voiceRecorder.js", "static/js/windowDrag.js", "static/js/windowResize.js", "static/js/workspace.js"]
+
+[[sections]]
+stem = "static-assets-vendored"
+title = "static: vendored libraries, fonts, icons, CSS"
+paths = ["static/app.js", "static/fonts/FiraCode-Light.woff2", "static/fonts/FiraCode-Regular.woff2", "static/fonts/FiraCode-SemiBold.woff2", "static/fonts/Inter-Medium.woff2", "static/fonts/Inter-Regular.woff2", "static/fonts/Inter-SemiBold.woff2", "static/fonts/OpenDyslexic-Bold.woff2", "static/fonts/OpenDyslexic-Regular.woff2", "static/fonts/custom/GohuFont.ttf", "static/icon.ico", "static/icons/icon-192.png", "static/icons/icon-512.png", "static/icons/icon-maskable-512.png", "static/icons/ollama-mark-crop.png", "static/icons/ollama-mark.png", "static/icons/sglang-logo.png", "static/icons/sglang-mark.png", "static/index.html", "static/lib/docx.umd.min.js", "static/lib/highlight.min.js", "static/lib/html2pdf.bundle.min.js", "static/lib/katex/fonts/KaTeX_AMS-Regular.woff2", "static/lib/katex/fonts/KaTeX_Caligraphic-Bold.woff2", "static/lib/katex/fonts/KaTeX_Caligraphic-Regular.woff2", "static/lib/katex/fonts/KaTeX_Fraktur-Bold.woff2", "static/lib/katex/fonts/KaTeX_Fraktur-Regular.woff2", "static/lib/katex/fonts/KaTeX_Main-Bold.woff2", "static/lib/katex/fonts/KaTeX_Main-BoldItalic.woff2", "static/lib/katex/fonts/KaTeX_Main-Italic.woff2", "static/lib/katex/fonts/KaTeX_Main-Regular.woff2", "static/lib/katex/fonts/KaTeX_Math-BoldItalic.woff2", "static/lib/katex/fonts/KaTeX_Math-Italic.woff2", "static/lib/katex/fonts/KaTeX_SansSerif-Bold.woff2", "static/lib/katex/fonts/KaTeX_SansSerif-Italic.woff2", "static/lib/katex/fonts/KaTeX_SansSerif-Regular.woff2", "static/lib/katex/fonts/KaTeX_Script-Regular.woff2", "static/lib/katex/fonts/KaTeX_Size1-Regular.woff2", "static/lib/katex/fonts/KaTeX_Size2-Regular.woff2", "static/lib/katex/fonts/KaTeX_Size3-Regular.woff2", "static/lib/katex/fonts/KaTeX_Size4-Regular.woff2", "static/lib/katex/fonts/KaTeX_Typewriter-Regular.woff2", "static/lib/katex/katex.min.css", "static/lib/katex/katex.min.js", "static/lib/mammoth.browser.min.js", "static/lib/mermaid.min.js", "static/lib/qrcode.min.js", "static/lib/xlsx.full.min.js", "static/login.html", "static/manifest.json", "static/modal-control-variants.html", "static/style.css", "static/sw.js", "static/wave-variants.html", "static/whirlpool-variants.html"]
+
+[[sections]]
+stem = "mcp-servers"
+title = "Bundled MCP servers"
+paths = ["mcp_servers/__init__.py", "mcp_servers/email_server.py", "mcp_servers/image_gen_server.py", "mcp_servers/memory_server.py", "mcp_servers/rag_server.py"]
+
+[[sections]]
+stem = "companion-and-swift"
+title = "Companion apps and Swift clients"
+paths = ["companion/README.md", "companion/__init__.py", "companion/pairing.py", "companion/routes.py", "integrations/claude/README.md", "integrations/claude/skills/odysseus/SKILL.md", "integrations/claude/skills/odysseus/scripts/odysseus_api.py", "integrations/codex/.codex-plugin/plugin.json", "integrations/codex/README.md", "integrations/codex/scripts/odysseus_api.py", "integrations/codex/skills/odysseus/SKILL.md", "swift/odysseus-mlx-image-bridge/Package.swift", "swift/odysseus-mlx-image-bridge/Sources/OdysseusMLXColorize/main.swift", "swift/odysseus-mlx-image-bridge/Sources/OdysseusMLXInpaint/main.swift"]
+
+[[sections]]
+stem = "website"
+title = "Project website"
+paths = ["website/_config.yml", "website/agent-migration.md", "website/attachments.md", "website/backup-restore.md", "website/bg.webm", "website/chat.webm", "website/compare.webm", "website/document.webm", "website/email-outlook.md", "website/gallery.webm", "website/index.html", "website/notes.webm", "website/pr-blocker-audit.md", "website/research.webm", "website/security-ci.md", "website/setup.md", "website/theme.webm"]
+
+[[sections]]
+stem = "tests-harness"
+title = "tests: harness, standards and helpers"
+paths = ["tests/LAYOUT_INVENTORY.md", "tests/OVERSIZED_TEST_SPLIT_PLAN.md", "tests/README.md", "tests/TESTING_STANDARD.md", "tests/_taxonomy.py", "tests/cli/test_calendar_cli_name.py", "tests/cli/test_contacts_cli_rows.py", "tests/cli/test_cookbook_cli_state.py", "tests/cli/test_docs_cli_content_length.py", "tests/cli/test_gallery_cli_album_count.py", "tests/cli/test_gallery_cli_preview.py", "tests/cli/test_logs_cli_resolve_nonstring.py", "tests/cli/test_mail_cli_read_empty_fetch.py", "tests/cli/test_mail_cli_recipients.py", "tests/cli/test_mcp_cli_env_serialize.py", "tests/cli/test_mcp_cli_json.py", "tests/cli/test_memory_cli_rows.py", "tests/cli/test_notes_cli_items.py", "tests/cli/test_personal_cli_rows.py", "tests/cli/test_preset_cli_invalid_entries.py", "tests/cli/test_preset_cli_set_corrupt_entry.py", "tests/cli/test_preset_cli_store.py", "tests/cli/test_research_cli_preview.py", "tests/cli/test_research_cli_status.py", "tests/cli/test_research_cli_status_filter.py", "tests/cli/test_research_cli_store.py", "tests/cli/test_sessions_cli.py", "tests/cli/test_signature_cli_export.py", "tests/cli/test_skills_cli_preview.py", "tests/cli/test_skills_cli_rows.py", "tests/cli/test_tasks_cli_preview.py", "tests/cli/test_theme_cli_store.py", "tests/cli/test_webhook_cli_mask.py", "tests/conftest.py", "tests/helpers/__init__.py", "tests/helpers/calendar_routes.py", "tests/helpers/cli_loader.py", "tests/helpers/db_stubs.py", "tests/helpers/embedding_lanes.py", "tests/helpers/import_state.py", "tests/helpers/sqlite_db.py", "tests/helpers/test_settings_shell.js", "tests/helpers/test_settings_shell_coordinator.mjs", "tests/run_focus.py", "tests/run_order_report.py", "tests/streaming/corpus.mjs", "tests/streaming/invariant.test.mjs", "tests/streaming/markdownHarness.mjs", "tests/streaming/segmenter.test.mjs", "tests/tools/build_oversized_test_split_plan.py"]
+
+[[sections]]
+stem = "tests-security"
+title = "tests: security, guard and prompt-injection"
+paths = ["tests/test_auth_config_lock_concurrency.py", "tests/test_auth_disabled_document_access.py", "tests/test_auth_event_loop.py", "tests/test_auth_policy.py", "tests/test_auth_regressions.py", "tests/test_auth_require_privilege_nondict.py", "tests/test_auth_root_path.py", "tests/test_auth_session_revocation.py", "tests/test_db_stubs_helper.py", "tests/test_is_youtube_url_nonstring.py", "tests/test_is_youtube_url_nonstring_svc.py", "tests/test_pr_blocker_audit.py", "tests/test_pr_description_check.py", "tests/test_prompt_injection_audit.py", "tests/test_prompt_security.py", "tests/test_security_headers_middleware.py", "tests/test_security_headers_pdf_preview.py", "tests/test_security_regressions.py", "tests/test_token_cache_atomic_swap.py", "tests/test_vault_password_not_in_argv.py", "tests/test_vault_routes_shim.py"]
+
+[[sections]]
+stem = "tests-email-calendar"
+title = "tests: email, calendar and webhooks"
+paths = ["tests/test_ai_image_url_safety.py", "tests/test_ai_interaction_owner_scope.py", "tests/test_caldav_bidirectional_sync.py", "tests/test_caldav_client_cleanup.py", "tests/test_caldav_google_principal_url.py", "tests/test_caldav_prune_parse_failure.py", "tests/test_caldav_redirect_hardening.py", "tests/test_caldav_sync_prune_local_events.py", "tests/test_caldav_sync_uid_scope.py", "tests/test_caldav_test_connection_ssl.py", "tests/test_caldav_url_hardening.py", "tests/test_caldav_url_nonstring.py", "tests/test_caldav_writeback.py", "tests/test_caldav_writeback_route.py", "tests/test_calendar_batch_events.py", "tests/test_calendar_cli_overlap.py", "tests/test_calendar_css_url_escape_js.py", "tests/test_calendar_default_transaction.py", "tests/test_calendar_event_contrast.py", "tests/test_calendar_import_zero_duration.py", "tests/test_calendar_list_range_aliases.py", "tests/test_calendar_owner_scope.py", "tests/test_calendar_parse_dt_naive.py", "tests/test_calendar_parse_dt_time_first.py", "tests/test_calendar_parse_dt_tonight.py", "tests/test_calendar_recurrence.py", "tests/test_calendar_reminder_minutes_parsing.py", "tests/test_calendar_rrule.py", "tests/test_calendar_rrule_until_utc.py", "tests/test_calendar_update_event_tz.py", "tests/test_calendar_utils_dates_js.py", "tests/test_contacts_add_null_name.py", "tests/test_contacts_carddav_security.py", "tests/test_contacts_import_nonstring.py", "tests/test_contacts_routes_shim.py", "tests/test_contacts_vcard_parse.py", "tests/test_diagnostics_logs.py", "tests/test_diagnostics_service_route.py", "tests/test_email_account_default_serialization.py", "tests/test_email_account_port_validation.py", "tests/test_email_decode_header.py", "tests/test_email_envelope_recipients.py", "tests/test_email_fallback_reconnect.py", "tests/test_email_gmail_fetch_flags.py", "tests/test_email_helpers_decode_header_spaces.py", "tests/test_email_imap_timeout.py", "tests/test_email_library_bulk_actions.py", "tests/test_email_library_prewarm.py", "tests/test_email_linkify_security_js.py", "tests/test_email_oauth.py", "tests/test_email_oauth_connect_smtp_security.py", "tests/test_email_oauth_docker_config.py", "tests/test_email_oauth_settings_redirect.py", "tests/test_email_open_dedup_js.py", "tests/test_email_owner_scope.py", "tests/test_email_ownerless_account_owner_scope.py", "tests/test_email_polly_imap_leak.py", "tests/test_email_read_mark_seen.py", "tests/test_email_registry_sync.py", "tests/test_email_send_only_no_inbox.py", "tests/test_email_smtp_security.py", "tests/test_email_split_border_css.py", "tests/test_email_summary_error_ui_js.py", "tests/test_email_summary_llm.py", "tests/test_email_test_connection_oauth.py", "tests/test_email_thread_parser_nonstring.py", "tests/test_email_uid_no_seqno_fallback.py", "tests/test_email_unsubscribe_candidates.py", "tests/test_email_urgency_checkpoint.py", "tests/test_ics_escape.py", "tests/test_ics_export_escaping.py", "tests/test_ics_import_dedup_tz.py", "tests/test_imap_leak_fixes.py", "tests/test_imap_mailbox_quoting.py", "tests/test_imap_move_uid.py", "tests/test_imap_uid_commands.py", "tests/test_web_fetch_plaintext.py", "tests/test_web_fetch_size_caps.py", "tests/test_web_search_query_sanitization.py", "tests/test_web_search_raw_json_tool_call.py", "tests/test_web_search_time_filter.py", "tests/test_web_search_tool_icon_js.py", "tests/test_web_user_agent_constant.py", "tests/test_webhook_dns_rebinding_pin.py", "tests/test_webhook_emitters_use_manager.py", "tests/test_webhook_routes_shim.py", "tests/test_webhook_sanitize_error_ipv6.py", "tests/test_webhook_ssrf_resilience.py", "tests/test_webhook_task_refs.py", "tests/test_webhook_trigger_auth_exempt.py"]
+
+[[sections]]
+stem = "tests-cookbook-models"
+title = "tests: cookbook, models and providers"
+paths = ["tests/test_cookbook_agent_tool_ssh_validation.py", "tests/test_cookbook_cpu_only_serve.py", "tests/test_cookbook_dead_download_status.py", "tests/test_cookbook_dependency_completion_regression.py", "tests/test_cookbook_deps_recipes.py", "tests/test_cookbook_diagnosis.py", "tests/test_cookbook_diagnosis_js.py", "tests/test_cookbook_docker_access.py", "tests/test_cookbook_download_toast_duration.py", "tests/test_cookbook_endpoint_registration.py", "tests/test_cookbook_error_feedback.py", "tests/test_cookbook_error_tail_lines.py", "tests/test_cookbook_gemma4_thinking_template.py", "tests/test_cookbook_helpers.py", "tests/test_cookbook_hf_token.py", "tests/test_cookbook_local_serve_pid_winpid.py", "tests/test_cookbook_package_detection.py", "tests/test_cookbook_port_parsing_js.py", "tests/test_cookbook_progress_signal_js.py", "tests/test_cookbook_remote_windows_diffusers.py", "tests/test_cookbook_same_host_server_profiles_js.py", "tests/test_cookbook_serve_lifecycle.py", "tests/test_cookbook_windows_stop_tree_js.py", "tests/test_embedding_cache_confinement.py", "tests/test_embedding_endpoint_config.py", "tests/test_embedding_lane_ndarray_restore.py", "tests/test_embedding_lanes.py", "tests/test_embedding_lanes_legacy.py", "tests/test_embedding_lanes_memory.py", "tests/test_embedding_lanes_rag.py", "tests/test_embedding_lanes_tool_index.py", "tests/test_embeddings.py", "tests/test_embeddings_client.py", "tests/test_endpoint_owner_scope_followup.py", "tests/test_endpoint_probing.py", "tests/test_endpoint_resolver_headers.py", "tests/test_endpoint_resolver_models.py", "tests/test_endpoint_resolver_urls.py", "tests/test_gpu_compose_standalone.py", "tests/test_hwfit_amd.py", "tests/test_hwfit_apple_bandwidth.py", "tests/test_hwfit_bandwidth_nonstring.py", "tests/test_hwfit_container_visibility_warning.py", "tests/test_hwfit_cpu_arch_detection.py", "tests/test_hwfit_cpu_only_fallback.py", "tests/test_hwfit_gemma4_12b.py", "tests/test_hwfit_gpu_count_nonnumeric.py", "tests/test_hwfit_macos.py", "tests/test_hwfit_manual_backend.py", "tests/test_hwfit_models_nonstring_fields.py", "tests/test_hwfit_native_quant_labels.py", "tests/test_hwfit_params_b_malformed.py", "tests/test_hwfit_quant_formats.py", "tests/test_hwfit_remote_validation.py", "tests/test_hwfit_unified_nvidia.py", "tests/test_hwfit_windows.py", "tests/test_llm_core_anthropic_cache.py", "tests/test_llm_core_anthropic_temp_clamp.py", "tests/test_llm_core_anthropic_temp_omit.py", "tests/test_llm_core_async_mistral_content.py", "tests/test_llm_core_concurrency.py", "tests/test_llm_core_connect_timeout.py", "tests/test_llm_core_fallback.py", "tests/test_llm_core_mistral_content.py", "tests/test_llm_core_ollama.py", "tests/test_llm_core_ollama_thinking.py", "tests/test_llm_core_openai_reasoning_tools.py", "tests/test_llm_core_reasoning.py", "tests/test_llm_core_reasoning_content_fallback.py", "tests/test_llm_core_sanitize_tool_calls.py", "tests/test_llm_core_sse_no_space.py", "tests/test_llm_core_streaming.py", "tests/test_llm_core_system_msg_missing_content.py", "tests/test_llm_core_temperature_anthropic.py", "tests/test_llm_core_temperature_moonshot.py", "tests/test_llm_core_temperature_reasoning.py", "tests/test_llm_core_thinking_models.py", "tests/test_llm_core_usage_finish_delta.py", "tests/test_model_capabilities.py", "tests/test_model_capability_readers.py", "tests/test_model_context.py", "tests/test_model_defaults.py", "tests/test_model_discovery_status.py", "tests/test_model_helper_owner_scope.py", "tests/test_model_interaction_registry.py", "tests/test_model_name_tooltip.py", "tests/test_model_routes.py", "tests/test_model_sort_js.py", "tests/test_provider_classification.py", "tests/test_provider_classification_errors.py", "tests/test_provider_classification_token_params.py", "tests/test_provider_detection_builders.py", "tests/test_provider_detection_detect.py", "tests/test_provider_detection_host_match.py", "tests/test_provider_device_flow_js.py", "tests/test_provider_endpoints_headers.py", "tests/test_provider_endpoints_models.py", "tests/test_provider_endpoints_normalization.py", "tests/test_provider_endpoints_tailscale.py", "tests/test_provider_endpoints_url_building.py", "tests/test_provider_label_js.py", "tests/test_providers_mixtral_logo_js.py", "tests/test_stt_leak.py", "tests/test_tts_available_nonstring_provider.py", "tests/test_tts_cache_stats.py", "tests/test_tts_service_enforce_cache_limit.py", "tests/test_tts_speed_malformed.py", "tests/test_youtube_comments_timeout.py", "tests/test_youtube_extract_id_nonstring.py", "tests/test_youtube_handler_consolidation.py", "tests/test_youtube_svc_comments_nondict.py", "tests/test_youtube_transcript_seg_nondict.py"]
+
+[[sections]]
+stem = "tests-llm-tools"
+title = "tests: LLM, tools and agent loop"
+paths = ["tests/test_action_intents.py", "tests/test_action_intents_shell_verbs.py", "tests/test_agent_bash_windows.py", "tests/test_agent_loop.py", "tests/test_agent_loop_tool_output_truncation.py", "tests/test_agent_migration_manifest.py", "tests/test_agent_round_model_provenance_ui.py", "tests/test_agent_rounds_exhausted.py", "tests/test_agent_state_dir_confinement.py", "tests/test_agent_thread_dot_alignment_css.py", "tests/test_agent_tool_budget_nonnumeric.py", "tests/test_agent_tools_truncate_nonstring.py", "tests/test_app_config_shared_fetch_js.py", "tests/test_app_db_permissions.py", "tests/test_app_initializer_memory_vector_degraded.py", "tests/test_app_static_mime.py", "tests/test_ask_user_persistence.py", "tests/test_ask_user_tool.py", "tests/test_bg_job_tools.py", "tests/test_bg_jobs_store.py", "tests/test_bg_monitor_stream.py", "tests/test_compaction_summary_failure.py", "tests/test_loop_breaker_runaway.py", "tests/test_mcp_add_server_args_validation.py", "tests/test_mcp_cache_invalidation.py", "tests/test_mcp_common_truncate.py", "tests/test_mcp_dependency_compatibility.py", "tests/test_mcp_email_decode_header_spaces.py", "tests/test_mcp_manager.py", "tests/test_mcp_memory_owner_scope.py", "tests/test_mcp_oauth.py", "tests/test_mcp_param_hint_hardening.py", "tests/test_mcp_reconnect_args.py", "tests/test_mcp_routes_shim.py", "tests/test_mcp_tool_params_in_prompt.py", "tests/test_research_chat_stream_owner.py", "tests/test_research_endpoint_owner_scope.py", "tests/test_research_handler_analyzed_urls.py", "tests/test_research_handler_path_confinement.py", "tests/test_research_handler_raw_nondict.py", "tests/test_research_handler_sources_nondict.py", "tests/test_research_owner_scope_routes.py", "tests/test_research_probe_errors.py", "tests/test_research_query_fallback.py", "tests/test_research_report_read.py", "tests/test_research_routes_path_confinement.py", "tests/test_research_routes_shim.py", "tests/test_research_service.py", "tests/test_research_session_id_validation.py", "tests/test_research_source_link_xss.py", "tests/test_research_status_avg_duration.py", "tests/test_research_utils.py", "tests/test_research_utils_low_quality_nonstring.py", "tests/test_schedule_email_offset_normalization.py", "tests/test_scheduler_prompt_cache_time.py", "tests/test_scheduler_restart_doublefire.py", "tests/test_scheduler_scheduled_time_validation.py", "tests/test_search_analytics_defaults.py", "tests/test_search_cache_invalidation.py", "tests/test_search_config_no_key_leak.py", "tests/test_search_config_provider_key.py", "tests/test_search_content_block_source_index.py", "tests/test_search_content_extraction_parity.py", "tests/test_search_content_url_guards.py", "tests/test_search_module_consolidation.py", "tests/test_search_provider_json.py", "tests/test_search_query.py", "tests/test_search_query_entities_nonstring.py", "tests/test_search_query_nonstring.py", "tests/test_search_query_unicode_names.py", "tests/test_search_ranking.py", "tests/test_search_ranking_recency.py", "tests/test_search_ranking_sports_substring.py", "tests/test_search_ranking_subject_substring.py", "tests/test_search_routes_shim.py", "tests/test_search_service_nondict_rows.py", "tests/test_skill_edit_no_collapse_on_outside_click_js.py", "tests/test_skill_extractor_json.py", "tests/test_skill_extractor_rows.py", "tests/test_skill_extractor_stray_brace.py", "tests/test_skill_format_timestamp.py", "tests/test_skill_frontmatter_escape_roundtrip.py", "tests/test_skill_importer.py", "tests/test_skill_importer_dns_pinning.py", "tests/test_skill_importer_security.py", "tests/test_skill_importer_ssrf_redirect.py", "tests/test_skill_index_prompt_injection.py", "tests/test_skill_index_toolset_gating.py", "tests/test_skill_save_no_rename.py", "tests/test_skills_delete_owner.py", "tests/test_skills_manager_owner_isolation.py", "tests/test_skills_routes_nondict.py", "tests/test_skills_routes_owner_update.py", "tests/test_skills_tag_token_match.py", "tests/test_task_chain_owner_scope.py", "tests/test_task_cookbook_admin_gate.py", "tests/test_task_endpoint_normalization.py", "tests/test_task_routes_shim.py", "tests/test_task_scheduler_cache.py", "tests/test_task_scheduler_cancel.py", "tests/test_task_scheduler_session_delivery.py", "tests/test_task_session_folder.py", "tests/test_task_shell_tools.py", "tests/test_tool_approval_frontend_routing.py", "tests/test_tool_approval_single_action_scope.py", "tests/test_tool_approval_task_scope.py", "tests/test_tool_approvals.py", "tests/test_tool_implementations_shim.py", "tests/test_tool_index_keyword_boundaries.py", "tests/test_tool_index_schema_parity.py", "tests/test_tool_output_prompt_injection.py", "tests/test_tool_parsing_bare_end_marker.py", "tests/test_tool_parsing_hermes_json.py", "tests/test_tool_parsing_nonstring.py", "tests/test_tool_path_confinement.py", "tests/test_tool_policy.py", "tests/test_tool_rag_contacts_domain.py", "tests/test_tool_rag_keyword_hints.py", "tests/test_tool_support_heuristic.py", "tests/test_tool_task_cancelled_on_disconnect.py", "tests/test_tool_utils_import_clean.py"]
+
+[[sections]]
+stem = "tests-session-chat-memory"
+title = "tests: session, chat, memory and RAG"
+paths = ["tests/test_chat_attachment_picker.py", "tests/test_chat_cached_model_normalization.py", "tests/test_chat_helpers.py", "tests/test_chat_helpers_bg_tasks_tracked.py", "tests/test_chat_image_routing.py", "tests/test_chat_metrics.py", "tests/test_chat_model_provenance_js.py", "tests/test_chat_preprocess_tool_policy.py", "tests/test_chat_processor_pinned_memory.py", "tests/test_chat_processor_web_search.py", "tests/test_chat_route_tool_policy.py", "tests/test_chat_stream_errors_js.py", "tests/test_chat_stream_scope.py", "tests/test_chat_tool_screenshot_xss.py", "tests/test_chat_upload_limit_config.py", "tests/test_chat_url_prefetch_failure_context.py", "tests/test_chatgpt_subscription_routes.py", "tests/test_chroma_client.py", "tests/test_context_budget.py", "tests/test_context_cache_per_endpoint.py", "tests/test_context_compactor.py", "tests/test_context_compactor_nonstring.py", "tests/test_memory_add_submit_regression.py", "tests/test_memory_audit_timeout.py", "tests/test_memory_bullet_extraction.py", "tests/test_memory_cli_add_nondict.py", "tests/test_memory_extract_chat_nondict.py", "tests/test_memory_extraction_parse.py", "tests/test_memory_extractor_rows.py", "tests/test_memory_extractor_vector_cross_tenant.py", "tests/test_memory_extractor_vector_degraded.py", "tests/test_memory_fallback_dislike.py", "tests/test_memory_imports.py", "tests/test_memory_owner_isolation.py", "tests/test_memory_provider.py", "tests/test_memory_recall_nondict_rows.py", "tests/test_memory_routes_session_owner.py", "tests/test_memory_routes_shim.py", "tests/test_memory_store_unreadable_no_wipe.py", "tests/test_memory_validate_entries_nondict.py", "tests/test_personal_delete_file_confinement.py", "tests/test_personal_dir_symlink_escape.py", "tests/test_personal_docs_exclusions.py", "tests/test_personal_docs_keyword_nondict.py", "tests/test_personal_docs_lists.py", "tests/test_personal_docs_office_index.py", "tests/test_personal_docs_pdf_index.py", "tests/test_personal_docs_state_store.py", "tests/test_personal_index_hidden_dirs.py", "tests/test_personal_remove_dir_confinement.py", "tests/test_personal_upload_isolation.py", "tests/test_personal_upload_privilege.py", "tests/test_rag_index_hidden_dirs.py", "tests/test_rag_keyword_fallback_owner.py", "tests/test_rag_manager_owner_compat.py", "tests/test_rag_remove_directory_scope.py", "tests/test_rag_search_signature.py", "tests/test_rag_server_directory_nonstring.py", "tests/test_rag_vector_id_stability.py", "tests/test_rag_vector_rename_owner.py", "tests/test_searchservice_search_call.py", "tests/test_session_actions_cleanup.py", "tests/test_session_concurrent.py", "tests/test_session_context_excludes_slash.py", "tests/test_session_discovery_message_count.py", "tests/test_session_endpoint_owner_scope.py", "tests/test_session_export_filename.py", "tests/test_session_export_nonstring_content.py", "tests/test_session_ghost_delete.py", "tests/test_session_image_cleanup.py", "tests/test_session_list_owner_scope.py", "tests/test_session_manager.py", "tests/test_session_manager_cleanup.py", "tests/test_session_manager_persist_guard.py", "tests/test_session_mode_helpers.py", "tests/test_session_owner_attribution.py", "tests/test_session_routes_utcnow.py", "tests/test_session_search.py", "tests/test_session_search_batch_fetch.py", "tests/test_session_tools_registry.py", "tests/test_topic_analyzer.py"]
+
+[[sections]]
+stem = "tests-documents-media"
+title = "tests: documents, uploads, gallery and media"
+paths = ["tests/test_attachment_refs.py", "tests/test_doc_library_open_orphaned.py", "tests/test_document_actions_nonstring.py", "tests/test_document_ai_preview_refresh_js.py", "tests/test_document_close_clears_active_route.py", "tests/test_document_deeplink.py", "tests/test_document_diff_discard_on_update_js.py", "tests/test_document_editor_scroll.py", "tests/test_document_library_delete_counters.py", "tests/test_document_library_language_facet.py", "tests/test_document_library_pdf_metadata.py", "tests/test_document_pdf_marker.py", "tests/test_document_processor_attachment_budget.py", "tests/test_document_processor_empty_media_subtype.py", "tests/test_document_render_pdf_iframe.py", "tests/test_document_routes_shim.py", "tests/test_document_session_owner_scope.py", "tests/test_document_tidy_null_timestamp.py", "tests/test_document_tool_owner_scope.py", "tests/test_gallery_album_owner_scope.py", "tests/test_gallery_delete_file_ordering.py", "tests/test_gallery_endpoint_hardening.py", "tests/test_gallery_endpoint_matching.py", "tests/test_gallery_endpoint_ssrf.py", "tests/test_gallery_exif_orientation.py", "tests/test_gallery_filename_confinement.py", "tests/test_gallery_image_endpoint_owner_scope.py", "tests/test_gallery_image_privileges.py", "tests/test_gallery_model_input_device.py", "tests/test_gallery_null_user_routes.py", "tests/test_gallery_owner_filter_single_user.py", "tests/test_gallery_result_image_ssrf.py", "tests/test_gallery_routes_shim.py", "tests/test_image_models_nondict_system.py", "tests/test_image_models_nonstring_search.py", "tests/test_load_features_permission_error.py", "tests/test_note_reminder_email_oauth.py", "tests/test_note_reminder_fire_scope.py", "tests/test_note_routes_shim.py", "tests/test_notes_dom_xss_helpers.py", "tests/test_notes_fail_closed_auth.py", "tests/test_notes_search_reset_on_reopen_js.py", "tests/test_notes_select_esc_listener_js.py", "tests/test_notes_update_due_date.py", "tests/test_notes_z_order_js.py", "tests/test_pdf_ai_edit_derivative.py", "tests/test_pdf_runtime.py", "tests/test_upload_content_detection_magic.py", "tests/test_upload_error_surfaced.py", "tests/test_upload_handler_atomicity.py", "tests/test_upload_handler_cleanup.py", "tests/test_upload_handler_rename_owner.py", "tests/test_upload_id_extension.py", "tests/test_upload_id_validation.py", "tests/test_upload_limits_centralized.py", "tests/test_upload_multifile.py", "tests/test_upload_routes_owner_scope.py"]
+
+[[sections]]
+stem = "tests-rest"
+title = "tests: remaining test modules"
+paths = ["tests/bombadil-spec.ts", "tests/live_thinking_scheduler.test.mjs", "tests/markdown_codefence_placeholder_regression.mjs", "tests/test_active_document_clear.py", "tests/test_active_email_reply_guard.py", "tests/test_add_directory_event_loop.py", "tests/test_admin_device_flow_static.py", "tests/test_admin_tools_registry.py", "tests/test_admin_wipe_gallery.py", "tests/test_admin_wipe_routes_shim.py", "tests/test_amd_gpu_check_args.py", "tests/test_anthropic_response_parse.py", "tests/test_api_call_integration_routing.py", "tests/test_api_chat_security.py", "tests/test_api_key_file_permissions.py", "tests/test_api_key_manager_atomic_save.py", "tests/test_api_key_manager_corrupt_load.py", "tests/test_api_key_manager_resilience.py", "tests/test_api_token_routes.py", "tests/test_api_token_tool_authority.py", "tests/test_api_token_user_route_gate.py", "tests/test_app.py", "tests/test_approved_replay_message_shape.py", "tests/test_archived_sessions_model_filter.py", "tests/test_atomic_io.py", "tests/test_aux_llm_owner_scope.py", "tests/test_backup_cli_security.py", "tests/test_backup_import_cross_user_dedup.py", "tests/test_backup_import_skills.py", "tests/test_backup_import_skills_dedup.py", "tests/test_blind_compare_redaction.py", "tests/test_budget_auto_sentinel.py", "tests/test_build_user_content_pdf_marker.py", "tests/test_builtin_actions_cookbook_serve_state.py", "tests/test_builtin_actions_nonstring.py", "tests/test_builtin_actions_owner_scope.py", "tests/test_builtin_mcp_bg_tasks.py", "tests/test_builtin_mcp_npx_cache.py", "tests/test_builtin_mcp_pythonpath.py", "tests/test_builtin_memory_consolidation.py", "tests/test_cache_affinity_local_only.py", "tests/test_canvas_coords_empty_touches_js.py", "tests/test_carddav_password_encryption.py", "tests/test_censor_pref_js.py", "tests/test_cerebras_cache_affinity.py", "tests/test_check_outbound_url_nonstring.py", "tests/test_checkin_digest_owner_scope.py", "tests/test_ci_authoritative_validation.py", "tests/test_claim_ownerless_json.py", "tests/test_classify_events_memory_text.py", "tests/test_cleanup_owner_scope.py", "tests/test_cleanup_routes_shim.py", "tests/test_cleanup_service_utcnow.py", "tests/test_code_nav_tools.py", "tests/test_codex_cookbook_admin_gate.py", "tests/test_codex_ssh_host_validation.py", "tests/test_compact_truncate_tool_call_args.py", "tests/test_companion_pairing.py", "tests/test_companion_readonly.py", "tests/test_compare_ask_user_routing.py", "tests/test_compare_endpoint_owner_scope.py", "tests/test_compare_js.py", "tests/test_compare_routes_shim.py", "tests/test_compare_stop_disconnect_poll.py", "tests/test_composer_arrow_up_recall_js.py", "tests/test_compute_next_run_monthly_clamp.py", "tests/test_consolidate_memory_explicit_drops.py", "tests/test_copilot.py", "tests/test_copilot_routes.py", "tests/test_copy_message_strips_thinking_js.py", "tests/test_cors_preflight.py", "tests/test_database_utcnow.py", "tests/test_ddg_redirect_resolution.py", "tests/test_deep_research_date_context.py", "tests/test_deep_research_extraction_controls.py", "tests/test_deep_research_parse_json_array_echo.py", "tests/test_deep_research_search_error.py", "tests/test_deep_research_synthesis_resilience.py", "tests/test_delete_message_no_session.py", "tests/test_delete_user_invalidates_token_cache.py", "tests/test_delete_user_revokes_api_tokens.py", "tests/test_deleted_session_sidebar_regression.py", "tests/test_derive_title_nonstring.py", "tests/test_device_flow_routes.py", "tests/test_dialog_aria.py", "tests/test_diffusion_server_security.py", "tests/test_digest_windows.py", "tests/test_direct_upload_limits.py", "tests/test_docker_devops_hardening.py", "tests/test_docs_no_orphan_images.py", "tests/test_docs_query_nondict_rows.py", "tests/test_edit_file.py", "tests/test_editor_draft_payload.py", "tests/test_emoji_shortcodes_js.py", "tests/test_emoji_svg_hardening.py", "tests/test_esc_menu_stack_js.py", "tests/test_estimate_tokens_tool_calls.py", "tests/test_external_context_tool_gate.py", "tests/test_extract_quotes.py", "tests/test_extract_skill_json_nonstring.py", "tests/test_extract_statistics.py", "tests/test_extract_urls.py", "tests/test_fastembed_cache_path.py", "tests/test_fenced_example_not_executed_for_native_models.py", "tests/test_fenced_inline_args.py", "tests/test_fenced_invoke_no_raw_xml.py", "tests/test_focused_test_guidance.py", "tests/test_font_routes.py", "tests/test_foreground_model_routing.py", "tests/test_fork_session_metadata.py", "tests/test_form_markdown_roundtrip.py", "tests/test_forwarded_message_divider.py", "tests/test_function_call_non_object_args.py", "tests/test_function_model_tool_call.py", "tests/test_gemma_tool_call_parsing.py", "tests/test_generated_image_confinement.py", "tests/test_gmail_quote_attribution_js.py", "tests/test_group_character_dropdown.py", "tests/test_group_chat_storage.py", "tests/test_harmonize_masks_invalid_layers_js.py", "tests/test_harmony_tool_aliasing.py", "tests/test_helpers_import_state.py", "tests/test_hex_to_rgb_js.py", "tests/test_history_compact_tool_calls.py", "tests/test_history_db_fallback_hidden.py", "tests/test_history_display_model_hydration.py", "tests/test_history_order_by_timestamp_regression.py", "tests/test_history_routes_shim.py", "tests/test_history_topics_owner_scope.py", "tests/test_icloud_imap_full_fetch.py", "tests/test_inside_base_dir_nonstring.py", "tests/test_integration_api_call_ssrf.py", "tests/test_integrations_api_call_truncation.py", "tests/test_integrations_store_shape.py", "tests/test_integrations_url_join.py", "tests/test_interactive_gate_passive_paths.py", "tests/test_internal_api_base.py", "tests/test_issue_description_check.py", "tests/test_keybind_altgr_js.py", "tests/test_kimi_code_hosts.py", "tests/test_kimi_code_user_agent.py", "tests/test_kokoro_optional_requirements.py", "tests/test_kv_cache_invalidation_2927.py", "tests/test_lang_icon_null_opts_js.py", "tests/test_launcher.py", "tests/test_legacy_default_fallback_ui.py", "tests/test_live_fallback_round_attribution.py", "tests/test_live_strip_email_tool_fences.py", "tests/test_live_thinking_chat_integration.py", "tests/test_live_thinking_scheduler_js.py", "tests/test_llama_server_models_url.py", "tests/test_llamacpp_discovery.py", "tests/test_lmstudio_discovery.py", "tests/test_lmstudio_models_url.py", "tests/test_lmstudio_vision.py", "tests/test_local_endpoint_api_key_js.py", "tests/test_local_endpoint_js.py", "tests/test_log_safety.py", "tests/test_manage_mcp_command_allowlist.py", "tests/test_manage_memory_blank_id.py", "tests/test_manage_memory_list.py", "tests/test_manage_notes_owner_gate.py", "tests/test_manage_settings_token_budget.py", "tests/test_manage_skills_action_required.py", "tests/test_manage_tasks_owner_scope.py", "tests/test_markdown_dom_xss_helpers.py", "tests/test_markdown_lazy_lib_loading_js.py", "tests/test_markdown_rendering_js.py", "tests/test_markdown_table_row_js.py", "tests/test_markitdown_format_nonstring.py", "tests/test_markitdown_runtime.py", "tests/test_match_model_key_js.py", "tests/test_matchescombo_nonstring_js.py", "tests/test_merge_last_assistant_rows.py", "tests/test_migrate_faiss_to_chroma.py", "tests/test_misfenced_read_file_tool_call.py", "tests/test_mlx_image_server_security.py", "tests/test_modal_dock_composer_clearance.py", "tests/test_multiple_mcp_servers_timeout.py", "tests/test_native_tool_result_threading.py", "tests/test_new_chat_clears_input.py", "tests/test_new_chat_model_preference.py", "tests/test_nix_upload_text.py", "tests/test_null_owner_gates.py", "tests/test_odysseus_dispatcher.py", "tests/test_odysseus_doc_fence_normalization.py", "tests/test_og_image_extraction.py", "tests/test_ollama_multimodal.py", "tests/test_ollama_port_detection.py", "tests/test_ollama_runner_hint.py", "tests/test_ordinal_suffix_js.py", "tests/test_owned_document_query.py", "tests/test_owner_identity.py", "tests/test_panel_loader_js.py", "tests/test_parse_due_time_first.py", "tests/test_parse_msg_content_jsonlike_string.py", "tests/test_plain_ui_control_open_panel.py", "tests/test_plan_mode.py", "tests/test_platform_compat.py", "tests/test_poll_endpoint_no_task_interrupt.py", "tests/test_popup_opener_isolation_js.py", "tests/test_portal_dropdown_z_js.py", "tests/test_pr6020_browser_review_regressions.py", "tests/test_pr6020_rebase_regressions.py", "tests/test_prefs_atomic_write.py", "tests/test_prefs_routes.py", "tests/test_prefs_single_user_no_clobber.py", "tests/test_preset_atomic_save.py", "tests/test_preset_expand_owner_scope.py", "tests/test_preset_fill_missing_defaults.py", "tests/test_preset_local_storage_js.py", "tests/test_preset_store_shape.py", "tests/test_promote_image_fields.py", "tests/test_public_blocked_tool_nonstring.py", "tests/test_question_type_detection.py", "tests/test_rate_limiter.py", "tests/test_readiness.py", "tests/test_readme_ascii_fenced.py", "tests/test_realesrgan_torchvision_compat.py", "tests/test_redos_cal_extract.py", "tests/test_redos_llm_parsers.py", "tests/test_redos_think_blocks.py", "tests/test_redos_verdict_continuation.py", "tests/test_redos_xml_tool_parsers.py", "tests/test_reminder_ntfy_ssrf.py", "tests/test_rename_user_case_insensitive.py", "tests/test_rename_user_owner_sync.py", "tests/test_rename_user_token_cache.py", "tests/test_replace_messages_multimodal.py", "tests/test_replace_messages_upload_reservations.py", "tests/test_reply_all_cc_nonstring_js.py", "tests/test_reply_recipients_js.py", "tests/test_resend_message_nondestructive.py", "tests/test_reserved_username_admin_escalation.py", "tests/test_resolve_endpoint_fallbacks.py", "tests/test_resolve_model_offloaded.py", "tests/test_resolve_session_auth_chatgpt.py", "tests/test_resolve_upload_path_nondict.py", "tests/test_retired_settings_interfaces.py", "tests/test_review_regressions.py", "tests/test_rewrite_persist_column.py", "tests/test_route_validators.py", "tests/test_run_focus.py", "tests/test_run_order_report.py", "tests/test_runtime_paths.py", "tests/test_sanitize_multimodal_merge.py", "tests/test_sanitize_preserves_reasoning.py", "tests/test_scheduled_poll_race.py", "tests/test_searxng_image_pinned.py", "tests/test_searxng_settings_migration.py", "tests/test_select_dropdown_theme_css.py", "tests/test_sender_signature_skip_roles.py", "tests/test_serve_html_with_nonce.py", "tests/test_serve_profiles.py", "tests/test_service_health_chromadb.py", "tests/test_service_health_collect.py", "tests/test_service_health_email.py", "tests/test_service_health_ntfy.py", "tests/test_service_health_providers.py", "tests/test_service_health_search.py", "tests/test_service_search_provider_guards.py", "tests/test_services_research_low_quality_sources.py", "tests/test_services_search_analytics_defaults.py", "tests/test_set_admin.py", "tests/test_settings_error_paths.py", "tests/test_settings_scrub.py", "tests/test_settings_shell_js_behavior.py", "tests/test_settings_store_shape.py", "tests/test_setup_admin_user.py", "tests/test_setup_device_auth_static.py", "tests/test_setup_llamacpp_hint_js.py", "tests/test_shell_routes.py", "tests/test_shell_service.py", "tests/test_signature_fold_js.py", "tests/test_signature_fold_self_closing_br_js.py", "tests/test_signature_route_hardening.py", "tests/test_signature_settings_dom_xss.py", "tests/test_slash_autocomplete_static.py", "tests/test_slash_setup_provider_aliases.py", "tests/test_snap_other_layers_nonarray_js.py", "tests/test_speech_service_toggles.py", "tests/test_spinner_stops_when_never_attached_js.py", "tests/test_split_chunks_no_duplicate_tail.py", "tests/test_sqlite_foreign_keys.py", "tests/test_src_search_query_nonstring.py", "tests/test_startup_session_bootstrap_js.py", "tests/test_startup_shell_js.py", "tests/test_streaming_segmenter_js.py", "tests/test_strip_reasoning_prose_dataloss.py", "tests/test_strip_think.py", "tests/test_svc_research_sources_nondict.py", "tests/test_tailscale_discovery_cache.py", "tests/test_taxonomy.py", "tests/test_teacher_audit_owner_scope.py", "tests/test_teacher_eval_nonstring_reply.py", "tests/test_teacher_eval_tier2.py", "tests/test_tidy_research_owner_scope.py", "tests/test_tile_manager_snap_zones_js.py", "tests/test_tls_overrides_scope.py", "tests/test_toast_dismiss_pointer_events.py", "tests/test_totp_failclosed.py", "tests/test_truncate_message_count_regression.py", "tests/test_ui_control_rag_toggle.py", "tests/test_ui_visibility_js.py", "tests/test_unknown_tool_calls.py", "tests/test_update_database_script.py", "tests/test_update_plan_tool.py", "tests/test_url_safety.py", "tests/test_user_time.py", "tests/test_vcard_unfolding.py", "tests/test_venice_hosts.py", "tests/test_vision_model_detection.py", "tests/test_vision_owner_scope.py", "tests/test_visual_report.py", "tests/test_visual_report_icon_url.py", "tests/test_visual_report_nonstring.py", "tests/test_visual_report_slug_unique.py", "tests/test_visual_report_toc_code_fence.py", "tests/test_warmup_ping_urls.py", "tests/test_windows_update_script.py", "tests/test_workspace_confine.py", "tests/test_write_file_empty_body.py"]
+
+[[tests]]
+label = "tests"
+root = "tests"
+suffixes = [".js", ".mjs", ".py"]

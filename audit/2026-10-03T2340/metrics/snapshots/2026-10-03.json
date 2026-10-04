@@ -1,0 +1,111 @@
+{
+  "audit_date": "2026-10-03",
+  "commit": "2992bf6d368a11472323e47d3bfed91e79cefc6b",
+  "disposition": {
+    "backlog": 31,
+    "fix-now": 2,
+    "next": 157
+  },
+  "findings": 190,
+  "head": "2992bf6d",
+  "project": "odysseus",
+  "run": "2026-10-03T2340",
+  "scale": {
+    "Other tracked trees": [
+      26,
+      6665
+    ],
+    "Repository root and build surface": [
+      19,
+      3818
+    ],
+    "core": [
+      11,
+      5182
+    ],
+    "routes": [
+      86,
+      47962
+    ],
+    "services": [
+      40,
+      10136
+    ],
+    "specs and scripts": [
+      85,
+      12436
+    ],
+    "src": [
+      149,
+      62737
+    ],
+    "static": [
+      172,
+      205901
+    ],
+    "tests": [
+      854,
+      113318
+    ]
+  },
+  "sections": {
+    "core-auth-session": 5,
+    "core-data-platform": 6,
+    "routes-chat-session": 4,
+    "routes-cookbook": 7,
+    "routes-email": 8,
+    "routes-gallery-document": 5,
+    "routes-models": 5,
+    "routes-rest-agent-admin": 4,
+    "routes-rest-auth-admin": 4,
+    "routes-rest-integrations-misc": 4,
+    "routes-rest-media-files": 3,
+    "routes-rest-memory-personal-research": 3,
+    "routes-rest-notes-contacts-history": 3,
+    "routes-shell": 7,
+    "routes-skills-calendar-task": 8,
+    "services-hwfit": 6,
+    "services-media": 7,
+    "services-memory": 7,
+    "services-research": 4,
+    "services-search": 5,
+    "src-agent-loop": 7,
+    "src-agent-tools": 9,
+    "src-chat-session": 7,
+    "src-documents": 4,
+    "src-email-integrations": 4,
+    "src-llm-core": 7,
+    "src-mcp": 5,
+    "src-memory-rag": 6,
+    "src-platform": 4,
+    "src-research-scheduling": 8,
+    "src-security": 7,
+    "src-tools-builtin-actions": 5,
+    "src-tools-capabilities-policy": 1,
+    "src-tools-parse-exec": 5,
+    "src-tools-schema-index": 6
+  },
+  "severity": {
+    "high": 3,
+    "low": 126,
+    "medium": 61
+  },
+  "tags": {
+    "BUG": 67,
+    "DEAD-CODE": 16,
+    "DEPENDENCY": 1,
+    "DOC-DRIFT": 3,
+    "DUP": 3,
+    "ERROR-HANDLING": 25,
+    "FOOTGUN": 5,
+    "HARDCODE": 2,
+    "PERF": 30,
+    "RACE": 6,
+    "SECURITY": 29,
+    "TYPE-SAFETY": 2,
+    "UNDOCUMENTED": 1
+  },
+  "tests": {
+    "tests": 834
+  }
+}
