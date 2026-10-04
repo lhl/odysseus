@@ -73,17 +73,17 @@ Each section's own coverage statement lists the files it read in part.
 <!-- metrics: counts -->
 | Count | Value |
 | ---: | ---: |
-| Findings | 190 |
+| Findings | 399 |
 | High severity | 3 |
-| Medium severity | 61 |
-| Low severity | 126 |
-| Disposition `fix-now` | 2 |
-| Disposition `next` | 157 |
-| Disposition `backlog` | 31 |
+| Medium severity | 106 |
+| Low severity | 290 |
+| Disposition `fix-now` | 8 |
+| Disposition `next` | 305 |
+| Disposition `backlog` | 86 |
 | Disposition `wontfix` | 0 |
 | Findings with no disposition | 0 |
 | Distinct tags | 13 |
-| Sections with at least one finding | 35 of 58 |
+| Sections with at least one finding | 58 of 58 |
 | Findings carrying an issue number | 0 |
 <!-- /metrics: counts -->
 
@@ -109,8 +109,8 @@ Each section's own coverage statement lists the files it read in part.
 | ---: | ---: |
 | Snapshot | `2992bf6d368a11472323e47d3bfed91e79cefc6b` |
 | First commit | 2026-05-31 |
-| Latest commit | 2026-10-01 |
-| Commits | 2,098 |
+| Latest commit | 2026-10-04 |
+| Commits | 2,102 |
 | Audit date | 2026-10-03 |
 | Working tree | dirty |
 <!-- /metrics: scale -->
@@ -120,10 +120,10 @@ Each section's own coverage statement lists the files it read in part.
 <!-- metrics: findings -->
 | Section | Findings | High | Medium | Low |
 | --- | ---: | ---: | ---: | ---: |
-| Repository root and project policy | 0 | 0 | 0 | 0 |
-| Build, install, launcher, CI and containers | 0 | 0 | 0 | 0 |
-| Specifications | 0 | 0 | 0 | 0 |
-| Operational scripts | 0 | 0 | 0 | 0 |
+| Repository root and project policy | 8 | 0 | 1 | 7 |
+| Build, install, launcher, CI and containers | 11 | 0 | 1 | 10 |
+| Specifications | 11 | 0 | 0 | 11 |
+| Operational scripts | 24 | 0 | 8 | 16 |
 | core: auth, sessions, middleware, models | 5 | 0 | 1 | 4 |
 | core: database, atomic IO, constants, platform | 6 | 0 | 3 | 3 |
 | src: agent loop, runs, approvals and gates | 7 | 0 | 2 | 5 |
@@ -159,26 +159,26 @@ Each section's own coverage statement lists the files it read in part.
 | services: research and docs | 4 | 0 | 0 | 4 |
 | services: hardware fit | 6 | 0 | 1 | 5 |
 | services: shell, STT, TTS, faces, youtube | 7 | 0 | 2 | 5 |
-| static: image editor | 0 | 0 | 0 | 0 |
-| static: model comparison UI | 0 | 0 | 0 | 0 |
-| static: chat, sessions and composer UI | 0 | 0 | 0 | 0 |
-| static: documents, notes, email, calendar UI | 0 | 0 | 0 | 0 |
-| static: cookbook, settings, models UI | 0 | 0 | 0 | 0 |
-| static: research, memory and search UI | 0 | 0 | 0 | 0 |
-| static: remaining first-party JS | 0 | 0 | 0 | 0 |
-| static: vendored libraries, fonts, icons, CSS | 0 | 0 | 0 | 0 |
-| Bundled MCP servers | 0 | 0 | 0 | 0 |
-| Companion apps and Swift clients | 0 | 0 | 0 | 0 |
-| Project website | 0 | 0 | 0 | 0 |
-| tests: harness, standards and helpers | 0 | 0 | 0 | 0 |
-| tests: security, guard and prompt-injection | 0 | 0 | 0 | 0 |
-| tests: email, calendar and webhooks | 0 | 0 | 0 | 0 |
-| tests: cookbook, models and providers | 0 | 0 | 0 | 0 |
-| tests: LLM, tools and agent loop | 0 | 0 | 0 | 0 |
-| tests: session, chat, memory and RAG | 0 | 0 | 0 | 0 |
-| tests: documents, uploads, gallery and media | 0 | 0 | 0 | 0 |
-| tests: remaining test modules | 0 | 0 | 0 | 0 |
-| **Total** | **190** | **3** | **61** | **126** |
+| static: image editor | 9 | 0 | 3 | 6 |
+| static: model comparison UI | 7 | 0 | 1 | 6 |
+| static: chat, sessions and composer UI | 8 | 0 | 2 | 6 |
+| static: documents, notes, email, calendar UI | 8 | 0 | 3 | 5 |
+| static: cookbook, settings, models UI | 5 | 0 | 0 | 5 |
+| static: research, memory and search UI | 11 | 0 | 1 | 10 |
+| static: remaining first-party JS | 5 | 0 | 1 | 4 |
+| static: vendored libraries, fonts, icons, CSS | 8 | 0 | 2 | 6 |
+| Bundled MCP servers | 7 | 0 | 2 | 5 |
+| Companion apps and Swift clients | 8 | 0 | 0 | 8 |
+| Project website | 7 | 0 | 1 | 6 |
+| tests: harness, standards and helpers | 10 | 0 | 1 | 9 |
+| tests: security, guard and prompt-injection | 11 | 0 | 3 | 8 |
+| tests: email, calendar and webhooks | 12 | 0 | 6 | 6 |
+| tests: cookbook, models and providers | 7 | 0 | 1 | 6 |
+| tests: LLM, tools and agent loop | 6 | 0 | 2 | 4 |
+| tests: session, chat, memory and RAG | 10 | 0 | 3 | 7 |
+| tests: documents, uploads, gallery and media | 7 | 0 | 1 | 6 |
+| tests: remaining test modules | 9 | 0 | 2 | 7 |
+| **Total** | **399** | **3** | **106** | **290** |
 <!-- /metrics: findings -->
 
 ### Tags
@@ -186,19 +186,19 @@ Each section's own coverage statement lists the files it read in part.
 <!-- metrics: tags -->
 | Tag | Findings |
 | --- | ---: |
-| `BUG` | 67 |
-| `PERF` | 30 |
-| `SECURITY` | 29 |
-| `ERROR-HANDLING` | 25 |
-| `DEAD-CODE` | 16 |
-| `RACE` | 6 |
-| `FOOTGUN` | 5 |
-| `DOC-DRIFT` | 3 |
-| `DUP` | 3 |
-| `HARDCODE` | 2 |
+| `BUG` | 155 |
+| `SECURITY` | 55 |
+| `DOC-DRIFT` | 35 |
+| `ERROR-HANDLING` | 35 |
+| `PERF` | 35 |
+| `DEAD-CODE` | 31 |
+| `FOOTGUN` | 19 |
+| `DUP` | 11 |
+| `RACE` | 8 |
+| `HARDCODE` | 6 |
+| `DEPENDENCY` | 4 |
+| `UNDOCUMENTED` | 3 |
 | `TYPE-SAFETY` | 2 |
-| `DEPENDENCY` | 1 |
-| `UNDOCUMENTED` | 1 |
 <!-- /metrics: tags -->
 
 ### Dispositions
@@ -206,9 +206,9 @@ Each section's own coverage statement lists the files it read in part.
 <!-- metrics: dispositions -->
 | Disposition | Findings |
 | --- | ---: |
-| `fix-now` | 2 |
-| `next` | 157 |
-| `backlog` | 31 |
+| `fix-now` | 8 |
+| `next` | 305 |
+| `backlog` | 86 |
 <!-- /metrics: dispositions -->
 
 ### Tests

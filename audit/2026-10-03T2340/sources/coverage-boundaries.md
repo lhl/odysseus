@@ -9,14 +9,19 @@ page states the boundary for the run.
 | Area | Sections | State on 2026-10-04 |
 | --- | --- | --- |
 | Backend: `core`, `src`, `routes`, `services` | 35 | Reviewed. |
-| First-party JavaScript | 7 `static-js-*` | Unread. No coverage statement, no findings. |
-| Tests | 8 `tests-*` | Unread. No coverage statement, no findings. |
-| Root, build, specifications, scripts, MCP servers, companion apps, website, vendored assets | 8 | Under review. Read each section's Coverage for what it covers. |
+| First-party JavaScript | 7 `static-js-*` | Reviewed. |
+| Tests | 8 `tests-*` | Reviewed, and sampled rather than read whole. Each section's Coverage states how many of its files were read end to end, how the sample was chosen, and what was not opened. |
+| Root, build, specifications, scripts, MCP servers, companion apps, website, vendored assets | 8 | Reviewed. |
 
 A path listed in `run.toml` is assigned to a section. It is covered only when that section's
 Coverage says it was read.
 
 Gaps inside the reviewed sections:
+
+- **The test sections sampled.** Three are too large to read whole: `tests-rest` read 47 of its 322
+  files end to end and did not open 267, `tests-llm-tools` read 46 of 121, and
+  `tests-cookbook-models` read 59 of 112. The tests findings describe what the samples turned up,
+  not a count over the suite; a file outside a sample has not been checked.
 
 - **Tool-to-route boundaries.** The tool sections establish what each agent tool sends, and the
   route sections establish what each handler does. Whether a route accepts and scopes a given
@@ -86,8 +91,9 @@ eight were lowered.
 
 **Not opened:** the other 46 mediums and all 118 lows the first pass recorded. They carry only
 the first pass's evidence. No measurement script from the first pass was re-run except the four
-`curl` probes and the address check named above. The 23 sections with no coverage statement were
-not read by this pass either.
+`curl` probes and the address check named above. The 23 sections that had no coverage statement
+when this pass ran were not re-reviewed; they have since been written, so their findings carry
+first-pass evidence only.
 
 **Hypotheses this pass tested and rejected:**
 

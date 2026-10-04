@@ -27,6 +27,8 @@ commit = "2992bf6d368a11472323e47d3bfed91e79cefc6b"
 "SameSite=Lax" = "cookie attribute value in the prose at companion/routes.py:172; the secret pattern reads `credential: SameSite=Lax` as an assignment, not a credential"
 "req.hf_token" = "attribute reference (the ServeRequest field) at routes/cookbook_routes.py:1084 and :1977, quoted in the cookbook section's evidence; the pattern reads the attribute name as a credential value, not a credential"
 "sess.headers" = "attribute reference (the request-header dict on a chat session) at routes/webhook/webhook_routes.py:372 and :383, quoted in the src-llm-core section's evidence; the pattern reads the attribute name as a credential value after matching `if api_key:` and the next line, not a credential"
+"PASSWORD_MIN_LENGTH" = "constant name defined at src/constants.py:110 and surfaced as the `password_min_length` settings key at core/auth.py:245; the build-install-deploy section names it while reporting the macOS quick-start truncation, and the pattern reads the identifier after the secret-shaped key as a credential value"
+"delegated_credential" = "parameter name at src/agent_loop.py:3449 and the prefix of the `delegated_credential_blocked_tools` symbol in src/tool_security.py:274, which gates tools for credential-delegating callers; the companion-and-swift section names it in its coverage statement, and the pattern reads the identifier after the secret-shaped key as a credential value"
 
 [gates]
 check = "python -m compileall -q app.py core routes src services scripts tests && python -m pytest -q"

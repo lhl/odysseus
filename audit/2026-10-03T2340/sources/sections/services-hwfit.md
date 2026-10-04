@@ -2,12 +2,6 @@
 
 ## Overview
 
-`services/hwfit/__init__.py` (empty), `services/hwfit/data/hf_models.json`,
-`services/hwfit/data/mlx_community_models.json`, `services/hwfit/fit.py`,
-`services/hwfit/hardware.py`, `services/hwfit/hf_discovery.py`,
-`services/hwfit/image_models.py`, `services/hwfit/models.py`,
-`services/hwfit/profiles.py`.
-
 The hardware-fit service: `hardware.py` probes RAM, CPU and GPU locally or over SSH and caches the
 result per target; `models.py` loads and merges the bundled and runtime model catalogues and holds
 the quant, parameter-count and memory arithmetic; `fit.py` ranks catalogue rows against a detected
@@ -19,15 +13,16 @@ two JSON files are the bundled offline catalogue (924 and 629 rows).
 The boundary: the four HTTP endpoints that call this service (`/api/hwfit/system`, `/models`,
 `/profiles`, `/image-models`), their host/port validation, the caller-supplied `model_path` probe
 and the missing admin gate on that router are `routes-rest-integrations-misc`, which reviews
-`routes/hwfit_routes.py`. This section covers the layer behind those calls — how a host, port or
-model path becomes a subprocess, an SSH invocation, a file read or an outbound request, and how a
-catalogue row becomes a recommendation. `core/platform_compat.py` (the SSH argv builder) is
-`core-data-platform`; `src/outbound_fetch.py` is `src-security`; the Cookbook's own GPU probe is
-`routes-cookbook`; the front-end consumers of these results are
-`static-js-cookbook-settings-models`; the catalogue import scripts are `scripts`. None of them were
-reviewed here beyond the lines a finding cites. No module in this section reads the settings store
-(`grep -rn 'settings' services/hwfit/*.py` returns nothing), so there is no settings dependency to
-trace.
+`routes/hwfit_routes.py`.
+
+This section covers the layer behind those calls — how a host, port or model path becomes a
+subprocess, an SSH invocation, a file read or an outbound request, and how a catalogue row becomes a
+recommendation. `core/platform_compat.py` (the SSH argv builder) is `core-data-platform`;
+`src/outbound_fetch.py` is `src-security`; the Cookbook's own GPU probe is `routes-cookbook`; the
+front-end consumers of these results are `static-js-cookbook-settings-models`; the catalogue import
+scripts are `scripts`. None of them were reviewed here beyond the lines a finding cites. No module
+in this section reads the settings store (`grep -rn 'settings' services/hwfit/*.py` returns
+nothing), so there is no settings dependency to trace.
 
 ## Coverage
 
@@ -63,8 +58,8 @@ the 9 test files listed below.
 - `services/hwfit/data/hf_models.json` (19,477 lines, 924 rows) and
   `services/hwfit/data/mlx_community_models.json` (15,727 lines, 629 rows). Both were parsed and
   every field of every row was type-censused with a script, and the head of each file plus
-  representative rows were read
-- the full text was not. The same census was run over the two runtime caches a live instance feeds
+  representative rows were read; the full text was not. The same census was run over the two runtime
+  caches a live instance feeds
   into `get_models()` — `data/hwfit/hf_collection_models.json` (501 rows) and
   `data/hwfit/mlx_community_models.json` (659 rows), untracked runtime state present in this
   checkout. Result: `name`, `parameter_count`, `quantization`, `use_case`, `provider` are strings in
@@ -101,7 +96,9 @@ commit for these paths and the line numbers below refer to it. The twenty suites
 module (`ls tests | grep -iE 'hwfit'` plus the three image/profiles suites that do not carry the
 `hwfit` prefix) were run from the repository root with
 `PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest -q -p no:cacheprovider …` — **126 passed, 1
-warning** (the pre-existing SQLAlchemy `declarative_base()` deprecation). Five throwaway probes were
+warning** (the pre-existing SQLAlchemy `declarative_base()` deprecation).
+
+Five throwaway probes were
 run with stdin scripts that replaced the transport with recorders; their output is quoted in the
 findings that rest on them. No probe opened a real SSH connection or made an outbound network
 request, and the only hardware probing any of them did was the local `/proc` and `/sys` reads the

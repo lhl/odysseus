@@ -42,7 +42,7 @@ owner-scoped document-id helper (`:48-55`); `src/rag_singleton.py` in full (63 l
 add-directory route (`:150-260`); `routes/research/research_routes.py` at the library owner gate
 (`:367-386`); `src/app_initializer.py:117-124`; `app.py:713`; `src/task_scheduler.py:2014-2024` and
 `:2122-2132`; `src/deep_research.py` at the round loop and the time budget (`:296`, `:536`,
-`:796-797`); `specs/research.md:105-160` and `specs/documents-rag-uploads.md:150-170`. Tests read in
+`:796-797`); `specs/research.md:105-157` and `specs/documents-rag-uploads.md:150-170`. Tests read in
 full: `tests/test_docs_query_nondict_rows.py`, `tests/test_research_handler_path_confinement.py`,
 `tests/test_services_research_low_quality_sources.py`; the suites named under *Checks run* were
 otherwise read only by result.

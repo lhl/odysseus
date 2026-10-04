@@ -5,7 +5,7 @@
 | **Audit date** | 2026-10-03 |
 | **Snapshot** | `2992bf6d368a` of https://github.com/odysseus-dev/odysseus |
 | **Run** | `odysseus/2026-10-03T2340` |
-| **Findings** | 190 — 3 high, 61 medium, 126 low |
+| **Findings** | 399 — 3 high, 106 medium, 290 low |
 | **Scope** | Self-hosted AI workspace: a FastAPI backend and a large first-party front end covering chat, an agent loop with a tool surface, email, calendar, documents and RAG, memory, research, model serving, and MCP. Python 3.11+ with a stdlib-plus-FastAPI backend. |
 | **Language** | python |
 | **Method** | Static analysis at the snapshot. Every cited line was re-read there. Claims that a command could settle were run, and the result is recorded with the finding. Anything that could not be run says so. |
@@ -55,6 +55,10 @@ Each finding has one tag.
 | `REFACTOR` | Structure that needs rework before it can be changed safely. |
 | `DEPENDENCY` | A third-party version, pin, or vendor boundary. |
 | `GATE-GAP` | A check the release process assumes but no gate runs. |
+
+`TEST-GAP` is for a path with no test at all, or a test no gate runs. A test that exists and passes
+without exercising the code it names is tagged `BUG`, so the 8 `tests-*` sections' findings of that
+shape are found under `BUG`, not under `TEST-GAP`.
 
 ## Severity legend
 

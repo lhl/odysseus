@@ -1,16 +1,15 @@
 # Executive summary
 
-**2026-10-04 — backend review complete; documentation, build and client sections in progress;
-front-end JavaScript and tests unread.**
+**2026-10-04 — all 58 sections reviewed.** The run holds 399 findings: three high, 106 medium and
+290 low.
 
-The Python backend (`core`, `src`, `routes` and `services`: 126,017 lines in 35 sections) holds
-three high-severity defects and five patterns that account for most of its medium findings. Each
-high has a fix of a few lines. The patterns are worth fixing once at their shared cause instead of
-finding by finding.
+Five patterns account for most of the medium findings in the 35 backend sections (126,017 lines).
+Three more run through the 23 non-backend sections: written material that describes a different
+program, escaping that does not fit its context, and tests that pin a copy of the code rather than
+the code.
 
-- **[Findings at a glance](#findings-at-a-glance)** has the counts by section, disposition and
-  tag, and the full list of medium findings. Those tables are generated, so they are current even
-  where this summary is not.
+- **[Findings at a glance](#findings-at-a-glance)** holds the generated counts and the full medium
+  list, so it is current even where this summary is not.
 
 ## Fix first
 
@@ -22,7 +21,7 @@ finding by finding.
 
 ## Patterns across the backend
 
-Each pattern names its cause, the shared fix, and the high and medium findings that belong to it.
+Each pattern names its cause, the findings that belong to it, and the shared fix where one exists.
 
 ### Owner identity is resolved handler by handler
 
@@ -75,18 +74,25 @@ registry and the routes it calls. The others need their own fixes.
 - [The email-urgency triage never reaches its classifier](#bug-the-email-urgency-triage-never-reaches-its-llm-classifier-and-still-requires-an-llm-endpoint)
 - [The scheduled-send poller starts only after an inbox request](#bug-the-scheduled-send-poller-starts-only-when-a-client-asks-for-the-inbox-list)
 
-### JSON stores are written without a lock or an atomic replace
+### State and secret files are written without a lock, an atomic replace, or a mode
 
-The app keeps memories, preferences, background jobs and credentials in JSON files. Several writers
-truncate in place or share one temp path, and one writer leaves credential files world-readable.
+The app keeps memories, preferences, background jobs and credentials in JSON files, and writes the
+app key, `.env`, the setup password database and the cookbook runner scripts beside them. Writers
+truncate in place or share one temp path, and secret-bearing files land at the umask default — a
+backup archive carries the app key beside the database it decrypts, the "stolen backup" case
+`src/secret_storage.py` names as its threat model.
 
-**Shared fix:** route every store through one writer that locks, stages to a unique temp file,
-replaces atomically and sets the file mode.
+**Shared fix:** route every write through one helper that locks, stages to a unique temp file,
+replaces atomically and sets the mode, and apply the same to the members a restore writes.
 
 - [Concurrent memory writes lose entries](#race-concurrent-memory-writes-lose-entries-raise-filenotfounderror-and-can-leave-memoryjson-unreadable) (high)
 - [The hourly null-owner sweep rewrites two stores non-atomically](#bug-the-hourly-null-owner-sweep-rewrites-memoryjson-and-user_prefsjson-non-atomically)
 - [The background-job store has no writer lock](#race-a-killed-background-job-can-still-be-auto-continued-the-job-store-has-no-writer-lock)
 - [`atomic_write_json` leaves the auth and settings stores at the umask default](#security-atomic_write_json-leaves-the-auth-and-settings-stores-at-the-umask-default)
+- [`snapshot` writes the archive world-readable, beside the key it contains](#security-snapshot-writes-the-archive-world-readable-beside-the-key-it-contains)
+- [`restore` does not restore file modes](#security-restore-does-not-restore-file-modes-so-the-app-key-comes-back-world-readable)
+- [The HuggingFace token is written in cleartext to world-readable runner scripts](#security-the-huggingface-token-is-written-in-cleartext-to-world-readable-runner-scripts-that-the-serve-path-never-removes)
+- [First-run setup writes the password database and `.env` world-readable](#footgun-first-run-setup-writes-the-password-database-and-the-env-file-world-readable)
 
 ### Failures are returned as normal results
 
@@ -101,28 +107,75 @@ or missing data that nothing reports.
 
 ## Outside the backend
 
-The repository root, build and deployment files, specifications, scripts, bundled MCP servers,
-companion apps, website and vendored static assets were under review when this summary was written
-on 2026-10-04. Their findings appear in [Findings at a glance](#findings-at-a-glance) as they are
-recorded. This summary does not yet draw conclusions from them.
+No non-backend section holds a high-severity finding, so the fix-first table stands. Three patterns
+run through these 23 sections.
+
+### The written material describes a different program than the code
+
+27 of the run's 30 `DOC-DRIFT` findings are here — 11 in the 61 specification files, 7 in the root
+documents, 9 across the website, build and companion files — against 3 in the 35 backend sections.
+
+**Shared fix:** one pass over `specs/`, the root documents and `website/` that re-derives each claim
+from the code at the reviewed commit, security-relevant claims first.
+
+- [26 of the 61 specs are stamped with a baseline commit that does not exist in this repository](#doc-drift-26-of-the-61-specs-are-stamped-with-a-baseline-commit-that-does-not-exist-in-this-repository)
+- [The threat model does not state multi-user data isolation as a goal](#doc-drift-the-threat-model-does-not-state-multi-user-data-isolation-as-a-goal-while-the-code-enforces-owner-scoping-and-this-audit-found-that-enforcement-failing)
+- [`SECURITY.md`'s fork-publishing scan returns two dozen false positives on the repository it ships with](#doc-drift-securitymds-fork-publishing-scan-returns-two-dozen-false-positives-on-the-repository-it-ships-with)
+- [The pairing credential is described as one-time but is a permanent, replayable bearer token](#doc-drift-the-pairing-credential-is-described-as-one-time-but-is-a-permanent-replayable-bearer-token)
+- [`shell-mcp.md` describes `ShellService` as "safe command execution" with "output caps"](#doc-drift-shell-mcpmd-describes-shellservice-as-safe-command-execution-with-output-caps)
+
+### Escaping does not fit its context
+
+Seven client-side sinks interpolate untrusted text into markup: a web page's `<title>` into the
+research spinner, a model-authored theme name into the theme grid and the slash replies, MCP tool
+metadata and calendar locations into quoted attributes, an email's `style` and `poster` URLs into
+CSS. Two files use the right escaper one context too early — `_esc` is a `textContent` round-trip,
+so it does not escape a quote inside an attribute.
+
+**The policy, not the code, keeps this short of script execution.** The chat page carries
+`script-src 'self' 'nonce-…'` with no `'unsafe-inline'` (`core/middleware.py:141-147`), so injected
+handlers are refused; the report page is served with `'unsafe-inline'` (`:115-123`), where the same
+injection executes.
+
+**Shared fix:** escape at the sink, in the context it is written into, and treat a relaxed policy
+anywhere as turning every one of these into an execution bug.
+
+- [A hostile search-result title reaches the research spinner's `innerHTML`](#security-a-hostile-search-result-title-reaches-the-research-spinners-innerhtml-injecting-markup-into-the-app-origin)
+- [A stored custom-theme name is rendered into the theme grid as markup on every page load](#security-a-stored-custom-theme-name-is-rendered-into-the-theme-grid-as-markup-on-every-page-load)
+- [The MCP tool list shadows the quote-escaping `esc` with a weaker local one](#security-the-mcp-tool-list-shadows-the-quote-escaping-esc-with-a-weaker-local-one-so-tool-metadata-injects-markup)
+- [A calendar event's location is only partly escaped](#security-a-calendar-events-location-is-only-partly-escaped-so-a-synced-or-imported-event-injects-html-and-css-into-the-calendar-ui)
+- [A sender's display name and attachment filename escape their attribute](#security-a-senders-display-name-and-attachment-filename-escape-their-attribute-because-_esc-is-used-where-an-attribute-escaper-is-needed)
+- [The email HTML sanitizer keeps remote URLs in inline styles and `poster`](#security-the-email-html-sanitizer-keeps-remote-urls-in-inline-styles-and-poster-so-an-html-mail-beacons-without-the-users-consent)
+
+### The tests pin a copy of the code, so they pass when it changes
+
+The recurring defect in the 8 tests sections is a test that reproduces the logic it is meant to
+check — a source substring, a hand-written copy of the module, or a stub that replaces the very
+guard under test. Such a file stays green when the behaviour it names is removed, which is why
+several of these findings were proved by making the module unimportable and watching the file pass.
+
+**Shared fix:** drive the real call path. Where a unit is hard to reach, say so in the test rather
+than testing a transcription of it.
+
+- [Four source-text "pins" pass with the code they name made unimportable](#bug-four-source-text-pins-pass-with-the-code-they-name-made-unimportable)
+- [Every CalDAV test-connection test runs with the URL guard stubbed out](#security-every-caldav-test-connection-test-runs-with-the-url-guard-stubbed-out) — neutering the real guard leaves the suite green while the guard's own suite collapses to 17 failures
+- [The `web_search` sources tests assert on a copy of the fix](#bug-the-web_search-sources-tests-in-test_agent_looppy-assert-on-a-copy-of-the-fix-so-reverting-the-fix-leaves-the-suite-green)
+- [The Cookbook source-text guards pass against a file with no implementation](#bug-the-cookbook-source-text-guards-pass-against-a-file-with-no-implementation)
+- [`conftest.py`'s pre-import block makes the module-scope stub guards dead in 23 files](#doc-drift-conftestpys-pre-import-block-makes-the-module-scope-stub-guards-for-the-modules-it-pre-imports-dead-in-23-files)
+- [`test_chat_route_tool_policy.py`'s functional half re-implements the tool policy](#bug-test_chat_route_tool_policypys-functional-half-re-implements-the-tool-policy-and-passes-with-routeschat_routes-unimportable)
 
 ## What this pass does not establish
 
-- **The first-party front end is unread.** The seven `static-js-*` sections have no coverage
-  statement. This audit makes no claim about cross-site scripting, client-side authorization or UI
-  correctness.
-- **The tests are unread.** The eight `tests-*` sections (113,318 lines) have no coverage
-  statement. Sections ran the test suites that cover the code they read, and each section's
-  Coverage records them. The full suite was not run, and whether it asserts negative cases is not
-  established.
-- **No build or deployment was run.** Measurements are the small probes each finding quotes.
+- **The test sections sampled rather than read the suite.** `tests-rest` read 47 of its 322 files
+  end to end and did not open 267; `tests-llm-tools` read 46 of 121; `tests-cookbook-models` read 59
+  of 112. Each states its sample and method, so the tests findings are the shape of what a sample
+  turns up, not a count of the suite.
+- **No build or deployment was run.** Measurements are the probes each finding quotes.
 - **Most findings carry first-pass evidence only.** The
-  [re-review on 2026-10-04](#re-review-2026-10-04) re-derived the 5 findings then rated high and 21
-  of the 67 then rated medium. It confirmed all 26 and lowered 10 severities. No later finding has
-  been re-reviewed.
+  [re-review on 2026-10-04](#re-review-2026-10-04) re-derived the 26 findings then rated high or
+  medium, confirmed all 26 and lowered 10 severities. Nothing found since has been re-reviewed.
 - **A finding count is a floor.** It is set by what was read. A file this pass did not read has not
   been checked.
 
-Suspected defects that did not survive checking are listed under
-[Hypotheses tested and rejected](#hypotheses-tested-and-rejected), so a later pass does not
-re-derive them.
+Suspected defects that did not survive checking are under
+[Hypotheses tested and rejected](#hypotheses-tested-and-rejected).

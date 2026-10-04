@@ -2,13 +2,21 @@
 
 ## Overview
 
-The app-shell assets that no other section owns: `static/sw.js` (the PWA service worker),
-`static/index.html` (the SPA shell, 2,591 lines with seven nonce-bearing inline scripts),
-`static/login.html` (the pre-auth page, which is a separate document with its own inline
-`<style>` and scripts), `static/style.css`, `static/manifest.json`, the three `*-variants.html`
-prototype pages, and the binary/vendored payload the shells load — `static/lib/*` (docx,
-highlight.js, html2pdf, KaTeX, mammoth, mermaid, qrcode, xlsx), `static/fonts/*`,
-`static/fonts/custom/GohuFont.ttf`, `static/icons/*` and `static/icon.ico`.
+The app-shell assets that no other section owns:
+
+- `static/sw.js` (the PWA service worker)
+- `static/index.html` (the SPA shell, 2,591 lines with seven nonce-bearing inline scripts)
+- `static/login.html` (the pre-auth page, which is a separate document with its own inline `<style>`
+  and scripts)
+- `static/style.css`
+- `static/manifest.json`
+- the three `*-variants.html` prototype pages
+- the binary/vendored payload the shells load:
+  - `static/lib/*` (docx, highlight.js, html2pdf, KaTeX, mammoth, mermaid, qrcode, xlsx)
+  - `static/fonts/*`
+  - `static/fonts/custom/GohuFont.ttf`
+  - `static/icons/*`
+  - `static/icon.ico`
 
 Boundary: the `static/js/**` modules belong to the `static-js-*` sections and are read here only
 where a finding rests on one of them; `static/app.js` (the module-graph entry point) is assigned
@@ -36,21 +44,35 @@ were not read beyond their existence and their use in `style.css` and `manifest.
 Line numbers refer to `2992bf6d368a` in the working tree; `git log --oneline -1` is `2992bf6d` and
 `git status --porcelain` shows only the untracked `audit/` directory.
 
-**Read fully:** `static/sw.js` (239 lines), `static/login.html` (618), `static/app.js` (4,583),
-`static/manifest.json` (16), `static/wave-variants.html` (226), `static/whirlpool-variants.html`
-(281) and `static/modal-control-variants.html` (240).
+**Read fully:**
 
-**Read partially:** `static/index.html` — the head and the whole executable surface (the seven
-inline `<script>` blocks at `:17`, `:118`, `:260`, `:998`, `:1065`, `:1301`, `:2589`, the
-`<script src>`/`<link>` inventory at `:211-260` and `:2556-2588`); the remaining ~2,000 lines are
-static modal markup and were grepped for inline event handlers, `javascript:` URLs and template
-placeholders rather than read line by line. `static/style.css` — 41,401 lines, read structurally
-only: every `url()` (24 occurrences), every `@font-face` and every `@import` were checked; the rule
-bodies were not read. `static/lib/*` — file headers only, for the version strings above.
+| File | Lines |
+| --- | ---: |
+| `static/app.js` | 4,583 |
+| `static/login.html` | 618 |
+| `static/whirlpool-variants.html` | 281 |
+| `static/modal-control-variants.html` | 240 |
+| `static/sw.js` | 239 |
+| `static/wave-variants.html` | 226 |
+| `static/manifest.json` | 16 |
 
-**Not read:** the internals of the eight minified bundles and the 20 KaTeX font files; the binary
-fonts and icons; `static/js/**` (other sections) except the lines cited below; `static/index.html`
-markup beyond the greps described above.
+**Read partially:**
+
+- `static/index.html` — the head and the whole executable surface (the seven inline `<script>`
+  blocks at `:17`, `:118`, `:260`, `:998`, `:1065`, `:1301`, `:2589`, the `<script src>`/`<link>`
+  inventory at `:211-260` and `:2556-2588`); the remaining ~2,000 lines are static modal markup and
+  were grepped for inline event handlers, `javascript:` URLs and template placeholders rather than
+  read line by line
+- `static/style.css` — 41,401 lines, read structurally only: every `url()` (24 occurrences), every
+  `@font-face` and every `@import` were checked; the rule bodies were not read
+- `static/lib/*` — file headers only, for the version strings above
+
+**Not read:**
+
+- the internals of the eight minified bundles and the 20 KaTeX font files
+- the binary fonts and icons
+- `static/js/**` (other sections) except the lines cited below
+- `static/index.html` markup beyond the greps described above
 
 **Checks run:** a probe against the real ASGI app via `fastapi.testclient` (`GET /`, `/login`,
 `/static/sw.js`, `/static/{index,login,wave-variants,whirlpool-variants,modal-control-variants}.html`,
@@ -302,11 +324,23 @@ authenticated `GET /backgrounds` reaches `serve_html_with_nonce` on a missing pa
   ```
 
   Resolving that module's static imports transitively gives 13 files / 342,740 bytes uncompressed:
-  `theme.js` (92 KB), `modalManager.js` (71 KB), `ui.js` (51 KB), `modalSnap.js` (47 KB),
-  `colorPicker.js`, `tileManager.js`, `windowDrag.js`, `windowResize.js`, `spinner.js`,
-  `escMenuStack.js`, `toolWindowZOrder.js`, `storage.js`, `color/hex.js`. The page uses one function
-  from it (`applyBgPattern`) to animate a canvas background; the login document has none of the
-  modals, windows or pickers those other modules exist for.
+
+  - `theme.js` (92 KB)
+  - `modalManager.js` (71 KB)
+  - `ui.js` (51 KB)
+  - `modalSnap.js` (47 KB)
+  - `colorPicker.js`
+  - `tileManager.js`
+  - `windowDrag.js`
+  - `windowResize.js`
+  - `spinner.js`
+  - `escMenuStack.js`
+  - `toolWindowZOrder.js`
+  - `storage.js`
+  - `color/hex.js`
+
+  The page uses one function from it (`applyBgPattern`) to animate a canvas background; the login
+  document has none of the modals, windows or pickers those other modules exist for.
 - **Impact:** the pre-auth page — the first thing every user loads, on the path that gates the rest
   of the app — pulls 335 KB of application JavaScript for a background effect, on top of its own
   inline styles. The comment at `login.html:601-608` documents the dependency but the cost was not
