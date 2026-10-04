@@ -153,6 +153,12 @@ invalidated, or what `manage_rag` is allowed to index.
   and a file written anywhere the process can write, such as `~/.ssh/authorized_keys` when the app
   runs as that user. Without injection the tool is safe, which is what keeps this at medium rather
   than high.
+- **Re-review (2026-10-05):** stands at medium. The impact says only the model's compliance stands
+  between an injected `folder` or `uid` and the write. A second control exists:
+  `download_attachment` carries `READ_PRIVATE` and `WRITE_WORKSPACE`
+  (`src/tool_capabilities.py:194-199`), which `decision_for` blocks once untrusted content is in
+  the run unless the user approves the call. Reading the email that carries the injection arms
+  that gate. Whether the gate covers the MCP-qualified name of this tool was not traced.
 - **Fix:** call the existing `routes.email_helpers.attachment_extract_dir` (or inline its two lines:
   flatten `f"{folder}_{uid}"` to `[A-Za-z0-9._-]`, then assert the resolved path is inside
   `MAIL_ATTACHMENTS_DIR` and return an error text otherwise). Also validate `uid` as digits where it

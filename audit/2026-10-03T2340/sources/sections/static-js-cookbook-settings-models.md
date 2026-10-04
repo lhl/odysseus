@@ -95,6 +95,10 @@ by line, so a defect outside those areas could remain.
   panel (`static/js/admin.js:2076` builds `${statusText}` from `s.error`, `:2082` interpolates it into
   `list.innerHTML`); escaping it there is a one-line change, but see the dead-code finding below
   before touching that code.
+- **Re-review (2026-10-05):** stands at low. The impact says injected script does not run; an
+  injected `<iframe srcdoc>` that loads script from `cdn.jsdelivr.net` does (the policy finding in
+  `core-auth-session`). This sink was not probed. Low is kept because the input comes from an
+  endpoint an admin configured or a name an admin typed.
 - **Fix:** escape both interpolations (`esc(displayName)`, `esc(_providerGroupName(provider))`) or
   build them with `textContent` as the rest of the module does.
 

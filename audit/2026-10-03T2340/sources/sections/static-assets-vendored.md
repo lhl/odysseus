@@ -243,6 +243,10 @@ authenticated `GET /backgrounds` reaches `serve_html_with_nonce` on a missing pa
   the user's cookie — and therefore the user's API, including the agent's shell tools — on the one
   path the app deliberately left remote. Reach is limited to users who run Python in the code
   runner, and the URL is version-pinned, which is why this is `low` rather than higher.
+- **Re-review (2026-10-05):** stands at low for the missing integrity attribute. The allowlist
+  entry that permits this script has a second consequence, reported as the policy finding in
+  `core-auth-session`: injected markup can load any jsDelivr-hosted script through a `srcdoc`
+  frame.
 - **Fix:** vendor the Pyodide runtime under `static/lib/` like every other bundle and drop
   `https://cdn.jsdelivr.net` from `script-src`; if the CDN has to stay, pin the script with an
   `integrity` hash and narrow the policy to that exact URL.

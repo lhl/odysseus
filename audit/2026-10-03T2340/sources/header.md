@@ -5,7 +5,7 @@
 | **Audit date** | 2026-10-03 |
 | **Snapshot** | `2992bf6d368a` of https://github.com/odysseus-dev/odysseus |
 | **Run** | `odysseus/2026-10-03T2340` |
-| **Findings** | 399 — 3 high, 106 medium, 290 low |
+| **Findings** | 400 — 5 high, 105 medium, 290 low |
 | **Scope** | Self-hosted AI workspace: a FastAPI backend and a large first-party front end covering chat, an agent loop with a tool surface, email, calendar, documents and RAG, memory, research, model serving, and MCP. Python 3.11+ with a stdlib-plus-FastAPI backend. |
 | **Language** | python |
 | **Method** | Static analysis at the snapshot. Every cited line was re-read there. Claims that a command could settle were run, and the result is recorded with the finding. Anything that could not be run says so. |

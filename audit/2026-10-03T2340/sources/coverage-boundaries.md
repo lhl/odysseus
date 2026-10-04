@@ -1,6 +1,6 @@
 # Coverage boundaries
 
-What this run did not read or run, what the re-review covered, and which suspected defects were
+What this run did not read or run, what each re-review covered, and which suspected defects were
 checked and rejected. Each section's own Coverage statement is the record for that section; this
 page states the boundary for the run.
 
@@ -106,6 +106,56 @@ first-pass evidence only.
   and re-checks the impersonated owner (`routes/research/research_routes.py:496-504`).
 - That a shipped client stores data in the shared bearer bucket. The `grep` in that finding
   returns nothing for `companion`, `swift`, `integrations` and `mcp_servers`.
+
+## Re-review, 2026-10-05
+
+A second independent pass, made after all 58 sections were written. It raised two severities,
+added one finding, corrected the impact of six more, and removed none. The run now holds 400
+findings.
+
+**Changed:**
+
+| Finding | Section | Before | After | Reason |
+| --- | --- | --- | --- | --- |
+| A search-result title reaches the research spinner's `innerHTML` | `static-js-chat` | medium, `next` | high, `fix-now` | The first pass held that the script policy stops execution. An injected `srcdoc` frame loaded a script from `cdn.jsdelivr.net` in the app's origin, with the shipped `spinner.js` and the app's policy string. |
+| A calendar event's location is only partly escaped | `static-js-documents-email` | medium, `next` | high, `fix-now` | The same measurement, with `_locHTML` copied by line range. |
+| `script-src` allowlists `cdn.jsdelivr.net` | `core-auth-session` | not recorded | medium, `fix-now` | New. The policy defect that the two findings above depend on, counted once. |
+
+**Impact corrected, severity unchanged (6):** the theme-name findings in `static-js-chat` and
+`static-js-rest` (execution measured for the theme grid; the `ui_control` tool gate keeps both at
+medium), and four lows whose impact said injected script cannot run: the metrics popup, the model
+picker, the task form textarea and the research report body. The attachment-path finding in
+`mcp-servers` gained the tool gate as a second control. Each carries a `Re-review (2026-10-05)`
+line.
+
+**What was checked:**
+
+| Set | Count | Check |
+| --- | ---: | --- |
+| Quoted code, every finding | 399 | A script compared each quoted code line with the cited files at `2992bf6d368a`. 1,446 of 1,524 lines match verbatim. The 78 that do not were read: each is an abbreviated quote (`...` in a call), a line with an added line number, or code proposed in a Fix. |
+| Cited locations, every finding | 399 | Every `path:line` in a Location field names an existing file and a line inside it. |
+| `fix-now` findings | 6 of 8 | Cited lines re-read. The other two are highs re-derived on 2026-10-04; the source has not changed since. |
+| Mediums | 91 of 106 | Location and impact read against the severity legend. The cited source was opened for 11: the five `fix-now` mediums, three injection findings and three test findings. The other 15 were re-derived on 2026-10-04. |
+| Lows | 11 of 290 | Impact read. These are the lows that cite the script policy. |
+
+**Not done:** 279 lows were not read by either re-review. No first-pass probe script was re-run;
+the probes lived in `/tmp` and were not kept. The three highs from 2026-10-04 were not re-derived a
+second time. The spinner finding's last link, a live search provider returning a markup-bearing
+title unmodified, was not tested.
+
+**Hypotheses this pass tested and rejected:**
+
+- That a `<script src>` assigned through `innerHTML` runs under the policy. It does not; the probe
+  reported `no execution`.
+- That an inline script inside the injected `srcdoc` frame runs. It does not; the frame inherits
+  the policy, and only a script from an allowlisted origin loads.
+- That the frame technique applies to the attribute-injection findings. It does not: `_esc` escapes
+  `<`, so the email chip and MCP tool-list sinks cannot create an element.
+- That a fetched page can make the model plant a theme name unassisted. `ui_control` carries
+  `ToolEffect.UI_SIDE_EFFECT`, which `decision_for` blocks once untrusted content is in the run
+  unless the user approves (`src/tool_capabilities.py:553-564`, `:654-684`).
+- That `tests/conftest.py` redirects the data directory, which would void the finding that a test
+  writes an admin account into the live one. Nothing under `tests/` sets `ODYSSEUS_DATA_DIR`.
 
 ## Hypotheses tested and rejected
 
@@ -979,35 +1029,24 @@ closed it.
 
 ## Unresolved state
 
-One item is carried forward for a later section rather than left as a finding.
-`tests/test_services_research_low_quality_sources.py:8-9` asserts that
-`services/research/service.py` is the live research path; `specs/research.md:118` and
-`src/app_initializer.py:117` say the live path is `src/research_handler.py` and the
-`services/` copy is compatibility surface to retire. The `services-research` pass found no
-production caller of the copy, so the test's premise is stale. Whether that staleness matters is
-for the `tests-*` pass, which owns that file.
-
-The one observation the previous pass left open — the three `secret_storage import failed;
-skipping <x> migration` warnings from `core/database.py` — is now a finding in
-`core-data-platform.md`. The reproduction is deterministic for a process whose first core-touching
-import is `src.secret_storage`, or a module that imports it first such as `routes.email_helpers`,
-and `import app` under the same conditions reports no skip, so the server boot order is safe. The
-finding records the one-line fix; what remains open is only whether a future entry point takes that
-import order.
+One item is open. `tests/test_services_research_low_quality_sources.py:8-9` asserts that
+`services/research/service.py` is the live research path. `specs/research.md:118` and
+`src/app_initializer.py:117` say the live path is `src/research_handler.py`, and the
+`services-research` section found no production caller of the `services/` copy. So the test's
+premise is stale. `tests-rest` owns that file and did not open it; it is outside that section's
+sample.
 
 ## How to extend this audit
 
 `PROMPT.md` is the assignment a reviewer executes. It gives the finding schema, the evidence
 rules, the section files and the stopping point.
 
-Remaining coverage, most consequential first:
+Remaining work, most consequential first:
 
-1. **`tests-*`.** Establishes whether the suite asserts the negative cases the backend findings
-   rely on, and settles the stale test premise under [Unresolved state](#unresolved-state).
-2. **`static-js-*`.** The largest unread surface. It decides the cross-site scripting and
-   client-side authorization questions this run leaves open.
-3. **Re-review of the findings not yet re-derived.** See
-   [Re-review, 2026-10-04](#re-review-2026-10-04) for what was covered.
+1. **Probe the other markup sinks for script execution.** The 2026-10-05 pass measured three. The
+   metrics popup, the model picker and the task form were corrected by reasoning, not by a probe.
+2. **Read the test files outside the samples.** [Not covered](#not-covered) gives the counts.
+3. **Re-read the 279 lows no re-review opened.**
 4. **`src/outbound_fetch.py` below line 44**, and the tool-to-route boundaries listed under
    [Not covered](#not-covered).
 

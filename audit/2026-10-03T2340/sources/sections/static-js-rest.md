@@ -164,7 +164,7 @@ finding is counted in that section.
 - **Impact:** one `create_theme` call from the model — reachable from any content that steers it,
   a fetched page, an email or a tool result — plants a payload in the user's persisted theme store,
   and the payload then re-parses in the app origin on every load without any further interaction.
-  It does not execute there: the chat page carries the nonce policy at `core/middleware.py:141-147`
+  Its inline handler does not execute there: the chat page carries the nonce policy at `core/middleware.py:141-147`
   (`script-src 'self' 'nonce-{nonce}'`, no `'unsafe-inline'`, nonce templated into `index.html`'s
   inline blocks), so the probe's `onerror` handler is refused. The stored payload is still worse
   than the reflected one below, because it is persistent and needs no user action: the injected
@@ -174,6 +174,15 @@ finding is counted in that section.
   finding for the slash-reply sink in `slashCommands.js:1468-1470`; this section reports the second
   sink of that root cause and keeps it at `medium` so the run does not count one cause twice, even
   though this sink needs no slash command and no user interaction.
+- **Re-review (2026-10-05):** stands at medium, with two corrections. With the swatch template
+  copied by line range onto a page served with the app's policy, the name
+  `<iframe/srcdoc="<script/src=https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js></script>">`
+  (no spaces, lower case, as `src/ai_interaction.py:759` leaves it) ran the CDN script in a
+  same-origin frame on render. So a stored name executes on every page load. And the path in is
+  narrower than "any content that steers the model": `ui_control` carries
+  `ToolEffect.UI_SIDE_EFFECT`, which `decision_for` blocks once untrusted content is in the run
+  unless the user approves the call (`src/tool_capabilities.py:226-231`, `:553-564`, `:654-684`).
+  That gate is why this is not high.
 - **Fix:** escape the name at the sink (`uiModule.esc(name)` at `theme.js:661`, `:668`, `:669`) and
   reject markup-bearing names at the boundary — restrict `theme_name` to `[a-z0-9_-]+` in
   `src/ai_interaction.py`'s `create_theme` branch and in `saveCustomTheme` before it is stored — so
@@ -215,6 +224,10 @@ finding is counted in that section.
   by a deliberate click, which is what keeps this at `low`; the escape hatch is that the payload
   only fires while editing that specific task. A second, quieter consequence is that a prompt
   containing `</textarea>` truncates the field the user sees.
+- **Re-review (2026-10-05):** stands at low. A prompt that closes the textarea and opens an
+  `<iframe srcdoc>` can load script from `cdn.jsdelivr.net` (the policy finding in
+  `core-auth-session`); this sink was not probed. Low is kept because the payload fires only when
+  the user opens that task's edit form.
 - **Fix:** `${_esc(existing?.prompt || '')}` at `tasks.js:1299`, matching the name field above it.
 
 ### [SECURITY] The MCP tool list shadows the quote-escaping `esc` with a weaker local one, so tool metadata injects markup

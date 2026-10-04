@@ -9,10 +9,10 @@ cites a number is yours to keep true.
 
 | | |
 | --- | --- |
-| **Review date** | 2026-10-03 |
+| **Review date** | 2026-10-05 |
 | **Subject** | [the code audit](README.md), audit date 2026-10-03, `2992bf6d368a` |
-| **Counts as of** | that audit snapshot |
-| **Coverage** | 126,017 of 468,155 lines (26.9%): all of `core`, `src`, `routes` and `services`, in 35 of 58 sections. No front-end, test, build, spec or script file was read. |
+| **Counts as of** | that audit snapshot, after the re-review of 2026-10-05 |
+| **Coverage** | All 58 sections reviewed. At least 220,914 of 468,155 lines (47.2%) were read end to end; see [Coverage by surface](#coverage-by-surface). |
 | **Tooling** | `./audit.py build` (the generated audit), `./audit.py table` (these tables), `./audit.py check` (the gate) |
 
 ## Updating the tables
@@ -25,60 +25,63 @@ The tables are snapshots of one run. After the audit changes:
 
 ## Verdict
 
-**Grade: C (confidence: medium — 26.9% of the tree read).**
+**Grade: C (confidence: medium — at least 47.2% of the tree read end to end).**
 
-The letter covers the Python backend: `core`, `src`, `routes` and `services`, 126,017 lines in
-35 sections. It does not cover the other 342,138 lines. `static` (205,901 lines) and `tests`
-(113,318 lines) are the two largest trees in the repository and neither was read.
+The letter covers all 58 sections. The backend (`core`, `src`, `routes`, `services`) was read
+whole. The front end was read whole for small modules and in regions for the largest files, and
+three test sections sampled.
 
-Correctness, Security and Enforcement drive the letter. The backend holds 190 recorded defects,
-three of them high, and the release image is published by a workflow that runs no test. Testing
-keeps the letter from going lower: 805 test modules exist and CI runs the whole suite on every
-push and pull request.
+Correctness, Security and Testing drive the letter. The run records 400 defects, five of them
+high. Two of the five are script execution in the browser, which the first pass rated medium and
+the re-review of 2026-10-05 measured. The test suite is large and CI runs all of it, but 50 of the
+72 findings in the test sections are tests that pass without exercising the code they name.
+Enforcement is the weakest dimension: the release image is published by a workflow that runs no
+test.
 
-The count of 190 is a floor set by what was read, not a measure of the repository. A re-review on
-2026-10-04 re-derived 26 of the 190 from source; the other 164 carry the first pass's evidence
-only. See [Re-review, 2026-10-04](README.md#re-review-2026-10-04).
+The count of 400 is a floor set by what was read. See
+[Coverage boundaries](README.md#coverage-boundaries) for what each re-review covered.
 
 ### Report card
 
 The six dimensions and the scale are fixed by
-[`docs/GRADING-RUBRIC.md`](../../../docs/GRADING-RUBRIC.md). Densities divide by the 126.0
-reviewed KLOC.
+[`docs/GRADING-RUBRIC.md`](../../../docs/GRADING-RUBRIC.md). Densities divide by 220.9 KLOC, the
+lines read end to end. That figure is a floor, so each density is an upper bound.
 
 | Dimension | Grade | Basis |
 | --- | --- | --- |
-| Correctness | C | `(10 × 3 + 3 × 61 + 126) / 126.0` = 2.69 weighted defects per reviewed KLOC, on 3 high, 61 medium, 126 low. The record places 2.02 at C and 3.03 at D. C is kept because 126 of the 190 are low and the three highs each have a fix of a few lines. |
-| Security | C | Worst `SECURITY` severity is high, carried by one finding: `manage_research` reads and deletes every user's research files. Ten more are medium and 18 are low. The agent tool gates are ordered and fail closed (`is_public_blocked_tool`, `ToolRunSecurityContext.decision_for`), which is why two findings first rated high were lowered. No committed credential was found: the secret gate matches none of the 189 secret-shaped values in the tree against this run. |
-| Testing | B | `ls tests/*.py` lists 805 modules, and `.github/workflows/ci.yml:145` runs `python -m pytest -q` on push and pull request. This run executed subsets only, and read no test file, so whether the suite asserts negative cases is not established. |
-| Enforcement | D | CI gates on `compileall`, `node --check` and the full test suite (`ci.yml:83`, `:100`, `:145`). No lint or type check is configured: `grep -rln "ruff\|mypy\|flake8\|pylint\|pyright\|eslint" .github pyproject.toml setup.py package.json` returns nothing. `docker-publish.yml:13-15` publishes on push to `dev` and `main` with no dependency on the test job. The rubric grades a missing lint or type check F; D is used because CI exists and runs every test, so the gap is the publish path and the two missing checks. |
-| Documentation | B | 3 `DOC-DRIFT` findings, 0.02 per reviewed KLOC. Documentation exists (`README.md`, `THREAT_MODEL.md`, `SECURITY.md`, 61 files under `specs/`) and none of it was read as its own section, so drift was found only where a code finding led to a document. |
-| Maintainability | C | 24 `DEAD-CODE` + `DUP` + `FOOTGUN` findings, 0.19 per reviewed KLOC, between the 0.07 the record places at B and the 0.35 it places at D. 16 of the 24 are dead code. |
-| **Overall** | **C** | Three dimensions at C, one at D, two at B. Correctness, Security and Enforcement drive it. |
+| Correctness | C | `(10 × 5 + 3 × 105 + 290) / 220.9` = at most 2.97 weighted defects per reviewed KLOC, on 5 high, 105 medium, 290 low. The record places 2.02 at C and 3.03 at D. C is kept because the denominator omits the large files read in regions, and because each of the five highs has a fix of a few lines. |
+| Security | C | Worst `SECURITY` severity is high, carried by three findings: `manage_research` reads and deletes every user's research files, and a search-result title and a calendar location each run script in the app's origin. 24 more are medium and 29 are low. The script policy allowlists a public CDN, so it did not stop the two injections. The agent tool gate is ordered and fails closed (`ToolRunSecurityContext.decision_for`), which kept three injection findings at medium in the re-reviews. No committed credential was found: the secret gate matches none of the secret-shaped values in the tree against this run. D was considered and not used because the gates, the address guards and the at-rest encryption exist and mostly hold. |
+| Testing | C | `ls tests/*.py` lists 805 modules, and `.github/workflows/ci.yml:145` runs `python -m pytest -q` on push and pull request. The third step fails: 50 of the 72 findings in the eight test sections are tests that assert on a copy of the code, a source substring or a stubbed guard. Three test sections sampled, so the 50 is a floor. |
+| Enforcement | D | CI gates on `compileall`, `node --check` and the full test suite. No lint or type check is configured. `docker-publish.yml:13-15` publishes on push to `dev` and `main`, and its one `needs:` names its own build job, not the test job. The rubric grades a missing lint or type check F; D is used because CI exists and runs every test. |
+| Documentation | C | 35 `DOC-DRIFT` findings, at most 0.16 per reviewed KLOC; the record places 0.13 at C. 32 of the 35 are in the specifications, the root documents, the website and the test standards. |
+| Maintainability | C | 61 `DEAD-CODE` + `DUP` + `FOOTGUN` findings, at most 0.28 per reviewed KLOC, between the 0.07 the record places at B and the 0.35 it places at D. |
+| **Overall** | **C** | Four dimensions at C, one at D, none above C. Correctness, Security and Testing drive it. |
 
 ### Coverage by surface
 
 | Surface | Findings | What was read |
 | --- | --- | --- |
-| `core` | 11 — 0 high, 4 medium, 7 low | 2 sections, 11 files, 5,182 lines. |
-| `src` | 85 — 2 high, 30 medium, 53 low | 15 sections, 149 files, 62,737 lines. |
-| `routes` | 65 — 1 high, 23 medium, 41 low | 13 sections, 86 files, 47,962 lines. |
-| `services` | 29 — 0 high, 4 medium, 25 low | 5 sections, 40 files, 10,136 lines. |
-| `static` | none recorded | Not read. 8 sections, 205,901 lines. |
-| `tests` | none recorded | Not read. 8 sections, 113,318 lines. |
-| Root, build, CI, `specs`, `scripts`, `mcp_servers`, `companion`, `swift`, `website` | none recorded | Not read as sections. 7 sections, 22,919 lines. Single files were opened where a backend finding cited them. |
+| `core` | 12 — 0 high, 5 medium, 7 low | 2 sections, 11 files, 5,182 lines, all read. |
+| `src` | 85 — 2 high, 30 medium, 53 low | 15 sections, 149 files, 62,737 lines, all read. |
+| `routes` | 65 — 1 high, 23 medium, 41 low | 13 sections, 86 files, 47,962 lines, all read. |
+| `services` | 29 — 0 high, 4 medium, 25 low | 5 sections, 40 files, 10,136 lines, all read. |
+| `static` | 61 — 2 high, 11 medium, 48 low | 8 sections. Small modules read whole; the largest files read in regions that each section's Coverage lists. `static/lib/` checked for provenance only. |
+| `tests` | 72 — 0 high, 19 medium, 53 low | 8 sections. Five read every assigned file. `tests-rest` read 47 of 322 files, `tests-llm-tools` 46 of 121, `tests-cookbook-models` 59 of 112. |
+| Root, build, CI, `specs`, `scripts`, `mcp_servers`, `companion`, `swift`, `website` | 76 — 0 high, 13 medium, 63 low | 7 sections. All assigned files read except `specs`, which read 30 of 61. |
 
-Each section's own coverage statement lists the files it read in part.
+The 220,914 lines are the backend's 126,017 plus the 94,897 that 17 of the other 23 sections
+state as read end to end. Six sections state their coverage in files, and their lines are not in
+the figure.
 
 <!-- metrics: counts -->
 | Count | Value |
 | ---: | ---: |
-| Findings | 399 |
-| High severity | 3 |
-| Medium severity | 106 |
+| Findings | 400 |
+| High severity | 5 |
+| Medium severity | 105 |
 | Low severity | 290 |
-| Disposition `fix-now` | 8 |
-| Disposition `next` | 305 |
+| Disposition `fix-now` | 11 |
+| Disposition `next` | 303 |
 | Disposition `backlog` | 86 |
 | Disposition `wontfix` | 0 |
 | Findings with no disposition | 0 |
@@ -112,7 +115,7 @@ Each section's own coverage statement lists the files it read in part.
 | Latest commit | 2026-10-04 |
 | Commits | 2,106 |
 | Audit date | 2026-10-03 |
-| Working tree | clean |
+| Working tree | dirty |
 <!-- /metrics: scale -->
 
 ### Findings
@@ -124,7 +127,7 @@ Each section's own coverage statement lists the files it read in part.
 | Build, install, launcher, CI and containers | 11 | 0 | 1 | 10 |
 | Specifications | 11 | 0 | 0 | 11 |
 | Operational scripts | 24 | 0 | 8 | 16 |
-| core: auth, sessions, middleware, models | 5 | 0 | 1 | 4 |
+| core: auth, sessions, middleware, models | 6 | 0 | 2 | 4 |
 | core: database, atomic IO, constants, platform | 6 | 0 | 3 | 3 |
 | src: agent loop, runs, approvals and gates | 7 | 0 | 2 | 5 |
 | src: LLM interaction, endpoints, model capability | 7 | 0 | 3 | 4 |
@@ -161,8 +164,8 @@ Each section's own coverage statement lists the files it read in part.
 | services: shell, STT, TTS, faces, youtube | 7 | 0 | 2 | 5 |
 | static: image editor | 9 | 0 | 3 | 6 |
 | static: model comparison UI | 7 | 0 | 1 | 6 |
-| static: chat, sessions and composer UI | 8 | 0 | 2 | 6 |
-| static: documents, notes, email, calendar UI | 8 | 0 | 3 | 5 |
+| static: chat, sessions and composer UI | 8 | 1 | 1 | 6 |
+| static: documents, notes, email, calendar UI | 8 | 1 | 2 | 5 |
 | static: cookbook, settings, models UI | 5 | 0 | 0 | 5 |
 | static: research, memory and search UI | 11 | 0 | 1 | 10 |
 | static: remaining first-party JS | 5 | 0 | 1 | 4 |
@@ -178,7 +181,7 @@ Each section's own coverage statement lists the files it read in part.
 | tests: session, chat, memory and RAG | 10 | 0 | 3 | 7 |
 | tests: documents, uploads, gallery and media | 7 | 0 | 1 | 6 |
 | tests: remaining test modules | 9 | 0 | 2 | 7 |
-| **Total** | **399** | **3** | **106** | **290** |
+| **Total** | **400** | **5** | **105** | **290** |
 <!-- /metrics: findings -->
 
 ### Tags
@@ -187,7 +190,7 @@ Each section's own coverage statement lists the files it read in part.
 | Tag | Findings |
 | --- | ---: |
 | `BUG` | 155 |
-| `SECURITY` | 55 |
+| `SECURITY` | 56 |
 | `DOC-DRIFT` | 35 |
 | `ERROR-HANDLING` | 35 |
 | `PERF` | 35 |
@@ -206,8 +209,8 @@ Each section's own coverage statement lists the files it read in part.
 <!-- metrics: dispositions -->
 | Disposition | Findings |
 | --- | ---: |
-| `fix-now` | 8 |
-| `next` | 305 |
+| `fix-now` | 11 |
+| `next` | 303 |
 | `backlog` | 86 |
 <!-- /metrics: dispositions -->
 
@@ -228,48 +231,41 @@ _No invocable targets were detected for this project._
 
 ### What was not checked
 
-- **The front end.** `static` is 44% of the repository's lines and no file in it was read. No
-  claim is made about cross-site scripting, client-side authorization, or UI correctness.
-- **The tests.** No test file was read. The Tests table counts files; it does not say what they
-  assert, and the full suite was not run by this audit.
-- **Build and release.** `Dockerfile`, the compose files, the installers and the workflows were
-  not reviewed as a section. The Enforcement grade rests on the three commands cited in the
-  report card.
-- **The bundled MCP servers and companion apps.** `mcp_servers/memory_server.py` was opened only
-  for the memory-store finding.
-- **Runtime behaviour.** No deployment was built. Measurements are the small probes each finding
-  records.
-- **164 of the 190 findings** were not re-derived by the re-review.
+- **Test files outside the samples.** 403 files in the three sampled test sections were not read
+  end to end.
+- **The largest front-end files, line by line.** They were read in the regions each section lists.
+- **Runtime behaviour.** No deployment was built and the full suite was not run. Measurements are
+  the probes each finding records.
+- **279 of the 290 lows** were not read by either re-review. A script checked their quoted code
+  and locations against the source.
 - **The Gates table reads "no invocable targets"** because the repository has no Makefile or
   package script. The gates are the CI jobs named in the report card.
 
 ## Recommendations
 
-1. **Filter `manage_research` by owner** (`src-agent-tools`, high). Any agent-capable user reads
-   and deletes every user's research reports. Decision: whether owner-less legacy files are
-   hidden, as the HTTP route hides them.
-2. **Pass the injected `BackgroundTasks` to the Codex and Claude email send**
-   (`routes-rest-agent-admin`, high). Every send through the documented integration is dropped
-   while reporting success. Decision: forward the object, or set `wait_for_delivery`.
-3. **Lock the memory store's read-modify-write and use a unique temp name** (`src-memory-rag`,
+1. **Write the research spinner's message as text, and escape the calendar location before
+   linkifying it** (`static-js-chat`, `static-js-documents-email`, both high). Each runs
+   attacker-supplied script in the user's session.
+2. **Remove `cdn.jsdelivr.net` from `script-src`** (`core-auth-session`, medium). It is the reason
+   the two findings above execute. Decision: self-host Pyodide, or load it in a sandboxed frame.
+3. **Filter `manage_research` by owner** (`src-agent-tools`, high). Decision: whether owner-less
+   legacy files are hidden, as the HTTP route hides them.
+4. **Pass the injected `BackgroundTasks` to the Codex and Claude email send**
+   (`routes-rest-agent-admin`, high). Decision: forward the object, or set `wait_for_delivery`.
+5. **Lock the memory store's read-modify-write and use a unique temp name** (`src-memory-rag`,
    high). Decision: a file lock, or pointing `mcp_servers/memory_server.py` at the app's API,
    because a process-local lock does not cover that second process.
-4. **Make the release path depend on the tests, and add a lint and a type check** (Enforcement D).
+6. **Make the release path depend on the tests, and add a lint and a type check** (Enforcement D).
    Decision: whether `docker-publish.yml` waits on `ci.yml` or runs the suite itself.
-5. **Resolve owner identity in one place.** Six findings are the same defect in different files:
-   a handler takes the caller's identity and does not apply it, or applies the shared `api`
-   identity. They are `manage_research`, the bearer bucket on preferences, drafts and signatures,
-   the bearer bucket on comparisons, the incognito purge, `classify_events`, and `daily_brief`.
-   Decision: one helper that returns the storage owner, used by tools, routes and scheduled
-   actions.
-6. **Move blocking I/O off the event loop.** `PERF` is the second-largest tag at 30 findings, and
-   its medium findings in `routes-email`, `routes-chat-session`, `routes-gallery-document` and
-   `routes-rest-media-files` each describe an `async def` handler making a synchronous call.
-   Decision: convert the handlers to `def`, or wrap the calls in `asyncio.to_thread`.
-7. **Normalize the `app_api` path before the blocklist check** (`src-agent-tools`, medium), and
-   add the percent-encoded and dot-segment forms to its tests.
-8. **Read the front end and the tests next.** The grade cannot move above medium confidence, and
-   the Testing letter cannot be confirmed, until they are read.
+7. **Resolve owner identity in one place.** The executive summary lists the findings that share
+   this cause. Decision: one helper that returns the storage owner, used by tools, routes and
+   scheduled actions.
+8. **Move blocking I/O off the event loop.** `PERF` holds 35 findings, and its mediums each
+   describe an `async def` handler making a synchronous call. Decision: convert the handlers to
+   `def`, or wrap the calls in `asyncio.to_thread`.
+9. **Replace the tests that pin a copy of the code** with tests that drive the real call path,
+   starting with the stubbed URL guards in the CalDAV and CardDAV suites.
+10. **Re-derive the specifications from the code**, security claims first.
 
 ## Review rules
 

@@ -203,6 +203,10 @@ symbols are unused with no behavioural effect, so they are recorded here rather 
   it can do is spoof or cover panel content, carry a link, or fire an `<img src>` beacon. Today the
   branch does not render, so no payload is reachable; the trap is that fixing the dead code without
   fixing this line makes it reachable.
+- **Re-review (2026-10-05):** stands at low because the branch is unreachable. The impact says the
+  markup is "not executed"; once the expansion gate is wired, an `<iframe srcdoc>` in page text
+  would load script from `cdn.jsdelivr.net` (the policy finding in `core-auth-session`). Fix this
+  line before fixing the dead flag.
 - **Fix:** `_markdownModule.mdToHtml(job.result)` instead of `renderContent`, matching the Library
   and chat callers; keep the `_esc` fallback branch as it is.
 
