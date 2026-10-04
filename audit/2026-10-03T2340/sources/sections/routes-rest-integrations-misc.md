@@ -2,28 +2,30 @@
 
 ## Overview
 
-`routes/webhook/__init__.py`,
-`routes/webhook/webhook_routes.py`,
-`routes/webhook_routes.py`,
-`routes/hwfit_routes.py`,
-`routes/compare/__init__.py`,
-`routes/compare/compare_routes.py`,
-`routes/compare_routes.py`,
-`routes/vault/__init__.py`,
-`routes/vault/vault_routes.py`,
-`routes/vault_routes.py`,
-`routes/diagnostics_routes.py`,
-`routes/search/__init__.py`,
-`routes/search/search_routes.py`,
-`routes/search_routes.py`,
-`routes/cleanup/__init__.py`,
-`routes/cleanup/cleanup_routes.py`,
-`routes/cleanup_routes.py`,
-`routes/document_helpers.py`,
-`routes/document_routes.py`,
-`routes/gallery_helpers.py`,
-`routes/gallery_routes.py`,
-`routes/task_routes.py`,
+Files in this section:
+
+- `routes/webhook/__init__.py`
+- `routes/webhook/webhook_routes.py`
+- `routes/webhook_routes.py`
+- `routes/hwfit_routes.py`
+- `routes/compare/__init__.py`
+- `routes/compare/compare_routes.py`
+- `routes/compare_routes.py`
+- `routes/vault/__init__.py`
+- `routes/vault/vault_routes.py`
+- `routes/vault_routes.py`
+- `routes/diagnostics_routes.py`
+- `routes/search/__init__.py`
+- `routes/search/search_routes.py`
+- `routes/search_routes.py`
+- `routes/cleanup/__init__.py`
+- `routes/cleanup/cleanup_routes.py`
+- `routes/cleanup_routes.py`
+- `routes/document_helpers.py`
+- `routes/document_routes.py`
+- `routes/gallery_helpers.py`
+- `routes/gallery_routes.py`
+- `routes/task_routes.py`
 
 The remaining first-party route modules: outgoing webhook registration and last-delivery status,
 token-authenticated synchronous chat, the vault, model comparison, hardware-fit detection,
@@ -43,26 +45,41 @@ second implementations of their targets.
 **Read fully:** all 22 assigned files (1,921 lines) listed in the Overview: the seven canonical
 route modules, ten flat shims, and **five** package `__init__.py` files (including cleanup).
 Working-tree citations refer to `2992bf6d368a`; `git status --short` showed only the untracked
-`audit/` directory. Also read fully for the request/storage boundaries: `core/middleware.py`,
-`src/auth_helpers.py`, `src/cleanup_service.py`, `src/tools/vault.py`,
-`services/search/core.py`, `routes/_validators.py`, and `SECURITY.md`. Read the test harness
-`tests/conftest.py` and the three suites `tests/test_hwfit_remote_validation.py`,
-`tests/test_search_routes_shim.py`, and `tests/test_webhook_trigger_auth_exempt.py` fully.
+`audit/` directory. Also read fully for the request/storage boundaries: the 7 items listed below.
+Read the test harness `tests/conftest.py` and the three suites
+`tests/test_hwfit_remote_validation.py`, `tests/test_search_routes_shim.py`, and
+`tests/test_webhook_trigger_auth_exempt.py` fully.
 
-**Read partially:** `app.py:259-518` (exempt paths, internal/loopback checks, bearer and cookie
-identity) and the seven routers' registration sites; `core/database.py:175-284`, `:520-617`,
-`:648-680` (session/message, endpoint/comparison, and outgoing-webhook storage models);
-`core/platform_compat.py:39-159`, `:350-453` (permissions, process helpers and SSH execution);
-`services/hwfit/hardware.py:1-250`, `:710-908` (`_run`, initial GPU probes, visibility metadata and
-`detect_system`); `src/webhook_manager.py` by function/signature search and `:323-455` (delivery,
-signing, URL revalidation call sites and status writes); `services/search/providers.py:135-246`
-(SearXNG JSON search), plus provider/settings/HTTP-call searches; `src/agent_tools/web_tools.py:1-100`
-and `src/deep_research.py:565-609` (offloaded search callers); `routes/cookbook_routes.py` at its
-admin-gate call sites and `:3135-3204` (GPU probing); `routes/session_routes.py:155-264` (raw-endpoint
-gate and neighbouring persistence helpers); `routes/task/task_routes.py` at webhook generation
-and update searches and `:1040` to end (incoming trigger, regeneration and neighbouring parser);
-`src/tool_security.py` at the vault blocklist and owner/delegated-tool gates. Read the audit rules,
-header, coverage boundaries, review scaffold and both supplied example sections.
+- `core/middleware.py`
+- `src/auth_helpers.py`
+- `src/cleanup_service.py`
+- `src/tools/vault.py`
+- `services/search/core.py`
+- `routes/_validators.py`
+- `SECURITY.md`
+
+**Read partially:**
+
+- `app.py:259-518` (exempt paths, internal/loopback checks, bearer and cookie identity) and the
+  seven routers' registration sites
+- `core/database.py:175-284`, `:520-617`, `:648-680` (session/message, endpoint/comparison, and
+  outgoing-webhook storage models)
+- `core/platform_compat.py:39-159`, `:350-453` (permissions, process helpers and SSH execution)
+- `services/hwfit/hardware.py:1-250`, `:710-908` (`_run`, initial GPU probes, visibility metadata
+  and `detect_system`)
+- `src/webhook_manager.py` by function/signature search and `:323-455` (delivery, signing, URL
+  revalidation call sites and status writes)
+- `services/search/providers.py:135-246` (SearXNG JSON search), plus provider/settings/HTTP-call
+  searches
+- `src/agent_tools/web_tools.py:1-100` and `src/deep_research.py:565-609` (offloaded search callers)
+- `routes/cookbook_routes.py` at its admin-gate call sites and `:3135-3204` (GPU probing)
+- `routes/session_routes.py:155-264` (raw-endpoint gate and neighbouring persistence helpers)
+- `routes/task/task_routes.py` at webhook generation and update searches and `:1040` to end
+  (incoming trigger, regeneration and neighbouring parser)
+- `src/tool_security.py` at the vault blocklist and owner/delegated-tool gates
+
+Read the audit rules, header, coverage boundaries, review scaffold and both supplied example
+sections.
 
 **Not read:** none of the assigned files. The document/gallery canonical modules were imported
 for alias-identity checks, not source-reviewed. Task implementation outside the stated regions,

@@ -2,15 +2,19 @@
 
 ## Overview
 
-The search implementation: `services/search/__init__.py` (the export surface),
-`services/search/providers.py` (the SearXNG, Brave, DuckDuckGo, Google PSE, Tavily and Serper
-calls plus the settings/key lookups they read), `services/search/core.py` (the provider chain,
-the cached retry orchestrator, `comprehensive_web_search`, and the config accessors),
-`services/search/content.py` (the guarded page fetch and its HTML/PDF/text extraction),
-`services/search/query.py` (query enhancement and the cache-duration heuristic),
-`services/search/ranking.py` (result ordering), `services/search/analytics.py` (the query
-recorder and its stats surface), `services/search/cache.py` (the cache directories and the LRU
-sweep), and `services/search/service.py` (the async `SearchService` facade).
+The search implementation.
+
+| File | Role |
+| --- | --- |
+| `services/search/__init__.py` | The export surface |
+| `services/search/providers.py` | The SearXNG, Brave, DuckDuckGo, Google PSE, Tavily and Serper calls plus the settings/key lookups they read |
+| `services/search/core.py` | The provider chain, the cached retry orchestrator, `comprehensive_web_search`, and the config accessors |
+| `services/search/content.py` | The guarded page fetch and its HTML/PDF/text extraction |
+| `services/search/query.py` | Query enhancement and the cache-duration heuristic |
+| `services/search/ranking.py` | Result ordering |
+| `services/search/analytics.py` | The query recorder and its stats surface |
+| `services/search/cache.py` | The cache directories and the LRU sweep |
+| `services/search/service.py` | The async `SearchService` facade |
 
 The boundary: the four HTTP handlers that call into this module and their authentication are
 `routes-rest-integrations-misc` (`routes/search/search_routes.py`), which already reports that
@@ -30,24 +34,32 @@ rest on: `routes/search/search_routes.py` (111), `src/outbound_fetch.py` (354),
 six `sys.modules` aliases, a re-exporting `ranking.py`, and the package `__init__.py`), and
 `specs/search.md`.
 
-**Read partially:** `src/settings.py` at `DEFAULT_SETTINGS`' search keys (`:66-95`) and
-`load_settings`/`save_settings`; `routes/auth_routes.py` at `GET`/`POST /api/auth/settings`
-(`:715-755`); `app.py` at the auth-exempt lists (`:264-296`) and the bearer/cookie branch
-(`:470-500`); `src/deep_research.py` at `_search` (`:560-607`), `_fetch_and_extract` (`:609-630`)
-and the search-unavailable report path (`:326-340`); `services/research/research_handler.py` at
-`call_research_service` (`:240-295`) and `_save_result` (`:209-231`); `src/service_health.py` at
-`_searxng_instance`/`searxng_health` (`:216-255`); `src/chat_processor.py` at the web-search and
-URL-prefetch call sites (`:440-470`); `.gitignore` at `*.cache`/`cache/` and
-`**/search_analytics.json` (`:59-60`, `:111`); and the test suites listed below for what they
-already pin.
+**Read partially:**
 
-**Not read:** the front end beyond `static/js/settings.js:1106` (`search_url` is posted
-unvalidated) — `static/js/search.js`, the compare-mode and research-panel search callers, and
-the admin search panel were not read; the pinned SearXNG image, its config and
-`scripts/migrate_searxng_settings.py`; `src/tool_execution.py` and `src/session_search.py`
-(other sections' search call sites); the rest of `services/research/*`, `src/chat_processor.py`
-and `src/deep_research.py`; `src/constants.py` beyond the fetch caps and data dir; the tests
-beyond the suites run; and every other `services-*` section.
+- `src/settings.py` at `DEFAULT_SETTINGS`' search keys (`:66-95`) and
+  `load_settings`/`save_settings`
+- `routes/auth_routes.py` at `GET`/`POST /api/auth/settings` (`:715-755`)
+- `app.py` at the auth-exempt lists (`:264-296`) and the bearer/cookie branch (`:470-500`)
+- `src/deep_research.py` at `_search` (`:560-607`), `_fetch_and_extract` (`:609-630`) and the
+  search-unavailable report path (`:326-340`)
+- `services/research/research_handler.py` at `call_research_service` (`:240-295`) and `_save_result`
+  (`:209-231`)
+- `src/service_health.py` at `_searxng_instance`/`searxng_health` (`:216-255`)
+- `src/chat_processor.py` at the web-search and URL-prefetch call sites (`:440-470`)
+- `.gitignore` at `*.cache`/`cache/` and `**/search_analytics.json` (`:59-60`, `:111`)
+- the test suites listed below for what they already pin
+
+**Not read:**
+
+- the front end beyond `static/js/settings.js:1106` (`search_url` is posted unvalidated) —
+  `static/js/search.js`, the compare-mode and research-panel search callers, and the admin search
+  panel were not read
+- the pinned SearXNG image, its config and `scripts/migrate_searxng_settings.py`
+- `src/tool_execution.py` and `src/session_search.py` (other sections' search call sites)
+- the rest of `services/research/*`, `src/chat_processor.py` and `src/deep_research.py`
+- `src/constants.py` beyond the fetch caps and data dir
+- the tests beyond the suites run
+- every other `services-*` section
 
 **Checks run:** five throwaway probes under `/tmp` (not part of the target tree), each quoted in
 the finding it settles — the Google PSE 403 probe (`probe_search_cred.py`), the

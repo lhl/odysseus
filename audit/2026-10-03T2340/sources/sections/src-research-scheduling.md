@@ -2,18 +2,6 @@
 
 ## Overview
 
-`src/bg_jobs.py`,
-`src/bg_monitor.py`,
-`src/cleanup_service.py`,
-`src/cookbook_serve_lifecycle.py`,
-`src/deep_research.py`,
-`src/research_handler.py`,
-`src/research_utils.py`,
-`src/task_endpoint.py`,
-`src/task_scheduler.py`,
-`src/teacher_escalation.py`,
-`src/visual_report.py`.
-
 The deep-research engine and its job store, the scheduled-task scheduler and its background-job
 runner, session cleanup, the cookbook serve reaper, and the teacher-escalation and
 visual-report generators. The routes that expose these (`routes/research/research_routes.py`,
@@ -28,27 +16,43 @@ are `core-data-platform`.
 
 ## Coverage
 
-**Read fully:** all eleven assigned files (8,451 lines): `src/task_scheduler.py` (2,675),
-`src/visual_report.py` (1,933), `src/research_handler.py` (991), `src/deep_research.py` (929),
-`src/teacher_escalation.py` (810), `src/bg_jobs.py` (297), `src/cleanup_service.py` (293),
-`src/cookbook_serve_lifecycle.py` (219), `src/bg_monitor.py` (168), `src/task_endpoint.py` (73),
-`src/research_utils.py` (63). In `src/visual_report.py` the CSS/palette ranges (1277–1684 and the
-style block of the template) were skimmed by pattern scan for code rather than read line by line;
-every executable region of that file was read. Working-tree line numbers refer to `2992bf6d368a`;
-`git status --short` showed only the untracked `audit/` directory, and the eleven files are
-unmodified against `HEAD`.
+**Read fully:** all eleven assigned files (8,451 lines).
 
-**Read partially:** `core/session_manager.py` at the session cache and message-count maintenance;
-`core/database.py` at the `ChatMessage`/`Session` foreign keys and the SQLite pragma listener;
-`routes/cleanup/cleanup_routes.py` (all 60 lines), `routes/chat_routes.py` at the research
-continuation (`1700–1750`), `routes/task/task_routes.py` at the three task-trigger routes,
-`routes/assistant_routes.py` at the assistant trigger, `routes/research/research_routes.py` at the
-report, library and image routes; `src/endpoint_resolver.py` at `normalize_base`, `build_headers`
-and `resolve_endpoint`; `src/agent_loop.py` at the teacher-escalation call site; `app.py` at
-`AuthMiddleware`; `core/middleware.py`; `services/search/content.py` at `fetch_webpage_content`;
-`src/builtin_actions.py` at `action_ping_events`, the action registry and `action_ping_notes`;
-`src/settings.py` at `get_setting`/`load_settings`; `static/js/tasks.js` and
-`static/js/research/panel.js` by search.
+| File | Lines |
+| --- | ---: |
+| `src/task_scheduler.py` | 2,675 |
+| `src/visual_report.py` | 1,933 |
+| `src/research_handler.py` | 991 |
+| `src/deep_research.py` | 929 |
+| `src/teacher_escalation.py` | 810 |
+| `src/bg_jobs.py` | 297 |
+| `src/cleanup_service.py` | 293 |
+| `src/cookbook_serve_lifecycle.py` | 219 |
+| `src/bg_monitor.py` | 168 |
+| `src/task_endpoint.py` | 73 |
+| `src/research_utils.py` | 63 |
+
+In `src/visual_report.py` the CSS/palette ranges (1277–1684 and the style block of the template)
+were skimmed by pattern scan for code rather than read line by line; every executable region of that
+file was read. Working-tree line numbers refer to `2992bf6d368a`; `git status --short` showed only
+the untracked `audit/` directory, and the eleven files are unmodified against `HEAD`.
+
+**Read partially:**
+
+- `core/session_manager.py` at the session cache and message-count maintenance
+- `core/database.py` at the `ChatMessage`/`Session` foreign keys and the SQLite pragma listener
+- `routes/cleanup/cleanup_routes.py` (all 60 lines), `routes/chat_routes.py` at the research
+  continuation (`1700–1750`), `routes/task/task_routes.py` at the three task-trigger routes,
+  `routes/assistant_routes.py` at the assistant trigger, `routes/research/research_routes.py` at the
+  report, library and image routes
+- `src/endpoint_resolver.py` at `normalize_base`, `build_headers` and `resolve_endpoint`
+- `src/agent_loop.py` at the teacher-escalation call site
+- `app.py` at `AuthMiddleware`
+- `core/middleware.py`
+- `services/search/content.py` at `fetch_webpage_content`
+- `src/builtin_actions.py` at `action_ping_events`, the action registry and `action_ping_notes`
+- `src/settings.py` at `get_setting`/`load_settings`
+- `static/js/tasks.js` and `static/js/research/panel.js` by search
 
 **Not read:** no assigned file remains unread. The search-provider chain (`src/search/core.py`,
 `src/search/providers.py`), the fetcher's SSRF/redirect internals, the PDF/office parsers behind

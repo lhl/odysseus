@@ -2,7 +2,21 @@
 
 ## Overview
 
-`src/chroma_client.py`, `src/embedding_lanes.py`, `src/embeddings.py`, `src/index_walk.py`, `src/memory.py`, `src/memory_provider.py`, `src/memory_vector.py`, `src/personal_docs.py`, `src/preset_manager.py`, `src/rag_manager.py`, `src/rag_singleton.py`, `src/rag_vector.py`, `src/settings.py`.
+Files in this section:
+
+- `src/chroma_client.py`
+- `src/embedding_lanes.py`
+- `src/embeddings.py`
+- `src/index_walk.py`
+- `src/memory.py`
+- `src/memory_provider.py`
+- `src/memory_vector.py`
+- `src/personal_docs.py`
+- `src/preset_manager.py`
+- `src/rag_manager.py`
+- `src/rag_singleton.py`
+- `src/rag_vector.py`
+- `src/settings.py`
 
 This section covers what the assistant remembers with: the JSON memory store and the ChromaDB
 vector index over memory entries, the personal-document index (vector and keyword), the embedding

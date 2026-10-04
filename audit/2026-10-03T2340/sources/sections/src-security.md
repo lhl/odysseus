@@ -2,8 +2,6 @@
 
 ## Overview
 
-`src/api_key_manager.py`, `src/auth_helpers.py`, `src/host_docker_access.py`, `src/outbound_fetch.py`, `src/owner_identity.py`, `src/prompt_security.py`, `src/rate_limiter.py`, `src/secret_storage.py`, `src/settings_scrub.py`, `src/tls_overrides.py`, `src/upload_limits.py`, `src/url_safety.py`, `src/url_security.py`.
-
 This section covers the guards the rest of the backend calls into: outbound URL admission,
 credential encryption at rest, secret scrubbing for non-admin callers, privilege gating, upload
 caps, and the prompt-injection wrapper. The neighbouring `src-agent-tools` and `routes-*` sections
@@ -12,9 +10,18 @@ guard holds, not about whether a caller invokes it.
 
 ## Coverage
 
-**Read fully:** `src/api_key_manager.py`, `src/auth_helpers.py`, `src/host_docker_access.py`,
-`src/owner_identity.py`, `src/prompt_security.py`, `src/rate_limiter.py`, `src/secret_storage.py`,
-`src/settings_scrub.py`, `src/tls_overrides.py`, `src/upload_limits.py`.
+**Read fully:** the 10 items listed below.
+
+- `src/api_key_manager.py`
+- `src/auth_helpers.py`
+- `src/host_docker_access.py`
+- `src/owner_identity.py`
+- `src/prompt_security.py`
+- `src/rate_limiter.py`
+- `src/secret_storage.py`
+- `src/settings_scrub.py`
+- `src/tls_overrides.py`
+- `src/upload_limits.py`
 
 **Read partially:** `src/outbound_fetch.py` — the address guard (`_PRIVATE_NETWORKS:23`,
 `_is_private_address:36`) and its four call sites (`:83`, `:87`, `:106`, `:114`) were read, plus the

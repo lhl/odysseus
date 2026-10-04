@@ -31,44 +31,69 @@ trace.
 
 ## Coverage
 
-**Read fully:** the seven Python modules in scope, 3,173 lines: `services/hwfit/hardware.py` (907),
-`services/hwfit/fit.py` (876), `services/hwfit/image_models.py` (435),
-`services/hwfit/hf_discovery.py` (374), `services/hwfit/models.py` (343),
-`services/hwfit/profiles.py` (238), `services/hwfit/__init__.py` (0 — the file is empty). Also read
-fully as boundary material: `routes/hwfit_routes.py` (456 lines — the only production caller of the
-service), `core/platform_compat.py:172-185` and `:362-417` (`NVIDIA_PATH_CANDIDATES`,
-`SSH_PATH_OVERRIDE`, `_ssh_exec_argv`, `run_ssh_command`), `app.py:811-812`, and the nine suites
-that pin this surface:
-`tests/test_hwfit_remote_validation.py`, `tests/test_hwfit_models_nonstring_fields.py`,
-`tests/test_hwfit_params_b_malformed.py`, `tests/test_hwfit_bandwidth_nonstring.py`,
-`tests/test_hwfit_gpu_count_nonnumeric.py`, `tests/test_hwfit_cpu_only_fallback.py`,
-`tests/test_image_models_nonstring_search.py`, `tests/test_image_models_nondict_system.py`,
-`tests/test_serve_profiles.py`.
+**Read fully:** the seven Python modules in scope, 3,173 lines.
 
-**Read structurally, not line by line:** `services/hwfit/data/hf_models.json` (19,477 lines, 924
-rows) and `services/hwfit/data/mlx_community_models.json` (15,727 lines, 629 rows). Both were
-parsed and every field of every row was type-censused with a script, and the head of each file plus
-representative rows were read; the full text was not. The same census was run over the two runtime
-caches a live instance feeds into `get_models()` — `data/hwfit/hf_collection_models.json` (501 rows)
-and `data/hwfit/mlx_community_models.json` (659 rows), untracked runtime state present in this
-checkout. Result: `name`, `parameter_count`, `quantization`, `use_case`, `provider` are strings in
-every row of all four files; `parameters_raw` and `context_length` are ints in every row;
-`active_parameters` is an int or `null` (52 static rows); and 29 static rows carry
-`release_date: null` (handled by the `newest` sort and by the front end, so not reported).
+| File | Lines |
+| --- | ---: |
+| `services/hwfit/hardware.py` | 907 |
+| `services/hwfit/fit.py` | 876 |
+| `services/hwfit/image_models.py` | 435 |
+| `services/hwfit/hf_discovery.py` | 374 |
+| `services/hwfit/models.py` | 343 |
+| `services/hwfit/profiles.py` | 238 |
 
-**Read partially:** the other eleven `tests/test_hwfit_*.py` suites by search (what each pins)
-rather than end to end; `static/js/cookbook-hwfit.js:158-168` (`_downloadSourceRepo`) and `:884`, and
-`static/js/cookbookDownload.js:68`, `:477` (the consumers of `quant_repo`); `routes/cookbook_routes.py:3231-3237`;
-`src/outbound_fetch.py:1-45` (docstring and private-address tables); the run's `header.md` and
-`coverage-boundaries.md`, and the two reference sections.
+`services/hwfit/__init__.py` (0 — the file is empty). Also read fully as boundary material:
+`routes/hwfit_routes.py` (456 lines — the only production caller of the service),
+`core/platform_compat.py:172-185` and `:362-417` (`NVIDIA_PATH_CANDIDATES`, `SSH_PATH_OVERRIDE`,
+`_ssh_exec_argv`, `run_ssh_command`), `app.py:811-812`, and the nine suites that pin this surface:
+the 9 test files listed below.
 
-**Not read:** `routes/_validators.py` (the host/port validators the routes call — their effect is
-recorded in `routes-rest-integrations-misc` and in `coverage-boundaries`); `core/platform_compat.py`
-outside the SSH and `which` helpers cited above; the rest of `src/outbound_fetch.py` and
-`services/search/content.py`; the Cookbook's own GPU probe and the rest of `routes/cookbook_routes.py`;
-the rest of the front end; `scripts/add_hwfit_models.py` and `scripts/import_from_vllm_recipes.py`
-(assigned to `scripts`); the catalogue files line by line; the eleven other suites that were
-executed but not read.
+- `tests/test_hwfit_remote_validation.py`
+- `tests/test_hwfit_models_nonstring_fields.py`
+- `tests/test_hwfit_params_b_malformed.py`
+- `tests/test_hwfit_bandwidth_nonstring.py`
+- `tests/test_hwfit_gpu_count_nonnumeric.py`
+- `tests/test_hwfit_cpu_only_fallback.py`
+- `tests/test_image_models_nonstring_search.py`
+- `tests/test_image_models_nondict_system.py`
+- `tests/test_serve_profiles.py`
+
+**Read structurally, not line by line:**
+
+- `services/hwfit/data/hf_models.json` (19,477 lines, 924 rows) and
+  `services/hwfit/data/mlx_community_models.json` (15,727 lines, 629 rows). Both were parsed and
+  every field of every row was type-censused with a script, and the head of each file plus
+  representative rows were read
+- the full text was not. The same census was run over the two runtime caches a live instance feeds
+  into `get_models()` — `data/hwfit/hf_collection_models.json` (501 rows) and
+  `data/hwfit/mlx_community_models.json` (659 rows), untracked runtime state present in this
+  checkout. Result: `name`, `parameter_count`, `quantization`, `use_case`, `provider` are strings in
+  every row of all four files
+- `parameters_raw` and `context_length` are ints in every row
+- `active_parameters` is an int or `null` (52 static rows)
+- 29 static rows carry `release_date: null` (handled by the `newest` sort and by the front end, so
+  not reported)
+
+**Read partially:**
+
+- the other eleven `tests/test_hwfit_*.py` suites by search (what each pins) rather than end to end
+- `static/js/cookbook-hwfit.js:158-168` (`_downloadSourceRepo`) and `:884`, and
+  `static/js/cookbookDownload.js:68`, `:477` (the consumers of `quant_repo`)
+- `routes/cookbook_routes.py:3231-3237`
+- `src/outbound_fetch.py:1-45` (docstring and private-address tables)
+- the run's `header.md` and `coverage-boundaries.md`, and the two reference sections
+
+**Not read:**
+
+- `routes/_validators.py` (the host/port validators the routes call — their effect is recorded in
+  `routes-rest-integrations-misc` and in `coverage-boundaries`)
+- `core/platform_compat.py` outside the SSH and `which` helpers cited above
+- the rest of `src/outbound_fetch.py` and `services/search/content.py`
+- the Cookbook's own GPU probe and the rest of `routes/cookbook_routes.py`
+- the rest of the front end
+- `scripts/add_hwfit_models.py` and `scripts/import_from_vllm_recipes.py` (assigned to `scripts`)
+- the catalogue files line by line
+- the eleven other suites that were executed but not read
 
 **Checks run:** `git log --oneline -1` → `2992bf6d fix(tools): publish blank-body files atomically`,
 and `git status --porcelain` → only the untracked `audit/` directory, so the working tree matches the
@@ -84,18 +109,23 @@ service itself performs on this machine (no GPU operation was performed). Greps:
 `services/hwfit/`, the `_should_discover_variants` chain, and the consumers of `release_date` and
 `quant_repo`. `./audit.py` was not run and no source, test, or run-level file was edited.
 
-**Noted, not reported.** Three things I checked that did not become findings. (1) A failed remote
-detection is cached as a result for `CACHE_TTL` (86,400 s): after one failed probe of a host, later
-`detect_system` calls for it return `{"error": "Cannot connect to …"}` without retrying (measured: 2
-SSH attempts, then 0). The `fresh=true` path the Rescan button uses bypasses the cache, so a user
-can recover; it is a design choice, not a defect. (2) `refresh_mlx_community_cache` has no
-per-source error containment while its sibling `refresh_hf_collection_models_cache` catches per
-source, so an outage for `mlx-community` aborts the whole dynamic refresh; the route reports that to
-the caller (`routes/hwfit_routes.py:209-213`) and the bundled catalogue still serves, so the impact
-is a failed refresh, not a wrong answer. (3) `_fetch_hf_image_collection_models` calls `data.get`
-on the parsed body without checking it is an object (`image_models.py:183`); a JSON array body raises
-`AttributeError` out of `get_image_models`. I could not establish that the Hugging Face collections
-endpoint returns a non-object for a valid slug, so it is recorded here rather than as a finding.
+**Noted, not reported.:**
+
+- Three things I checked that did not become findings. (1) A failed remote detection is cached as a
+  result for `CACHE_TTL` (86,400 s): after one failed probe of a host, later `detect_system` calls
+  for it return `{"error": "Cannot connect to …"}` without retrying (measured: 2 SSH attempts, then
+  0). The `fresh=true` path the Rescan button uses bypasses the cache, so a user can recover
+- it is a design choice, not a defect. (2) `refresh_mlx_community_cache` has no per-source error
+  containment while its sibling `refresh_hf_collection_models_cache` catches per source, so an
+  outage for `mlx-community` aborts the whole dynamic refresh
+- the route reports that to the caller (`routes/hwfit_routes.py:209-213`) and the bundled catalogue
+  still serves, so the impact is a failed refresh, not a wrong answer. (3)
+  `_fetch_hf_image_collection_models` calls `data.get` on the parsed body without checking it is an
+  object (`image_models.py:183`)
+- a JSON array body raises `AttributeError` out of `get_image_models`
+
+I could not establish that the Hugging Face collections endpoint returns a non-object for a valid
+slug, so it is recorded here rather than as a finding.
 
 ### [RACE] One probe's SSH target is process-global, so concurrent requests swap hosts and cache each other's hardware
 

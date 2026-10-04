@@ -19,22 +19,33 @@ cited here only where a finding needs them. The email helpers the actions call
 **Read fully:** `src/builtin_actions.py` (3,436 lines). Every cited line was re-read at
 `2992bf6d368a`.
 
-**Read partially:** the scheduler call path `_execute_action` and its result handling
-(`src/task_scheduler.py:918-946`, `:1242-1268`); `RETIRED_HOUSEKEEPING_ACTIONS` (`:265-269`) and
-the retirement sweep (`:2345-2361`); `src/task_action_policy.py` (the admin-action set and
-`owner_has_admin_task_privileges`); `routes/task/task_routes.py:426-465` (create) and `:666-690`
-(update) to confirm the admin gate is applied on both write paths; `routes/email_helpers.py` at
-`_imap_connect` (`:1200-1248`) and `_get_email_config` (`:1011-1066`); the
-`sender_signatures` schema (`:639-648`); `core/database.py` at `CalendarCal`/`CalendarEvent`
-(`:1838-1881`); `static/js/tasks.js:222-233`, `:449`, `:620`, `:1332`; `src/settings.py:187`;
-`tests/test_builtin_actions_owner_scope.py`, `tests/test_classify_events_memory_text.py`,
-`tests/test_email_urgency_checkpoint.py:97-140`, `:1170-1200`, and
-`tests/test_imap_uid_commands.py:78-108` to see what the suite pins.
+**Read partially:**
 
-**Not read:** `src/task_scheduler.py` in full; `routes/email_pollers.py` beyond
-`_run_auto_summarize_once`'s return strings (`:1320-1356`); the email, calendar, and skills route
-modules; `services/memory/skills.py`; `routes/skills_routes.py`; every test not named above. No
-test suite was run.
+- the scheduler call path `_execute_action` and its result handling
+  (`src/task_scheduler.py:918-946`, `:1242-1268`)
+- `RETIRED_HOUSEKEEPING_ACTIONS` (`:265-269`) and the retirement sweep (`:2345-2361`)
+- `src/task_action_policy.py` (the admin-action set and `owner_has_admin_task_privileges`)
+- `routes/task/task_routes.py:426-465` (create) and `:666-690` (update) to confirm the admin gate is
+  applied on both write paths
+- `routes/email_helpers.py` at `_imap_connect` (`:1200-1248`) and `_get_email_config` (`:1011-1066`)
+- the `sender_signatures` schema (`:639-648`)
+- `core/database.py` at `CalendarCal`/`CalendarEvent` (`:1838-1881`)
+- `static/js/tasks.js:222-233`, `:449`, `:620`, `:1332`
+- `src/settings.py:187`
+- `tests/test_builtin_actions_owner_scope.py`, `tests/test_classify_events_memory_text.py`,
+  `tests/test_email_urgency_checkpoint.py:97-140`, `:1170-1200`, and
+  `tests/test_imap_uid_commands.py:78-108` to see what the suite pins
+
+**Not read:**
+
+- `src/task_scheduler.py` in full
+- `routes/email_pollers.py` beyond `_run_auto_summarize_once`'s return strings (`:1320-1356`)
+- the email, calendar, and skills route modules
+- `services/memory/skills.py`
+- `routes/skills_routes.py`
+- every test not named above
+
+No test suite was run.
 
 ## Findings
 

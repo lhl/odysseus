@@ -17,33 +17,48 @@ privilege vocabulary is `src/owner_identity.py` / `src/auth_helpers.py` (`src-pl
 
 ## Coverage
 
-**Read fully:** `core/auth.py` (680 lines), `core/log_safety.py` (27), `core/middleware.py`
-(152), `core/models.py` (191), `core/session_manager.py` (782);
-`tests/test_session_manager_cleanup.py` (29), `tests/test_log_safety.py` (27);
-`specs/auth-security.md` (169).
+**Read fully:**
 
-**Read partially:** `app.py` at the auth middleware (`:265-500`) — the token cache, bearer
-verification and internal-tool bypass; `routes/session_routes.py` at `list_sessions`
-(`:250-357`), `create_session` (`:359-495`), `inject_messages` (`:573-608`), archive/unarchive
-(`:730-797`), `sessions_save_now`/`session/openai` (`:932-966`), the important route
-(`:967-1003`) and `auto_sort_sessions` (`:1084-1100`, `:1175-1190`); `routes/auth_routes.py` at
-login (`:168-182`), change-password (`:228-239`), 2FA setup/confirm/disable, user
-delete/rename (`:336-470`) and `:592`; `routes/chat_helpers.py` at `resolve_session_auth`
-(`:455-514`); `src/auth_helpers.py` at `effective_user` (`:15-36`); `src/agent_tools/session_tools.py`
-at `create_session` (`:50-70`) and `list_sessions` (`:104`); `src/ai_interaction.py` at the
-model-switch handler (`:705-725`); `src/cleanup_service.py` (`:1-160`) and
-`routes/cleanup/cleanup_routes.py`; `src/endpoint_resolver.py` at `resolve_url`,
-`normalize_base`, `_prepare_endpoint_base` and `build_chat_url` (`:209-285`);
-`routes/model_routes.py` at endpoint create (`:1989-2060`) and the probe log sites
-(`:1015-1045`); `tests/test_history_display_model_hydration.py` (the drift, hydration and fork
-tests, `:1-407`), `tests/test_auth_session_revocation.py` (`:1-130`),
-`tests/test_rename_user_owner_sync.py` (`:1-40`), `tests/test_session_list_owner_scope.py` (by
-search only); `specs/persistence.md` and `specs/chat.md` at their session-relevant lines.
+| File | Lines |
+| --- | ---: |
+| `core/auth.py` | 680 |
+| `core/log_safety.py` | 27 |
+| `core/middleware.py` | 152 |
+| `core/models.py` | 191 |
+| `core/session_manager.py` | 782 |
+| `tests/test_session_manager_cleanup.py` | 29 |
+| `tests/test_log_safety.py` | 27 |
+| `specs/auth-security.md` | 169 |
 
-**Not read:** `core/database.py` (the session/message schema and migrations — assigned to
-`core-data-platform`); the bodies of the `routes-*` handlers beyond the regions above; the front
-end's session list/search code (`static/js/sessions.js` beyond the endpoints it fetches);
-`src/task_scheduler.py`'s session use.
+**Read partially:**
+
+- `app.py` at the auth middleware (`:265-500`) — the token cache, bearer verification and
+  internal-tool bypass
+- `routes/session_routes.py` at `list_sessions` (`:250-357`), `create_session` (`:359-495`),
+  `inject_messages` (`:573-608`), archive/unarchive (`:730-797`),
+  `sessions_save_now`/`session/openai` (`:932-966`), the important route (`:967-1003`) and
+  `auto_sort_sessions` (`:1084-1100`, `:1175-1190`)
+- `routes/auth_routes.py` at login (`:168-182`), change-password (`:228-239`), 2FA
+  setup/confirm/disable, user delete/rename (`:336-470`) and `:592`
+- `routes/chat_helpers.py` at `resolve_session_auth` (`:455-514`)
+- `src/auth_helpers.py` at `effective_user` (`:15-36`)
+- `src/agent_tools/session_tools.py` at `create_session` (`:50-70`) and `list_sessions` (`:104`)
+- `src/ai_interaction.py` at the model-switch handler (`:705-725`)
+- `src/cleanup_service.py` (`:1-160`) and `routes/cleanup/cleanup_routes.py`
+- `src/endpoint_resolver.py` at `resolve_url`, `normalize_base`, `_prepare_endpoint_base` and
+  `build_chat_url` (`:209-285`)
+- `routes/model_routes.py` at endpoint create (`:1989-2060`) and the probe log sites (`:1015-1045`)
+- `tests/test_history_display_model_hydration.py` (the drift, hydration and fork tests, `:1-407`),
+  `tests/test_auth_session_revocation.py` (`:1-130`), `tests/test_rename_user_owner_sync.py`
+  (`:1-40`), `tests/test_session_list_owner_scope.py` (by search only)
+- `specs/persistence.md` and `specs/chat.md` at their session-relevant lines
+
+**Not read:**
+
+- `core/database.py` (the session/message schema and migrations — assigned to `core-data-platform`)
+- the bodies of the `routes-*` handlers beyond the regions above
+- the front end's session list/search code (`static/js/sessions.js` beyond the endpoints it fetches)
+- `src/task_scheduler.py`'s session use
 
 **Checks run:** four probes under `venv/bin/python` — a 104-row cache probe (finding 1), a
 `cleanup_empty_sessions` run against a real SQLite row (finding 3), a `create_session` +

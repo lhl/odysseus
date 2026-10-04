@@ -19,23 +19,36 @@ authenticate, scope and forward correctly, not whether the handlers underneath a
 
 ## Coverage
 
-**Read fully:** all six files (2,055 lines): `routes/codex_routes.py` (910),
-`routes/mcp/mcp_routes.py` (710), `routes/assistant_routes.py` (327), `routes/workspace_routes.py`
-(85), `routes/mcp_routes.py` (18), `routes/mcp/__init__.py` (5).
+**Read fully:** all six files (2,055 lines).
 
-**Read partially:** the callees the findings rest on — `routes/email_routes.py` at `send_email`
-(`:4519-4725`); `routes/email_helpers.py` at `SendEmailRequest` (`:1990-2010`);
-`src/tools/notes.py` at `do_manage_notes` (`:19-42`, `:88-327`); `routes/_validators.py` (all 31
-lines); `src/tool_security.py` at `owner_is_admin_or_single_user` and `blocked_tools_for_owner`
-(`:222-284`); `core/middleware.py` at `require_admin`; `src/auth_helpers.py` at `get_current_user`,
-`require_user` and `require_authenticated_request`; `app.py` at the auth-exempt lists (`:265-292`)
-and the logging setup (`:107-114`); `core/database.py` at the `McpServer`, `CrewMember` and
-`ScheduledTask` models and `Path(DATA_DIR).mkdir` (`:40`); `src/constants.py` at `DATA_DIR`,
-`MCP_OAUTH_DIR` and `COOKBOOK_STATE_FILE`; `src/task_scheduler.py` at `compute_next_run` and
-`run_task_now`; `src/owner_identity.py` at `REQUEST_SENTINEL_OWNERS`; `routes/cookbook_helpers.py`
-at `ServeRequest` and the `hf_token` fields (`:1060-1090`);
-`integrations/codex/skills/odysseus/SKILL.md` and its `integrations/claude/` twin at the email
-endpoint documentation (`:106-107`).
+| File | Lines |
+| --- | ---: |
+| `routes/codex_routes.py` | 910 |
+| `routes/mcp/mcp_routes.py` | 710 |
+| `routes/assistant_routes.py` | 327 |
+| `routes/workspace_routes.py` | 85 |
+| `routes/mcp_routes.py` | 18 |
+| `routes/mcp/__init__.py` | 5 |
+
+**Read partially:** the callees the findings rest on:
+
+- `routes/email_routes.py` at `send_email` (`:4519-4725`)
+- `routes/email_helpers.py` at `SendEmailRequest` (`:1990-2010`)
+- `src/tools/notes.py` at `do_manage_notes` (`:19-42`, `:88-327`)
+- `routes/_validators.py` (all 31 lines)
+- `src/tool_security.py` at `owner_is_admin_or_single_user` and `blocked_tools_for_owner`
+  (`:222-284`)
+- `core/middleware.py` at `require_admin`
+- `src/auth_helpers.py` at `get_current_user`, `require_user` and `require_authenticated_request`
+- `app.py` at the auth-exempt lists (`:265-292`) and the logging setup (`:107-114`)
+- `core/database.py` at the `McpServer`, `CrewMember` and `ScheduledTask` models and
+  `Path(DATA_DIR).mkdir` (`:40`)
+- `src/constants.py` at `DATA_DIR`, `MCP_OAUTH_DIR` and `COOKBOOK_STATE_FILE`
+- `src/task_scheduler.py` at `compute_next_run` and `run_task_now`
+- `src/owner_identity.py` at `REQUEST_SENTINEL_OWNERS`
+- `routes/cookbook_helpers.py` at `ServeRequest` and the `hf_token` fields (`:1060-1090`)
+- `integrations/codex/skills/odysseus/SKILL.md` and its `integrations/claude/` twin at the email
+  endpoint documentation (`:106-107`)
 
 **Not read:** `src/mcp_manager.py` and `src/mcp_oauth.py` (the manager and the pending-state
 registry these routes drive), the MCP client transports, `src/task_scheduler.py` beyond the two
@@ -44,20 +57,36 @@ functions named, `routes/cookbook_routes.py` and `routes/cookbook_helpers.py` be
 send region, `src/upload_handler.py`, `core/atomic_io.py`, the contents of the two plugin bundles,
 and the front end's MCP, assistant and workspace panels.
 
-**Checks run:** three probes, all quoted in the findings — the framework semantics of a locally
-constructed `BackgroundTasks` against an injected one; the cookbook stop and adopt endpoints with
-`asyncio.create_subprocess_shell` replaced by a recorder so that no tmux session was touched; and
-the caller-set greps quoted in the third finding. Twenty-one suites were run over this surface —
-`tests/test_codex_cookbook_admin_gate.py`, `tests/test_codex_ssh_host_validation.py`,
-`tests/test_mcp_oauth.py`, `tests/test_mcp_routes_shim.py`, `tests/test_mcp_manager.py`,
-`tests/test_manage_mcp_command_allowlist.py`, `tests/test_mcp_add_server_args_validation.py`,
-`tests/test_mcp_cache_invalidation.py`, `tests/test_mcp_reconnect_args.py`,
-`tests/test_mcp_memory_owner_scope.py`, `tests/test_mcp_param_hint_hardening.py`,
-`tests/test_mcp_email_decode_header_spaces.py`, `tests/test_mcp_common_truncate.py`,
-`tests/test_mcp_dependency_compatibility.py`, `tests/test_multiple_mcp_servers_timeout.py`,
-`tests/test_mcp_tool_params_in_prompt.py`, `tests/test_builtin_mcp_bg_tasks.py`,
-`tests/test_builtin_mcp_npx_cache.py`, `tests/test_builtin_mcp_pythonpath.py`,
-`tests/test_workspace_confine.py`, `tests/test_merge_last_assistant_rows.py` — **170 passed**.
+**Checks run:** three probes, all quoted in the findings:
+
+- the framework semantics of a locally constructed `BackgroundTasks` against an injected one
+- the cookbook stop and adopt endpoints with `asyncio.create_subprocess_shell` replaced by a
+  recorder so that no tmux session was touched
+- the caller-set greps quoted in the third finding
+
+Twenty-one suites were run over this surface — the 21 test files listed below — **170 passed**.
+
+- `tests/test_codex_cookbook_admin_gate.py`
+- `tests/test_codex_ssh_host_validation.py`
+- `tests/test_mcp_oauth.py`
+- `tests/test_mcp_routes_shim.py`
+- `tests/test_mcp_manager.py`
+- `tests/test_manage_mcp_command_allowlist.py`
+- `tests/test_mcp_add_server_args_validation.py`
+- `tests/test_mcp_cache_invalidation.py`
+- `tests/test_mcp_reconnect_args.py`
+- `tests/test_mcp_memory_owner_scope.py`
+- `tests/test_mcp_param_hint_hardening.py`
+- `tests/test_mcp_email_decode_header_spaces.py`
+- `tests/test_mcp_common_truncate.py`
+- `tests/test_mcp_dependency_compatibility.py`
+- `tests/test_multiple_mcp_servers_timeout.py`
+- `tests/test_mcp_tool_params_in_prompt.py`
+- `tests/test_builtin_mcp_bg_tasks.py`
+- `tests/test_builtin_mcp_npx_cache.py`
+- `tests/test_builtin_mcp_pythonpath.py`
+- `tests/test_workspace_confine.py`
+- `tests/test_merge_last_assistant_rows.py`
 
 ### [BUG] The Codex and Claude email-send endpoint reports the message queued and never delivers it
 

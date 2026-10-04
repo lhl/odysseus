@@ -24,39 +24,53 @@ underneath is correct.
 
 ## Coverage
 
-**Read fully:** all three assigned files (5,478 lines): `routes/chat_routes.py` (2,829),
-`routes/session_routes.py` (1,386), `routes/chat_helpers.py` (1,263). Line numbers refer to
-`2992bf6d368a`.
+**Read fully:** all three assigned files (5,478 lines).
 
-**Read partially:** the boundary code the findings rest on — `core/session_manager.py` at
-`get_session`/`_load_session_from_db` (`:421-524`), `sync_session_metadata` (`:454-498`),
-`replace_messages` (`:353-400`), `create_session` (`:541-578`), `delete_session`
-(`:587-627`) and `get_sessions_for_user`/`save_sessions` (`:700-710`);
-`src/auth_helpers.py` at `get_current_user`/`effective_user` (`:10-36`),
-the delegated-credential predicate (`:44-55`) and `require_api_token_scope` /
-`require_chat_api_token_scope` (`:60-80`); `src/agent_runs.py` end to end (the
-detach/subscribe/evict machinery behind the stream); `src/chat_processor.py` at
-`build_context_preface` (`:263-470`); `src/chat_helpers.py` at
-`coerce_message_and_session` (`:251-316`); `src/upload_handler.py` at `reserve_upload`
-(`:864-965`); `src/session_image_cleanup.py` (`:23-121`); `src/chatgpt_subscription.py` at
-`fetch_available_models` (`:90-120`); `src/session_actions.py` at
-`is_session_recently_active` (`:42-52`); `src/tool_security.py` at
-`owner_is_admin_or_single_user` (`:237-262`); `src/tool_execution.py` at `vet_workspace`
-(`:466-491`); `src/llm_core.py` at the `llm_call` definition (`:1969`);
-`services/search/core.py:250` and `services/search/content.py:181` (definition lines);
-`app.py` at the auth-exempt lists (`:264-296`), the exception handlers (`:617-629`), the
-session-router mount (`:683`) and the uvicorn launch (`:1306`); `static/js/sessions.js` at
-the incognito cleanup helpers (`:261-267`, `:1083`), the list request (`:1682-1684`) and
-session materialization (`:2276-2300`); `tests/test_session_list_owner_scope.py` and
-`tests/test_archived_sessions_model_filter.py` (the harnesses the first and third findings
-quote).
+| File | Lines |
+| --- | ---: |
+| `routes/chat_routes.py` | 2,829 |
+| `routes/session_routes.py` | 1,386 |
+| `routes/chat_helpers.py` | 1,263 |
 
-**Not read:** the middleware itself (`core/middleware.py`); the models and the
-session/message tables (`core/database.py`); the agent loop (`src/agent_loop.py`); the LLM
-streaming path and provider fallback (`src/llm_core.py` beyond the one definition line);
-the compactor and preprocessor (`src/context_compactor.py`, `src/chat_handler.py`); the
-research handler; the memory, RAG and search stores behind the context preface; the front
-end beyond the cited lines; and the other `routes-*` sections.
+Line numbers refer to `2992bf6d368a`.
+
+**Read partially:** the boundary code the findings rest on:
+
+- `core/session_manager.py` at `get_session`/`_load_session_from_db` (`:421-524`),
+  `sync_session_metadata` (`:454-498`), `replace_messages` (`:353-400`), `create_session`
+  (`:541-578`), `delete_session` (`:587-627`) and `get_sessions_for_user`/`save_sessions`
+  (`:700-710`)
+- `src/auth_helpers.py` at `get_current_user`/`effective_user` (`:10-36`), the delegated-credential
+  predicate (`:44-55`) and `require_api_token_scope` / `require_chat_api_token_scope` (`:60-80`)
+- `src/agent_runs.py` end to end (the detach/subscribe/evict machinery behind the stream)
+- `src/chat_processor.py` at `build_context_preface` (`:263-470`)
+- `src/chat_helpers.py` at `coerce_message_and_session` (`:251-316`)
+- `src/upload_handler.py` at `reserve_upload` (`:864-965`)
+- `src/session_image_cleanup.py` (`:23-121`)
+- `src/chatgpt_subscription.py` at `fetch_available_models` (`:90-120`)
+- `src/session_actions.py` at `is_session_recently_active` (`:42-52`)
+- `src/tool_security.py` at `owner_is_admin_or_single_user` (`:237-262`)
+- `src/tool_execution.py` at `vet_workspace` (`:466-491`)
+- `src/llm_core.py` at the `llm_call` definition (`:1969`)
+- `services/search/core.py:250` and `services/search/content.py:181` (definition lines)
+- `app.py` at the auth-exempt lists (`:264-296`), the exception handlers (`:617-629`), the
+  session-router mount (`:683`) and the uvicorn launch (`:1306`)
+- `static/js/sessions.js` at the incognito cleanup helpers (`:261-267`, `:1083`), the list request
+  (`:1682-1684`) and session materialization (`:2276-2300`)
+- `tests/test_session_list_owner_scope.py` and `tests/test_archived_sessions_model_filter.py` (the
+  harnesses the first and third findings quote)
+
+**Not read:**
+
+- the middleware itself (`core/middleware.py`)
+- the models and the session/message tables (`core/database.py`)
+- the agent loop (`src/agent_loop.py`)
+- the LLM streaming path and provider fallback (`src/llm_core.py` beyond the one definition line)
+- the compactor and preprocessor (`src/context_compactor.py`, `src/chat_handler.py`)
+- the research handler
+- the memory, RAG and search stores behind the context preface
+- the front end beyond the cited lines
+- the other `routes-*` sections
 
 **Checks run:** three throwaway probes under `/tmp` (a two-owner incognito-purge probe
 built on the `tests/test_session_list_owner_scope.py` harness; a probe that calls the three

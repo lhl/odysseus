@@ -19,20 +19,31 @@ assigned to `src-tools-capabilities-policy`; the individual tool handlers
 **Read fully:** `src/tool_parsing.py` (1,525 lines), `src/tool_execution.py` (1,417 lines).
 Every cited line was re-read at `2992bf6d368a`.
 
-**Read partially:** `src/builtin_mcp.py` (the `_BUILTIN_SERVERS` table and its comment);
-`src/mcp_manager.py` at `call_tool` (`:467-508`); `src/agent_tools/subprocess_tools.py` at
-`BashTool.execute` (`:298-357`) and the tmux helpers (`:41-176`); `src/agent_loop.py` at
-`_resolve_tool_blocks` (`:2944-2990`), the two `execute_tool_block` call sites (`:4559`,
-`:5793`), the `strip_tool_blocks` call sites (`:5007`, `:5425`), and the try/except structure
-of `stream_agent_loop`; `routes/chat_routes.py` at `_resolve_request_workspace` (`:348-372`)
-and the stream's only handler (`:2551`); `tests/test_redos_llm_parsers.py` (201 lines);
-`tests/test_agent_bash_windows.py` at the tmux cases (`:55-100`); `src/preset_manager.py` and
-`static/js/presets.js` only for the `max_tokens: 0` presets.
+**Read partially:**
 
-**Not read:** `src/tool_capabilities.py`, `src/tool_policy.py`, `src/tool_security.py`,
-`src/tool_approvals.py`, `src/tool_schemas.py`, `src/tool_utils.py` (other sections); the
-`src/agent_tools/*` handlers beyond the `ctx` reads cited here; the MCP servers under
-`mcp_servers/`; `src/ai_interaction.py`; `src/tool_implementations.py`. No test suite was run.
+- `src/builtin_mcp.py` (the `_BUILTIN_SERVERS` table and its comment)
+- `src/mcp_manager.py` at `call_tool` (`:467-508`)
+- `src/agent_tools/subprocess_tools.py` at `BashTool.execute` (`:298-357`) and the tmux helpers
+  (`:41-176`)
+- `src/agent_loop.py` at `_resolve_tool_blocks` (`:2944-2990`), the two `execute_tool_block` call
+  sites (`:4559`, `:5793`), the `strip_tool_blocks` call sites (`:5007`, `:5425`), and the
+  try/except structure of `stream_agent_loop`
+- `routes/chat_routes.py` at `_resolve_request_workspace` (`:348-372`) and the stream's only handler
+  (`:2551`)
+- `tests/test_redos_llm_parsers.py` (201 lines)
+- `tests/test_agent_bash_windows.py` at the tmux cases (`:55-100`)
+- `src/preset_manager.py` and `static/js/presets.js` only for the `max_tokens: 0` presets
+
+**Not read:**
+
+- `src/tool_capabilities.py`, `src/tool_policy.py`, `src/tool_security.py`, `src/tool_approvals.py`,
+  `src/tool_schemas.py`, `src/tool_utils.py` (other sections)
+- the `src/agent_tools/*` handlers beyond the `ctx` reads cited here
+- the MCP servers under `mcp_servers/`
+- `src/ai_interaction.py`
+- `src/tool_implementations.py`
+
+No test suite was run.
 
 ## Findings
 

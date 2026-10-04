@@ -21,37 +21,52 @@ underneath is safe.
 
 ## Coverage
 
-**Read fully:** all three assigned files (9,725 lines): `routes/email_routes.py` (6,152),
-`routes/email_helpers.py` (2,008), `routes/email_pollers.py` (1,565).
+**Read fully:** all three assigned files (9,725 lines).
 
-**Read partially:** the boundary code the findings rest on — `src/auth_helpers.py` at
-`get_current_user`/`effective_user` (`:11-38`); `src/tool_security.py` at
-`owner_is_admin_or_single_user` (`:237-262`); `src/email_thread_parser.py` at the output
-shape (`:14-22`) and `parse_thread` (`:605-614`); `src/task_scheduler.py` at
-`RETIRED_HOUSEKEEPING_ACTIONS` (`:265-269`); `app.py` at the router construction
-(`:860-864`); `static/js/emailLibrary.js` at `_sanitizeHtml` and its three call sites
-(`:5826-5847`, `:6175`); the three `docker-compose*.yml` files and `.env.example` at
-`ODYSSEUS_INPROCESS_POLLERS`; `specs/email-contacts.md:93`.
+| File | Lines |
+| --- | ---: |
+| `routes/email_routes.py` | 6,152 |
+| `routes/email_helpers.py` | 2,008 |
+| `routes/email_pollers.py` | 1,565 |
 
-**Not read:** the auth middleware and `AuthManager` internals (assigned to
-`core-auth-session` and `routes-rest-auth-admin`); `src/auth_helpers.py` below `:40` and
-`src/owner_identity.py`; the `EmailAccount` model, its migrations and `src/secret_storage.py`
-beyond the `encrypt`/`decrypt` call sites in these files (assigned to
-`core-data-platform`); the MCP email server (assigned to `mcp-servers`); `scripts/odysseus-mail`
-and the cron/systemd deployment path; the front end beyond the sanitizer cited above.
+**Read partially:** the boundary code the findings rest on:
 
-**Checks run:** a route-level probe that built the real router with `setup_email_routes()` and
-(a) confirmed `require_owner`'s sub-dependency carries the `account_id` query parameter and
-that a foreign `account_id` on `GET /api/email/list` reaches `_assert_owns_account`, (b) called
-the `/accounts/test` coroutine with a JSON array and a JSON string body, (c) printed
-`attachment_extract_dir` for two inputs; an event-loop stall measurement against a black-hole
-IMAP listener, quoted in the `PERF` finding; an `import app` probe that printed the poller
-state at startup, quoted in the first finding; a `grep` for the callers of `_send_email_sync`,
-`_auto_summarize_poller` and `email_boundaries`; and the writer/caller greps cited in each
-finding. Forty-three suites were run over this surface — every file matching
-`ls tests | grep -iE 'email|mail|imap|smtp'`, from `tests/test_active_email_reply_guard.py`
-and `tests/test_email_account_default_serialization.py` through `tests/test_imap_uid_commands.py`
-and `tests/test_schedule_email_offset_normalization.py` — **269 passed**.
+- `src/auth_helpers.py` at `get_current_user`/`effective_user` (`:11-38`)
+- `src/tool_security.py` at `owner_is_admin_or_single_user` (`:237-262`)
+- `src/email_thread_parser.py` at the output shape (`:14-22`) and `parse_thread` (`:605-614`)
+- `src/task_scheduler.py` at `RETIRED_HOUSEKEEPING_ACTIONS` (`:265-269`)
+- `app.py` at the router construction (`:860-864`)
+- `static/js/emailLibrary.js` at `_sanitizeHtml` and its three call sites (`:5826-5847`, `:6175`)
+- the three `docker-compose*.yml` files and `.env.example` at `ODYSSEUS_INPROCESS_POLLERS`
+- `specs/email-contacts.md:93`
+
+**Not read:**
+
+- the auth middleware and `AuthManager` internals (assigned to `core-auth-session` and
+  `routes-rest-auth-admin`)
+- `src/auth_helpers.py` below `:40` and `src/owner_identity.py`
+- the `EmailAccount` model, its migrations and `src/secret_storage.py` beyond the
+  `encrypt`/`decrypt` call sites in these files (assigned to `core-data-platform`)
+- the MCP email server (assigned to `mcp-servers`)
+- `scripts/odysseus-mail` and the cron/systemd deployment path
+- the front end beyond the sanitizer cited above
+
+**Checks run:**
+
+- a route-level probe that built the real router with `setup_email_routes()` and (a) confirmed
+  `require_owner`'s sub-dependency carries the `account_id` query parameter and that a foreign
+  `account_id` on `GET /api/email/list` reaches `_assert_owns_account`, (b) called the
+  `/accounts/test` coroutine with a JSON array and a JSON string body, (c) printed
+  `attachment_extract_dir` for two inputs
+- an event-loop stall measurement against a black-hole IMAP listener, quoted in the `PERF` finding
+- an `import app` probe that printed the poller state at startup, quoted in the first finding
+- a `grep` for the callers of `_send_email_sync`, `_auto_summarize_poller` and `email_boundaries`
+- the writer/caller greps cited in each finding
+
+Forty-three suites were run over this surface — every file matching `ls tests | grep -iE
+'email|mail|imap|smtp'`, from `tests/test_active_email_reply_guard.py` and
+`tests/test_email_account_default_serialization.py` through `tests/test_imap_uid_commands.py` and
+`tests/test_schedule_email_offset_normalization.py` — **269 passed**.
 
 ### [BUG] The scheduled-send poller starts only when a client asks for the inbox list
 

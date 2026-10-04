@@ -24,39 +24,53 @@ capability tables) belong to `src-tools-capabilities-policy`.
 
 ## Coverage
 
-**Read fully:** `src/tool_schemas.py` (1,601 lines — every schema and the whole converter),
-`src/tool_index.py` (629), `src/tool_implementations.py` (115);
-`tests/test_tool_index_schema_parity.py` (56), `tests/test_research_report_read.py` (66),
-`tests/test_tool_rag_keyword_hints.py` (65), `tests/test_tool_implementations_shim.py` (165).
+**Read fully:** `src/tool_schemas.py` (1,601 lines — every schema and the whole converter),.
 
-**Read partially:** `src/agent_loop.py` at `_resolve_tool_blocks` (`:2944-2992`),
-`_assemble_prompt` (`:848-865`), the domain/keyword tables (`:528-556`),
-`_classify_agent_request` (`:1390-1489`), the `manage_session`/`manage_documents`/
-`manage_research` prompt sections (`:693-702`), the native call site and per-block loop
-(`:5631-5832`), the empty-tool-blocks exit (`:5433`), and the fenced gate (`:2983`);
-`src/tool_execution.py` at `_split_bg_marker` (`:737-747`), the bash call (`:1087`),
-`_MCP_ARG_PARSERS` (`:627-637`), and the `tail_serve_output` dispatch (`:1205-1207`);
-`src/agent_tools/__init__.py` at the `TOOL_TAGS` set (`:79-114`);
-`src/agent_tools/document_tools.py` (`:799-890`), `session_tools.py` (`:302-350`),
-`web_tools.py` (`:8-30`), `filesystem_tools.py` (`:243-256`);
-`src/tool_security.py` at `_PLAN_MODE_KNOWN_MUTATORS` (`:130-166`); `src/agent_runs.py` at
-`_drain` (`:115-173`); `routes/chat_routes.py` at the active-email block (`:1091-1140`);
-`src/tools/system.py`, `src/tools/calendar.py`, `src/tools/notes.py` and
-`src/ai_interaction.py` at their action dispatch, to compare each multiplexed tool's enum
-with its handler.
+| File | Lines |
+| --- | ---: |
+| `src/tool_index.py` | 629 |
+| `src/tool_implementations.py` | 115 |
+| `tests/test_tool_index_schema_parity.py` | 56 |
+| `tests/test_research_report_read.py` | 66 |
+| `tests/test_tool_rag_keyword_hints.py` | 65 |
+| `tests/test_tool_implementations_shim.py` | 165 |
 
-**Not read:** the `do_*` handler bodies beyond their action dispatch (assigned to
-`src-agent-tools`); `src/tool_execution.py` beyond the call sites named;
-`src/tool_parsing.py` (assigned to `src-tools-parse-exec`); `static/js/*` (the UI side of the
-tool toggles and pickers); the embedding/ChromaDB lanes behind `ToolIndex`.
+**Read partially:**
 
-**Checks run:** a three-way set diff of the schema names, `TOOL_TAGS` and
-`BUILTIN_TOOL_DESCRIPTIONS` keys (findings 2 and 3); `function_call_to_tool_block` driven
-with seven malformed-but-plausible argument objects, each resulting block fed to its first
-consumer (finding 1); a `ToolIndex` with retrieval stubbed to exercise the keyword hints for
-four report-reading queries (finding 3); each multiplexed tool's enum compared with its
-handler's `action ==` branches (finding 4). `venv/bin/python -m pytest -q` on the three test
-files listed as read fully: `10 passed`.
+- `src/agent_loop.py` at `_resolve_tool_blocks` (`:2944-2992`), `_assemble_prompt` (`:848-865`), the
+  domain/keyword tables (`:528-556`), `_classify_agent_request` (`:1390-1489`), the
+  `manage_session`/`manage_documents`/ `manage_research` prompt sections (`:693-702`), the native
+  call site and per-block loop (`:5631-5832`), the empty-tool-blocks exit (`:5433`), and the fenced
+  gate (`:2983`)
+- `src/tool_execution.py` at `_split_bg_marker` (`:737-747`), the bash call (`:1087`),
+  `_MCP_ARG_PARSERS` (`:627-637`), and the `tail_serve_output` dispatch (`:1205-1207`)
+- `src/agent_tools/__init__.py` at the `TOOL_TAGS` set (`:79-114`)
+- `src/agent_tools/document_tools.py` (`:799-890`), `session_tools.py` (`:302-350`), `web_tools.py`
+  (`:8-30`), `filesystem_tools.py` (`:243-256`)
+- `src/tool_security.py` at `_PLAN_MODE_KNOWN_MUTATORS` (`:130-166`)
+- `src/agent_runs.py` at `_drain` (`:115-173`)
+- `routes/chat_routes.py` at the active-email block (`:1091-1140`)
+- `src/tools/system.py`, `src/tools/calendar.py`, `src/tools/notes.py` and `src/ai_interaction.py`
+  at their action dispatch, to compare each multiplexed tool's enum with its handler
+
+**Not read:**
+
+- the `do_*` handler bodies beyond their action dispatch (assigned to `src-agent-tools`)
+- `src/tool_execution.py` beyond the call sites named
+- `src/tool_parsing.py` (assigned to `src-tools-parse-exec`)
+- `static/js/*` (the UI side of the tool toggles and pickers)
+- the embedding/ChromaDB lanes behind `ToolIndex`
+
+**Checks run:**
+
+- a three-way set diff of the schema names, `TOOL_TAGS` and `BUILTIN_TOOL_DESCRIPTIONS` keys
+  (findings 2 and 3)
+- `function_call_to_tool_block` driven with seven malformed-but-plausible argument objects, each
+  resulting block fed to its first consumer (finding 1)
+- a `ToolIndex` with retrieval stubbed to exercise the keyword hints for four report-reading queries
+  (finding 3)
+- each multiplexed tool's enum compared with its handler's `action ==` branches (finding 4).
+  `venv/bin/python -m pytest -q` on the three test files listed as read fully: `10 passed`
 
 ## Findings
 

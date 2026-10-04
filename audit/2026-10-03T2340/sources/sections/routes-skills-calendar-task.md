@@ -21,50 +21,73 @@ the middleware underneath is correct.
 
 ## Coverage
 
-**Read fully:** the four assigned files (4,860 lines): `routes/skills_routes.py` (1,899),
-`routes/calendar_routes.py` (1,775), `routes/task/task_routes.py` (1,181),
-`routes/task/__init__.py` (5).
+**Read fully:** the four assigned files (4,860 lines).
 
-**Read fully, outside the assigned paths:** `services/memory/skill_importer.py` (487),
-`src/auth_helpers.py` (199), `src/upload_limits.py` (72), `src/task_action_policy.py` (47).
+| File | Lines |
+| --- | ---: |
+| `routes/skills_routes.py` | 1,899 |
+| `routes/calendar_routes.py` | 1,775 |
+| `routes/task/task_routes.py` | 1,181 |
+| `routes/task/__init__.py` | 5 |
 
-**Read partially:** `src/task_scheduler.py` at `compute_next_run` (`:113-231`),
-`HOUSEKEEPING_DEFAULTS` (`:251-263`), the loop (`:673-700`), `_check_due_tasks` (`:701-735`),
-`_execute_task` / `_execute_task_locked` (`:737-1159`), `run_task_now` / `stop_task`
-(`:2264-2290`); `services/memory/skills.py` at the path helpers (`:76-83`), `_iter_skill_files` /
-`_read_skill` / `_write_skill` (`:159-181`), `load` (`:278-287`), `add_skill` (`:293-383`),
-`import_bundle_from_files` (`:384-431`), `update_skill` / `delete_skill` / `read_skill_md`
-(`:432-575`); `services/memory/skill_format.py` at `slugify` (`:65-72`); `src/caldav_sync.py` at
-`validate_caldav_url` (`:106-131`) and the sync entry points (`:617-722`); `core/middleware.py` at
-`require_admin` (`:57-82`); `core/database.py` at `ScheduledTask` (`:730-760`), `TaskRun`
-(`:810-825`), `CalendarCal` (`:1838-1855`) and `CalendarEvent` (`:1856-1875`);
-`src/builtin_actions.py` at the urgency-cache writer (`:2275-2290`, `:2532`);
-`routes/email_helpers.py` at `OWNER_SCOPED_EMAIL_CACHE_TABLES` (`:566-586`); `src/tools/system.py`
-at the `manage_tasks` action (`:285-310`, `:340-365`); `app.py` at the uvicorn launch
-(`:1300-1306`); `Dockerfile:113`; `specs/calendar-tasks-notes.md:52`; `static/js/tasks.js` at the
-run-now paths (`:150-151`, `:1874-1877`, `:2767`).
+**Read fully, outside the assigned paths:**
 
-**Not read:** the middleware that authenticates the request — what stamps
-`request.state.current_user` lives in `app.py` and `core/middleware.py` (assigned to
-`core-auth-session`), and only `require_admin`, `require_user` and `get_current_user` were read;
-the task executors the scheduler dispatches into (`_execute_llm_task`, `_execute_action`,
-`_execute_research_task`, `_deliver_task_result`, `_deliver_via_mcp`) beyond their call sites;
-`src/agent_loop.stream_agent_loop` and the tool surface a skill test or an audit run reaches; the
-CalDAV sync implementation (`_sync_blocking`, `src/caldav_writeback.py`) and
-`src/url_safety.check_outbound_url`; the skills, calendar and task front end beyond the regions
-cited; the `do_manage_*` agent tools (their own sections) beyond the `scheduled_day` pass-through
-cited; the remaining 2,000-odd lines of `src/task_scheduler.py` (delivery, notifications,
-research and check-in execution).
+| File | Lines |
+| --- | ---: |
+| `services/memory/skill_importer.py` | 487 |
+| `src/auth_helpers.py` | 199 |
+| `src/upload_limits.py` | 72 |
+| `src/task_action_policy.py` | 47 |
 
-**Checks run:** four throwaway probes under `/tmp` that call the real handlers — a non-object-body
-probe (the router built with a stub skills manager, mirroring
-`tests/test_integrations_store_shape.py`), an ICS-import probe over a temp SQLite database
-mirroring `tests/test_calendar_import_zero_duration.py`, a `create_task` probe over the same
-harness, and a self-request repro mirroring `_try_delete`'s call shape; `_expand_rrule` timed
-directly with a stub event; the dateutil expansion timed separately; and the `icalendar` parse of
-100,000 `VEVENT`s timed. The
-sixty-six suites matching `ls tests | grep -iE 'skill|calendar|task|ics'` were run —
-**319 passed**.
+**Read partially:**
+
+- `src/task_scheduler.py` at `compute_next_run` (`:113-231`), `HOUSEKEEPING_DEFAULTS` (`:251-263`),
+  the loop (`:673-700`), `_check_due_tasks` (`:701-735`), `_execute_task` / `_execute_task_locked`
+  (`:737-1159`), `run_task_now` / `stop_task` (`:2264-2290`)
+- `services/memory/skills.py` at the path helpers (`:76-83`), `_iter_skill_files` / `_read_skill` /
+  `_write_skill` (`:159-181`), `load` (`:278-287`), `add_skill` (`:293-383`),
+  `import_bundle_from_files` (`:384-431`), `update_skill` / `delete_skill` / `read_skill_md`
+  (`:432-575`)
+- `services/memory/skill_format.py` at `slugify` (`:65-72`)
+- `src/caldav_sync.py` at `validate_caldav_url` (`:106-131`) and the sync entry points (`:617-722`)
+- `core/middleware.py` at `require_admin` (`:57-82`)
+- `core/database.py` at `ScheduledTask` (`:730-760`), `TaskRun` (`:810-825`), `CalendarCal`
+  (`:1838-1855`) and `CalendarEvent` (`:1856-1875`)
+- `src/builtin_actions.py` at the urgency-cache writer (`:2275-2290`, `:2532`)
+- `routes/email_helpers.py` at `OWNER_SCOPED_EMAIL_CACHE_TABLES` (`:566-586`)
+- `src/tools/system.py` at the `manage_tasks` action (`:285-310`, `:340-365`)
+- `app.py` at the uvicorn launch (`:1300-1306`)
+- `Dockerfile:113`
+- `specs/calendar-tasks-notes.md:52`
+- `static/js/tasks.js` at the run-now paths (`:150-151`, `:1874-1877`, `:2767`)
+
+**Not read:** the middleware that authenticates the request:
+
+- what stamps `request.state.current_user` lives in `app.py` and `core/middleware.py` (assigned to
+  `core-auth-session`), and only `require_admin`, `require_user` and `get_current_user` were read
+- the task executors the scheduler dispatches into (`_execute_llm_task`, `_execute_action`,
+  `_execute_research_task`, `_deliver_task_result`, `_deliver_via_mcp`) beyond their call sites
+- `src/agent_loop.stream_agent_loop` and the tool surface a skill test or an audit run reaches
+- the CalDAV sync implementation (`_sync_blocking`, `src/caldav_writeback.py`) and
+  `src/url_safety.check_outbound_url`
+- the skills, calendar and task front end beyond the regions cited
+- the `do_manage_*` agent tools (their own sections) beyond the `scheduled_day` pass-through cited
+- the remaining 2,000-odd lines of `src/task_scheduler.py` (delivery, notifications, research and
+  check-in execution)
+
+**Checks run:**
+
+- four throwaway probes under `/tmp` that call the real handlers — a non-object-body probe (the
+  router built with a stub skills manager, mirroring `tests/test_integrations_store_shape.py`), an
+  ICS-import probe over a temp SQLite database mirroring
+  `tests/test_calendar_import_zero_duration.py`, a `create_task` probe over the same harness, and a
+  self-request repro mirroring `_try_delete`'s call shape
+- `_expand_rrule` timed directly with a stub event
+- the dateutil expansion timed separately
+- the `icalendar` parse of 100,000 `VEVENT`s timed
+
+The sixty-six suites matching `ls tests | grep -iE 'skill|calendar|task|ics'` were run — **319
+passed**.
 
 ### [BUG] Deleting a cookbook task calls its own API from a blocking client, so the cascade never runs and the delete stalls for 10 seconds
 

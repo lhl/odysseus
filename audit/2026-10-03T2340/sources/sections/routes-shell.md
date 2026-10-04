@@ -20,17 +20,25 @@ decision is not re-reviewed here.
 
 **Read fully:** `routes/shell_routes.py` (1,971 lines). Every cited line was re-read at `2992bf6d368a`.
 
-**Read partially:** `static/js/cookbook.js` at `_installDep` (`:1399-1470`) and the install-button
-wiring (`:1509-1516`), to establish which endpoint the UI's install path calls;
-`static/js/codeRunner.js:309-340` and `static/js/cookbookDownload.js:380-400`, the two call sites
-that set the request shape; `app.py:125-145` (CORS origin list) and `:1303` (default bind host);
-`routes/auth_routes.py:185-194` (session cookie flags). Two small reproduction scripts were run in
-`/tmp` with the same `asyncio.create_subprocess_shell` call shape as `_create_shell`; their output is
-quoted in the first finding.
+**Read partially:**
 
-**Not read:** every test file; `routes/cookbook_helpers.py` (`_llama_cpp_rebuild_cmd` is called at
-`:1949` but not read); `routes/cookbook_routes.py`; the remaining Cookbook front-end panels beyond
-the cited lines; `static/js/cookbookRunning.js`, which drives the tmux tasks these endpoints serve.
+- `static/js/cookbook.js` at `_installDep` (`:1399-1470`) and the install-button wiring
+  (`:1509-1516`), to establish which endpoint the UI's install path calls
+- `static/js/codeRunner.js:309-340` and `static/js/cookbookDownload.js:380-400`, the two call sites
+  that set the request shape
+- `app.py:125-145` (CORS origin list) and `:1303` (default bind host)
+- `routes/auth_routes.py:185-194` (session cookie flags). Two small reproduction scripts were run in
+  `/tmp` with the same `asyncio.create_subprocess_shell` call shape as `_create_shell`
+- their output is quoted in the first finding
+
+**Not read:**
+
+- every test file
+- `routes/cookbook_helpers.py` (`_llama_cpp_rebuild_cmd` is called at `:1949` but not read)
+- `routes/cookbook_routes.py`
+- the remaining Cookbook front-end panels beyond the cited lines
+- `static/js/cookbookRunning.js`, which drives the tmux tasks these endpoints serve
+
 No test suite was run.
 
 ## Findings

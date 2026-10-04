@@ -2,10 +2,6 @@
 
 ## Overview
 
-`src/attachment_refs.py`, `src/document_actions.py`, `src/document_processor.py`,
-`src/generated_images.py`, `src/markitdown_runtime.py`, `src/office_doc.py`,
-`src/pdf_form_doc.py`, `src/pdf_forms.py`, `src/pdf_runtime.py`, `src/upload_handler.py`.
-
 The document pipeline behind a chat attachment and the upload store behind it: the
 `UploadHandler` (rate limit, size/type checks, dedup, the `uploads.json` index, reservation
 against cleanup, owner rename, retention sweep), the persistence form for message content and
@@ -28,63 +24,90 @@ missing — not whether the routes that call them authenticate or scope correctl
 
 ## Coverage
 
-**Read fully:** all ten assigned files (3,429 lines): `src/upload_handler.py` (1,393),
-`src/document_processor.py` (607), `src/pdf_form_doc.py` (441), `src/pdf_forms.py` (401),
-`src/document_actions.py` (197), `src/attachment_refs.py` (164), `src/markitdown_runtime.py`
-(106), `src/office_doc.py` (73), `src/generated_images.py` (32), `src/pdf_runtime.py` (15).
-Line references are to the working tree at `2992bf6d368a`; `git status --porcelain` showed only
-the untracked `audit/` directory.
+**Read fully:** all ten assigned files (3,429 lines).
 
-**Read partially:** the boundary code the findings rest on — `routes/document/document_routes.py`
-at the PDF import (`:225-300`), the tidy route (`:852-965`), the render/export/AI-fill handlers
-(`:1380-1440`, `:1491-1625`) and the unguarded `import fitz` (`:1247-1255`);
-`routes/document/document_helpers.py` at `_verify_doc_owner`, `_owner_session_filter`,
-`_resolve_user_upload_path`, `_locate_upload` and `_assert_pdf_marker_upload_owned` (`:1-215`);
-`routes/upload_routes.py` at the download handler (`:360-425`) and the offloaded cleanup
-(`:325-327`); `app.py` at `/api/generated-image/{filename}` (`:513-553`), the exception handlers
-(`:616-633`) and the startup seeding of housekeeping tasks (`:1160-1180`); `core/session_manager.py`
-at the message persist (`:265-285`); `core/database.py` at `_scrub_legacy_chat_message_fts_media`
-(`:2264-2292`); `src/agent_tools/document_tools.py` at the active-document globals and owner
-query helpers (`:1-80`), the read/update/suggest targets (`:470-500`, `:705-735`) and the
-`manage_documents` dispatch (`:763-892`); `src/tool_execution.py` at `_direct_fallback`
-(`:765-780`), `_document_tool_dispatch` (`:783-802`), `execute_tool_block` (`:810-965`) and the
-`manage_documents` branch (`:1133-1144`); `src/agent_loop.py` at the SSE tool wrapper
-(`:5785-5825`); `routes/chat_routes.py` at the active-document fallback (`:1445-1475`) and the
-stream handler's `try`/`except`/`finally` (`:2309`, `:2336`, `:2551`, `:2590-2600`);
-`src/builtin_actions.py` at `TaskNoop` (`:412-422`) and `action_tidy_documents` (`:453-461`);
-`src/task_scheduler.py` at `HOUSEKEEPING_DEFAULTS` (`:253`) and the seeding/status block
-(`:2474-2507`); `src/tool_security.py` at `owner_is_admin_or_single_user` and
-`blocked_tools_for_owner` (`:237-271`); `src/owner_identity.py:17-25`; `src/upload_limits.py`
-in full (72 lines — the chat cap this handler reads); `requirements-optional.txt` at the
-PyMuPDF and markitdown entries (`:30-46`).
+| File | Lines |
+| --- | ---: |
+| `src/upload_handler.py` | 1,393 |
+| `src/document_processor.py` | 607 |
+| `src/pdf_form_doc.py` | 441 |
+| `src/pdf_forms.py` | 401 |
+| `src/document_actions.py` | 197 |
+| `src/attachment_refs.py` | 164 |
+| `src/markitdown_runtime.py` | 106 |
+| `src/office_doc.py` | 73 |
+| `src/generated_images.py` | 32 |
+| `src/pdf_runtime.py` | 15 |
 
-**Not read:** the rest of `routes/document/document_routes.py`, `routes/chat_routes.py`,
-`src/agent_loop.py`, `src/tool_execution.py`, `src/agent_tools/document_tools.py`,
-`core/session_manager.py` and `src/task_scheduler.py` (each assigned to another section); the
-front end that renders attachments, documents and the PDF editor; the RAG indexer's use of
-markitdown (`src/personal_docs.py`, assigned elsewhere); the other `routes-*` and `src-*`
-sections; and every path that needs PyMuPDF, which is not installed in this checkout
-(`venv/bin/python -c "import fitz"` → `ModuleNotFoundError`) — `extract_fields`, `fill_fields`,
-`stamp_signatures` and `stamp_annotations` were read, not run. The library's own tests were
-executed, not read end to end.
+Line references are to the working tree at `2992bf6d368a`; `git status --porcelain` showed only the
+untracked `audit/` directory.
 
-**Checks run:** `git log --oneline -1` / `git status --porcelain` (clean apart from `audit/`),
-the optional-dependency imports (`markitdown`, `fitz`, `magic`, `pypdf`, `PIL`,
-`charset_normalizer`), and eleven throwaway probe scripts under `/tmp` (not part of the target
-tree); the ones quoted below are: a crafted `.docx` with the zip encryption bit set, one with
-compression method 9, and one with ten zeroed bytes in its deflate stream,
-through `_extract_docx_native`, `convert_to_markdown` and `build_user_content`; the same
-`build_user_content` call on a healthy `.docx` as a control; the real dispatcher
-(`execute_tool_block` with a `manage_documents` `tidy` block, and `action=list` as the control)
-against a temp app DB with nothing to tidy, with `AUTH_ENABLED=false` so the admin gate does not
-short-circuit; `run_document_tidy` against a temp app DB holding an archived junk document, an
-active document and an archived copy of it; the same function over 500 documents (2.9 MB) inside
-a live event loop with a 10 ms ticker; `_process_pdf` on six malformed or hostile PDFs; and the
-`DATA_URL_RE` match set over six data-URL shapes. Also greps for the callers of
-`resolve_upload`, `reserve_upload`, `get_upload_info`, `persistable_message_content`,
-`strip_inline_data_urls`, `build_user_content`, `run_document_tidy`, `set_active_document` and
-`TaskNoop`, and an AST scan for functions in these ten files with no reference outside their
-file.
+**Read partially:** the boundary code the findings rest on:
+
+- `routes/document/document_routes.py` at the PDF import (`:225-300`), the tidy route (`:852-965`),
+  the render/export/AI-fill handlers (`:1380-1440`, `:1491-1625`) and the unguarded `import fitz`
+  (`:1247-1255`)
+- `routes/document/document_helpers.py` at `_verify_doc_owner`, `_owner_session_filter`,
+  `_resolve_user_upload_path`, `_locate_upload` and `_assert_pdf_marker_upload_owned` (`:1-215`)
+- `routes/upload_routes.py` at the download handler (`:360-425`) and the offloaded cleanup
+  (`:325-327`)
+- `app.py` at `/api/generated-image/{filename}` (`:513-553`), the exception handlers (`:616-633`)
+  and the startup seeding of housekeeping tasks (`:1160-1180`)
+- `core/session_manager.py` at the message persist (`:265-285`)
+- `core/database.py` at `_scrub_legacy_chat_message_fts_media` (`:2264-2292`)
+- `src/agent_tools/document_tools.py` at the active-document globals and owner query helpers
+  (`:1-80`), the read/update/suggest targets (`:470-500`, `:705-735`) and the `manage_documents`
+  dispatch (`:763-892`)
+- `src/tool_execution.py` at `_direct_fallback` (`:765-780`), `_document_tool_dispatch`
+  (`:783-802`), `execute_tool_block` (`:810-965`) and the `manage_documents` branch (`:1133-1144`)
+- `src/agent_loop.py` at the SSE tool wrapper (`:5785-5825`)
+- `routes/chat_routes.py` at the active-document fallback (`:1445-1475`) and the stream handler's
+  `try`/`except`/`finally` (`:2309`, `:2336`, `:2551`, `:2590-2600`)
+- `src/builtin_actions.py` at `TaskNoop` (`:412-422`) and `action_tidy_documents` (`:453-461`)
+- `src/task_scheduler.py` at `HOUSEKEEPING_DEFAULTS` (`:253`) and the seeding/status block
+  (`:2474-2507`)
+- `src/tool_security.py` at `owner_is_admin_or_single_user` and `blocked_tools_for_owner`
+  (`:237-271`)
+- `src/owner_identity.py:17-25`
+- `src/upload_limits.py` in full (72 lines — the chat cap this handler reads)
+- `requirements-optional.txt` at the PyMuPDF and markitdown entries (`:30-46`)
+
+**Not read:**
+
+- the rest of `routes/document/document_routes.py`, `routes/chat_routes.py`, `src/agent_loop.py`,
+  `src/tool_execution.py`, `src/agent_tools/document_tools.py`, `core/session_manager.py` and
+  `src/task_scheduler.py` (each assigned to another section)
+- the front end that renders attachments, documents and the PDF editor
+- the RAG indexer's use of markitdown (`src/personal_docs.py`, assigned elsewhere)
+- the other `routes-*` and `src-*` sections
+- every path that needs PyMuPDF, which is not installed in this checkout (`venv/bin/python -c
+  "import fitz"` → `ModuleNotFoundError`) — `extract_fields`, `fill_fields`, `stamp_signatures` and
+  `stamp_annotations` were read, not run
+
+The library's own tests were executed, not read end to end.
+
+**Checks run:**
+
+- `git log --oneline -1` / `git status --porcelain` (clean apart from `audit/`), the
+  optional-dependency imports (`markitdown`, `fitz`, `magic`, `pypdf`, `PIL`, `charset_normalizer`),
+  and eleven throwaway probe scripts under `/tmp` (not part of the target tree)
+- the ones quoted below are: a crafted `.docx` with the zip encryption bit set, one with compression
+  method 9, and one with ten zeroed bytes in its deflate stream, through `_extract_docx_native`,
+  `convert_to_markdown` and `build_user_content`
+- the same `build_user_content` call on a healthy `.docx` as a control
+- the real dispatcher (`execute_tool_block` with a `manage_documents` `tidy` block, and
+  `action=list` as the control) against a temp app DB with nothing to tidy, with
+  `AUTH_ENABLED=false` so the admin gate does not short-circuit
+- `run_document_tidy` against a temp app DB holding an archived junk document, an active document
+  and an archived copy of it
+- the same function over 500 documents (2.9 MB) inside a live event loop with a 10 ms ticker
+- `_process_pdf` on six malformed or hostile PDFs
+- the `DATA_URL_RE` match set over six data-URL shapes
+
+Also greps for the callers of `resolve_upload`, `reserve_upload`, `get_upload_info`,
+`persistable_message_content`, `strip_inline_data_urls`, `build_user_content`, `run_document_tidy`,
+`set_active_document` and `TaskNoop`, and an AST scan for functions in these ten files with no
+reference outside their file.
 
 The required discovery command, `ls tests | grep -iE
 'upload|document|markitdown|pdf|office|attachment|generated_image'`, selected 48 suites. Running

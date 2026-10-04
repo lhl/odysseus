@@ -2,9 +2,17 @@
 
 ## Overview
 
-`services/memory/__init__.py`, `services/memory/memory.py`, `services/memory/memory_extractor.py`,
-`services/memory/memory_vector.py`, `services/memory/service.py`, `services/memory/skill_extractor.py`,
-`services/memory/skill_format.py`, `services/memory/skill_importer.py`, `services/memory/skills.py`.
+Files in this section:
+
+- `services/memory/__init__.py`
+- `services/memory/memory.py`
+- `services/memory/memory_extractor.py`
+- `services/memory/memory_vector.py`
+- `services/memory/service.py`
+- `services/memory/skill_extractor.py`
+- `services/memory/skill_format.py`
+- `services/memory/skill_importer.py`
+- `services/memory/skills.py`
 
 This is the package the rest of the app imports for memory and skills. Two of the nine files are
 compatibility re-exports of canonical modules (`memory.py` re-exports `src.memory.MemoryManager` and
@@ -30,42 +38,71 @@ do with the values they are handed, not about whether their callers scoped them.
 Line numbers refer to `2992bf6d368a`. `git status --short` showed only the untracked `audit/`
 directory before and after the checks.
 
-**Read fully:** all nine assigned files, 2,835 lines — `skills.py` (716), `memory_extractor.py` (678),
-`skill_importer.py` (487), `skill_format.py` (483), `skill_extractor.py` (305), `service.py` (126),
-`memory.py` (20), `__init__.py` (15), `memory_vector.py` (5).
+**Read fully:** all nine assigned files, 2,835 lines.
 
-**Read partially:** the boundary code the findings rest on. `src/memory.py` at `_read_entries`
-(`:125-164`), `load_all` / `load_all_for_update` / `load` (`:166-194`), `_validate_entries`
-(`:215-232`), `save` (`:261-278`) and `add_entry` (`:280-299`); `src/memory_vector.py` in full (251
-lines — the store the extractor drives); `src/memory_provider.py` at the `NativeMemoryProvider` method
-signatures (`:114-256`); `src/embedding_lanes.py` at `EmbeddingLane` (`:24-56`), `_create_lane`
-(`:232-249`) and `build_embedding_lanes` (`:252-272`); `src/embeddings.py` at `FastEmbedClient`
-(`:132-192`); `src/chroma_client.py` (`:1-60`); `routes/memory/memory_routes.py` at `_load_for_update`
-(`:38-50`) and `api_audit_memories` (`:289-337`); `routes/chat_helpers.py` at the extraction dispatch
-(`:1154-1250`); `routes/skills_routes.py` at `SkillAddRequest` (`:37-62`), `import-from-url`
-(`:1351-1378`), `add` (`:1381-1412`) and `save_skill_markdown` (`:1804-1851`); `src/tools/system.py` at
-`do_manage_skills` (`:24-245`); `src/builtin_actions.py` at `action_test_skills` and
-`action_audit_skills` (`:1910-2050`); `setup.py` at the `MEMORY_VECTORS_DIR` entry (`:14-40`).
+| File | Lines |
+| --- | ---: |
+| `skills.py` | 716 |
+| `memory_extractor.py` | 678 |
+| `skill_importer.py` | 487 |
+| `skill_format.py` | 483 |
+| `skill_extractor.py` | 305 |
+| `service.py` | 126 |
+| `memory.py` | 20 |
+| `__init__.py` | 15 |
+| `memory_vector.py` | 5 |
 
-**Not read:** `src/memory.py` outside the regions above (search, consolidation, the chat-extraction
-helpers); the `src/memory_provider.py` method bodies; `src/rag_vector.py`, `src/personal_docs.py` and
-the rest of `src-memory-rag`'s files; the skills front end (`static/js/skills*.js`) and every other
-`static-*` path; `src/teacher_escalation.py`; `mcp_servers/memory_server.py`; `services/__init__.py`;
-and the parts of `routes/skills_routes.py`, `routes/memory/memory_routes.py` and
-`routes/chat_helpers.py` outside the regions above. No live LLM, embedding endpoint or ChromaDB server
-was reachable in this environment, so no extraction, audit or import was run end to end against a real
-model or a real GitHub URL.
+**Read partially:**
 
-**Checks run:** `git rev-parse --short=12 HEAD` and `git status --short`; caller greps
-(`MemoryService(`, `audit_memories`, `extract_and_store`, `MEMORY_VECTORS_DIR`, and `to_thread` /
-`run_in_threadpool` across `routes/`, `src/` and `services/`); and four throwaway probes under `/tmp`
-(not part of the target tree), each quoted in the finding it settles: the SKILL.md round trip, a
-non-list `steps`/`tags` add and a nested-path import (`/tmp/probe_mem/skill_probes.py`);
-`audit_memories` against an unparseable store (`/tmp/probe_mem/audit_unreadable.py`); a real
-`MemoryVectorStore.rebuild` of 300 entries with the real fastembed encoder over a Chroma-shaped stub
-collection (`/tmp/probe_mem/rebuild_loop_block.py`); and `_PinnedTransport.handle_request` over a stub
-httpcore pool streaming 5 MiB (`/tmp/probe_mem/transport_buffer.py`). The 49 suites matching
-`ls tests | grep -iE 'memory|skill'` were run over this surface — **205 passed**, 2 warnings, 3.55s.
+- the boundary code the findings rest on. `src/memory.py` at `_read_entries` (`:125-164`),
+  `load_all` / `load_all_for_update` / `load` (`:166-194`), `_validate_entries` (`:215-232`), `save`
+  (`:261-278`) and `add_entry` (`:280-299`)
+- `src/memory_vector.py` in full (251 lines — the store the extractor drives)
+- `src/memory_provider.py` at the `NativeMemoryProvider` method signatures (`:114-256`)
+- `src/embedding_lanes.py` at `EmbeddingLane` (`:24-56`), `_create_lane` (`:232-249`) and
+  `build_embedding_lanes` (`:252-272`)
+- `src/embeddings.py` at `FastEmbedClient` (`:132-192`)
+- `src/chroma_client.py` (`:1-60`)
+- `routes/memory/memory_routes.py` at `_load_for_update` (`:38-50`) and `api_audit_memories`
+  (`:289-337`)
+- `routes/chat_helpers.py` at the extraction dispatch (`:1154-1250`)
+- `routes/skills_routes.py` at `SkillAddRequest` (`:37-62`), `import-from-url` (`:1351-1378`), `add`
+  (`:1381-1412`) and `save_skill_markdown` (`:1804-1851`)
+- `src/tools/system.py` at `do_manage_skills` (`:24-245`)
+- `src/builtin_actions.py` at `action_test_skills` and `action_audit_skills` (`:1910-2050`)
+- `setup.py` at the `MEMORY_VECTORS_DIR` entry (`:14-40`)
+
+**Not read:**
+
+- `src/memory.py` outside the regions above (search, consolidation, the chat-extraction helpers)
+- the `src/memory_provider.py` method bodies
+- `src/rag_vector.py`, `src/personal_docs.py` and the rest of `src-memory-rag`'s files
+- the skills front end (`static/js/skills*.js`) and every other `static-*` path
+- `src/teacher_escalation.py`
+- `mcp_servers/memory_server.py`
+- `services/__init__.py`
+- the parts of `routes/skills_routes.py`, `routes/memory/memory_routes.py` and
+  `routes/chat_helpers.py` outside the regions above
+
+No live LLM, embedding endpoint or ChromaDB server was reachable in this environment, so no
+extraction, audit or import was run end to end against a real model or a real GitHub URL.
+
+**Checks run:**
+
+- `git rev-parse --short=12 HEAD` and `git status --short`
+- caller greps (`MemoryService(`, `audit_memories`, `extract_and_store`, `MEMORY_VECTORS_DIR`, and
+  `to_thread` / `run_in_threadpool` across `routes/`, `src/` and `services/`)
+- four throwaway probes under `/tmp` (not part of the target tree), each quoted in the finding it
+  settles: the SKILL.md round trip, a non-list `steps`/`tags` add and a nested-path import
+  (`/tmp/probe_mem/skill_probes.py`)
+- `audit_memories` against an unparseable store (`/tmp/probe_mem/audit_unreadable.py`)
+- a real `MemoryVectorStore.rebuild` of 300 entries with the real fastembed encoder over a
+  Chroma-shaped stub collection (`/tmp/probe_mem/rebuild_loop_block.py`)
+- `_PinnedTransport.handle_request` over a stub httpcore pool streaming 5 MiB
+  (`/tmp/probe_mem/transport_buffer.py`)
+
+The 49 suites matching `ls tests | grep -iE 'memory|skill'` were run over this surface — **205
+passed**, 2 warnings, 3.55s.
 
 ### [PERF] The memory audit re-embeds every owner's memories inside the request coroutine and stalls the event loop
 

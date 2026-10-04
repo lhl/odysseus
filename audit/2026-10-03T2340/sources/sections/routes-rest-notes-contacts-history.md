@@ -2,10 +2,17 @@
 
 ## Overview
 
-`routes/note/__init__.py`, `routes/note/note_routes.py`, `routes/note_routes.py`,
-`routes/contacts/__init__.py`, `routes/contacts/contacts_routes.py`,
-`routes/contacts_routes.py`, `routes/history/__init__.py`,
-`routes/history/history_routes.py`, and `routes/history_routes.py`.
+Files in this section:
+
+- `routes/note/__init__.py`
+- `routes/note/note_routes.py`
+- `routes/note_routes.py`
+- `routes/contacts/__init__.py`
+- `routes/contacts/contacts_routes.py`
+- `routes/contacts_routes.py`
+- `routes/history/__init__.py`
+- `routes/history/history_routes.py`
+- `routes/history_routes.py`
 
 Notes with reminders and due dates, contacts with CardDAV and vCard/CSV import, and
 chat history with display pagination, topics and compaction. Notes and history are
@@ -18,27 +25,35 @@ The earlier-registered session router and its live compaction endpoint belong to
 
 ## Coverage
 
-**Read fully:** all nine assigned files (2,765 lines): `routes/note/note_routes.py`
-(937), `routes/contacts/contacts_routes.py` (916), `routes/history/history_routes.py`
-(849), the three flat shims (18, 13 and 17 respectively), and each package's
-`__init__.py` (5 each). Boundary files read fully: `src/auth_helpers.py`,
-`src/topic_analyzer.py`, `src/url_safety.py`, `core/middleware.py` and
-`core/atomic_io.py`. Read the audit prompt, header, coverage boundaries, review
-scaffold and both requested model sections. Citations refer to working-tree source
-at `2992bf6d368a`; `git status --short` showed only the untracked `audit/` directory.
+**Read fully:** all nine assigned files (2,765 lines).
 
-**Read partially:** `app.py` at authentication and request identity assignment
-(lines 259–499) and the session/history/note/contacts router registrations;
-`routes/session_routes.py` at owner verification, the active-run guard, adjacent
-helpers and the live compaction handler (98–287, 1004–1103), plus searches for
-search/compaction definitions. `core/database.py` at the session factory and
-Session, ChatMessage and Note models (factory search, 175–274, 1808–1855);
-`core/session_manager.py` at message persistence/truncation (225–353), hydration
-(421–555), and owner filtering/no-op save (700–714). The contacts JSON store and
-its writes were read fully as part of the canonical route module. Test source read:
-`tests/conftest.py`, `tests/test_contacts_carddav_security.py`,
-`tests/test_contacts_import_nonstring.py`, `tests/test_contacts_vcard_parse.py`
-(end to end), and `tests/test_history_compact_tool_calls.py` (1–250).
+| File | Lines |
+| --- | ---: |
+| `routes/note/note_routes.py` | 937 |
+| `routes/contacts/contacts_routes.py` | 916 |
+| `routes/history/history_routes.py` | 849 |
+
+The three flat shims (18, 13 and 17 respectively), and each package's `__init__.py` (5 each).
+Boundary files read fully: `src/auth_helpers.py`, `src/topic_analyzer.py`, `src/url_safety.py`,
+`core/middleware.py` and `core/atomic_io.py`. Read the audit prompt, header, coverage boundaries,
+review scaffold and both requested model sections. Citations refer to working-tree source at
+`2992bf6d368a`; `git status --short` showed only the untracked `audit/` directory.
+
+**Read partially:**
+
+- `app.py` at authentication and request identity assignment (lines 259–499) and the
+  session/history/note/contacts router registrations
+- `routes/session_routes.py` at owner verification, the active-run guard, adjacent helpers and the
+  live compaction handler (98–287, 1004–1103), plus searches for search/compaction definitions.
+  `core/database.py` at the session factory and Session, ChatMessage and Note models (factory
+  search, 175–274, 1808–1855)
+- `core/session_manager.py` at message persistence/truncation (225–353), hydration (421–555), and
+  owner filtering/no-op save (700–714)
+
+The contacts JSON store and its writes were read fully as part of the canonical route module. Test
+source read: `tests/conftest.py`, `tests/test_contacts_carddav_security.py`,
+`tests/test_contacts_import_nonstring.py`, `tests/test_contacts_vcard_parse.py` (end to end), and
+`tests/test_history_compact_tool_calls.py` (1–250).
 
 **Not read:** no assigned file remains unread. Boundary code beyond those regions,
 including the full session manager, full database initialization/migrations, upload

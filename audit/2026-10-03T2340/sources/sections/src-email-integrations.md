@@ -2,8 +2,6 @@
 
 ## Overview
 
-`src/caldav_sync.py`, `src/caldav_writeback.py`, `src/email_thread_parser.py`, `src/integrations.py`, `src/webhook_manager.py`, `src/youtube_handler.py`.
-
 The outbound integration layer. `src/caldav_sync.py` pulls a remote CalDAV server into the local
 `CalendarCal`/`CalendarEvent` tables and retries the pending local→remote pushes;
 `src/caldav_writeback.py` performs one create, update or delete against the remote calendar;
@@ -30,65 +28,86 @@ whether the routes that call them are gated correctly.
 Citations refer to the working tree at `2992bf6d368a`; `git status --porcelain` showed only the
 untracked `audit/` directory.
 
-**Read fully:** all six assigned files (2,935 lines) — `src/integrations.py` (810),
-`src/caldav_sync.py` (722), `src/email_thread_parser.py` (614), `src/webhook_manager.py` (455),
-`src/caldav_writeback.py` (311), `src/youtube_handler.py` (23). Also read fully for the
-credential-storage and outbound-URL claims: `src/secret_storage.py` (87), `src/url_safety.py`
+**Read fully:** all six assigned files (2,935 lines) — the 6 items listed below. Also read fully for
+the credential-storage and outbound-URL claims: `src/secret_storage.py` (87), `src/url_safety.py`
 (108) and `routes/prefs_routes.py` (125, the per-user store the CalDAV accounts live in).
 
-**Read partially:** the boundary code and callers this section's claims rest on —
-`routes/calendar_routes.py` at `_require_user` (`:69-80`), the CalDAV config and account CRUD
-(`:819-995`), `_push_caldav_event_after_commit` (`:151-179`), `_record_caldav_delete_tombstone`
-(`:181-198`), the test-connection route (`:995-1085`) and `/sync` (`:1086-1093`);
-`routes/email_routes.py` at the read path's parser call (`:3117-3128`) and the
-`asyncio.to_thread` that runs it (`:3216`); `routes/webhook/webhook_routes.py` at the webhook CRUD
-and test routes (`:64-160`); `routes/auth_routes.py` at the integration CRUD (`:759-917`);
-`core/database.py` at `CalendarEvent` (`:1856-1888`); `src/settings.py` at `save_settings`
-(`:250-254`); `src/api_key_manager.py` at `get_or_create_key` / `encrypt_api_key` /
-`decrypt_api_key` (`:17-51`); `src/tools/system.py` at `do_api_call` (`:496-524`);
-`src/tool_capabilities.py` at the `api_call`/`app_api` registration (`:247-261`) and
-`tool_result_should_arm_gate` (`:505-547`); `src/task_scheduler.py` at the retired-action set
-(`:265-269`) and the integrations caller (`:1398-1420`); `services/youtube/youtube_handler.py`
-(`:1-60`), `services/youtube/__init__.py`, `services/__init__.py` and `src/chat_handler.py:19-26`
-for the alias check; `static/js/emailLibrary.js` at the two `thread_turns` render sites
-(`:5769-5771`, `:6188-6216`) and the `_sanitizeHtml` calls that feed them (`:5826-5847`);
-`static/js/settings.js` at the integration auth-type select (`:3160-3187`). Of the module's own
-tests: `tests/test_caldav_sync_uid_scope.py`, `tests/test_caldav_redirect_hardening.py`,
-`tests/test_integrations_url_join.py` and `tests/test_webhook_ssrf_resilience.py` fully;
-`tests/test_integrations_store_shape.py` at its first cases.
+- `src/integrations.py` (810)
+- `src/caldav_sync.py` (722)
+- `src/email_thread_parser.py` (614)
+- `src/webhook_manager.py` (455)
+- `src/caldav_writeback.py` (311)
+- `src/youtube_handler.py` (23)
 
-**Not read:** the rest of every caller file named above — `routes/email_routes.py` (~6,100 further
-lines), `routes/calendar_routes.py`, `routes/auth_routes.py` and
-`routes/webhook/webhook_routes.py` outside the regions cited; `src/task_scheduler.py` outside its
-two cited regions; `src/agent_loop.py` beyond the integrations-prompt call (`:2733-2743`);
-`src/tool_execution.py` beyond the `api_call` dispatch (`:1178`); `core/database.py` beyond
-`CalendarEvent`; `services/youtube/youtube_handler.py` beyond `:60`; the IMAP/SMTP code that
-produces the email bodies, the email front end beyond the sanitizer sites, and the `caldav` and
-`httpx` library internals beyond the behavior the probes exercised; `mcp_servers/`. The other
-sections' findings were read only where a cross-reference is named.
+**Read partially:** the boundary code and callers this section's claims rest on:
 
-**Checks run:** the 32 suites matching `ls tests | grep -iE 'caldav|integrations|webhook|youtube|email_thread|carddav'`
-— `venv/bin/python -m pytest -q -p no:cacheprovider <32 files>` from the repository root →
-**163 passed** in 4.59s, 7 warnings (the `datetime.utcnow()` deprecations at
-`src/caldav_sync.py:309-310` and one at `tests/test_caldav_google_principal_url.py:45`). Thirteen
-throwaway probe scripts under `/tmp`, outside the target tree. The ones the findings quote: the
-CalDAV DNS-flip probe (three runs; two quoted below), the VEVENT-UID collision probe (three runs,
-including one with a non-colliding second event), the parser probes (four runs: a nesting-depth
-sweep, a sibling-count sweep, a deep-chain run, and a smoke set of six real-world bodies), and the
-webhook guard probe (two runs, comparing the accepted address list with `src/url_safety._classify`).
-The last is the `api_call` path-join probe recorded under the dropped hypotheses. Also the greps
-each finding records: the `parse_thread` caller set, the `turns_json` writer set, the `validate_webhook_url` / `_is_private_url` callers,
-the `_join_integration_url` / `mask_integration_secret` / `load_integrations` callers, the
-`set_loop` / `fire_and_forget` callers, the `untrusted_content` consumers, `uvicorn.run`'s worker
-count, and `_find_integration` / `_stable_cal_id` call sites. Four hypotheses were checked and
-dropped rather than reported: a `//host` path cannot move the `api_call` request to another host
-(`_join_integration_url` strips every leading slash before `urljoin`, measured); the parser's turn
-HTML is not a new XSS surface (the client runs `body_html` through `_sanitizeHtml`); the
-integration store's read-modify-write has no interleaving caller (every writer is an `async`
-handler whose load-and-save block contains no await, and `app.py:1306` launches uvicorn with no
-worker count); and a missing `untrusted_content` flag on a successful `api_call` does not arm the
-gate less than a failure (the tool is registered `ResultIntegrity.EXTERNAL_UNTRUSTED` at
-`src/tool_capabilities.py:247-261`, which `tool_result_should_arm_gate` consults for both).
+- `routes/calendar_routes.py` at `_require_user` (`:69-80`), the CalDAV config and account CRUD
+  (`:819-995`), `_push_caldav_event_after_commit` (`:151-179`), `_record_caldav_delete_tombstone`
+  (`:181-198`), the test-connection route (`:995-1085`) and `/sync` (`:1086-1093`)
+- `routes/email_routes.py` at the read path's parser call (`:3117-3128`) and the `asyncio.to_thread`
+  that runs it (`:3216`)
+- `routes/webhook/webhook_routes.py` at the webhook CRUD and test routes (`:64-160`)
+- `routes/auth_routes.py` at the integration CRUD (`:759-917`)
+- `core/database.py` at `CalendarEvent` (`:1856-1888`)
+- `src/settings.py` at `save_settings` (`:250-254`)
+- `src/api_key_manager.py` at `get_or_create_key` / `encrypt_api_key` / `decrypt_api_key` (`:17-51`)
+- `src/tools/system.py` at `do_api_call` (`:496-524`)
+- `src/tool_capabilities.py` at the `api_call`/`app_api` registration (`:247-261`) and
+  `tool_result_should_arm_gate` (`:505-547`)
+- `src/task_scheduler.py` at the retired-action set (`:265-269`) and the integrations caller
+  (`:1398-1420`)
+- `services/youtube/youtube_handler.py` (`:1-60`), `services/youtube/__init__.py`,
+  `services/__init__.py` and `src/chat_handler.py:19-26` for the alias check
+- `static/js/emailLibrary.js` at the two `thread_turns` render sites (`:5769-5771`, `:6188-6216`)
+  and the `_sanitizeHtml` calls that feed them (`:5826-5847`)
+- `static/js/settings.js` at the integration auth-type select (`:3160-3187`). Of the module's own
+  tests: `tests/test_caldav_sync_uid_scope.py`, `tests/test_caldav_redirect_hardening.py`,
+  `tests/test_integrations_url_join.py` and `tests/test_webhook_ssrf_resilience.py` fully
+- `tests/test_integrations_store_shape.py` at its first cases
+
+**Not read:** the rest of every caller file named above:
+
+- `routes/email_routes.py` (~6,100 further lines), `routes/calendar_routes.py`,
+  `routes/auth_routes.py` and `routes/webhook/webhook_routes.py` outside the regions cited
+- `src/task_scheduler.py` outside its two cited regions
+- `src/agent_loop.py` beyond the integrations-prompt call (`:2733-2743`)
+- `src/tool_execution.py` beyond the `api_call` dispatch (`:1178`)
+- `core/database.py` beyond `CalendarEvent`
+- `services/youtube/youtube_handler.py` beyond `:60`
+- the IMAP/SMTP code that produces the email bodies, the email front end beyond the sanitizer sites,
+  and the `caldav` and `httpx` library internals beyond the behavior the probes exercised
+- `mcp_servers/`
+
+The other sections' findings were read only where a cross-reference is named.
+
+**Checks run:**
+
+- the 32 suites matching `ls tests | grep -iE
+  'caldav|integrations|webhook|youtube|email_thread|carddav'` — `venv/bin/python -m pytest -q -p
+  no:cacheprovider <32 files>` from the repository root → **163 passed** in 4.59s, 7 warnings (the
+  `datetime.utcnow()` deprecations at `src/caldav_sync.py:309-310` and one at
+  `tests/test_caldav_google_principal_url.py:45`). Thirteen throwaway probe scripts under `/tmp`,
+  outside the target tree. The ones the findings quote: the CalDAV DNS-flip probe (three runs; two
+  quoted below), the VEVENT-UID collision probe (three runs, including one with a non-colliding
+  second event), the parser probes (four runs: a nesting-depth sweep, a sibling-count sweep, a
+  deep-chain run, and a smoke set of six real-world bodies), and the webhook guard probe (two runs,
+  comparing the accepted address list with `src/url_safety._classify`). The last is the `api_call`
+  path-join probe recorded under the dropped hypotheses. Also the greps each finding records: the
+  `parse_thread` caller set, the `turns_json` writer set, the `validate_webhook_url` /
+  `_is_private_url` callers, the `_join_integration_url` / `mask_integration_secret` /
+  `load_integrations` callers, the `set_loop` / `fire_and_forget` callers, the `untrusted_content`
+  consumers, `uvicorn.run`'s worker count, and `_find_integration` / `_stable_cal_id` call sites.
+  Four hypotheses were checked and dropped rather than reported: a `//host` path cannot move the
+  `api_call` request to another host (`_join_integration_url` strips every leading slash before
+  `urljoin`, measured)
+- the parser's turn HTML is not a new XSS surface (the client runs `body_html` through
+  `_sanitizeHtml`)
+- the integration store's read-modify-write has no interleaving caller (every writer is an `async`
+  handler whose load-and-save block contains no await, and `app.py:1306` launches uvicorn with no
+  worker count)
+- a missing `untrusted_content` flag on a successful `api_call` does not arm the gate less than a
+  failure (the tool is registered `ResultIntegrity.EXTERNAL_UNTRUSTED` at
+  `src/tool_capabilities.py:247-261`, which `tool_result_should_arm_gate` consults for both)
 
 ### [SECURITY] The CalDAV host guard resolves once, so a rebinding DNS answer reaches loopback with the stored credentials
 

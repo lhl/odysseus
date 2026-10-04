@@ -25,50 +25,70 @@ not whether the store, the URL builders, or the middleware are themselves correc
 
 **Read fully:** `routes/model_routes.py` (2,717 lines).
 
-**Read partially:** the boundary code and callers the findings rest on —
-`core/middleware.py` at `require_admin` (`:57-82`); `src/auth_helpers.py` in full (199 lines:
-`get_current_user`, `effective_user`, `owner_filter`, `_auth_disabled`); `core/database.py` at the
-`ModelEndpoint` model (`:520-554`); `src/endpoint_resolver.py` at `resolve_endpoint_runtime`
-(`:146-162`), `resolve_url` (`:209-222`), `normalize_base` (`:225-234`), `_validated_endpoint_base`
-(`:237-242`), `_prepare_endpoint_base` (`:245-247`), `build_chat_url` (`:271-283`),
-`build_models_url` (`:286-315`) and `build_headers` (`:318-340`); `core/log_safety.py` (`:1-27`);
-`src/readiness.py` in full (61 lines — it checks the database and the data directory and does not
-touch the model-endpoint store); `src/service_health.py` at `providers_health` (`:346-382`) and the
-enabled-endpoint query it feeds (`:435-445`); `app.py` at the auth-exempt list (`:265-292`) and
-`/api/health` (`:956-958`); `routes/diagnostics_routes.py` at `get_service_health` (`:23-30`);
-`src/tool_security.py` at `NON_ADMIN_BLOCKED_TOOLS` (`:42-78`); `src/agent_tools/admin_tools.py` at
-`do_manage_endpoints` (`:22-80`); `routes/cookbook_routes.py` at the serve-registration block
-(`:1888-1925`) and `save_cookbook_state` (`:3395-3415`); `routes/chatgpt_subscription_routes.py`
-(`:55-95`) and `routes/copilot_routes.py` (`:55-90`); `src/chatgpt_subscription.py` at
-`resolve_runtime_credentials` (`:254-286`); the chat-side credential resolution
-(`src/ai_interaction.py:137`, `src/agent_loop.py:1029`, `routes/chat_routes.py:605`,
-`routes/chat_helpers.py:484`); `static/js/admin.js` at the add-endpoint form (`:1100-1135`), the
-refresh control (`:680-700`) and `_normalizeBaseUrl` (`:966-1000`); `static/js/markdown.js` at
-`_isModelEndpointUrl` (`:168-177`), `_appendEndpointAddButtons` (`:1122-1142`) and
-`_registerEndpointFromButton` (`:1144-1180`); `static/js/cookbookRunning.js` at
-`_removeEndpointByUrl` (`:529-543`); `static/js/models.js:202`; and the module's own tests
-(`tests/test_model_routes.py`, `tests/test_endpoint_probing.py`,
-`tests/test_endpoint_owner_scope_followup.py`) for what is already pinned.
+**Read partially:** the boundary code and callers the findings rest on:
 
-**Not read:** `src/llm_core.py` internals (`_detect_provider`, `httpx_get_kimi_aware`, the payload
-builders) beyond the call signatures; `src/settings.py`; `core/database.py` beyond the
-`ModelEndpoint` model (the encryption column, the session store); `core/middleware.py` beyond
-`require_admin` (the request-authentication middleware itself belongs to `core-auth-session`);
-`src/chatgpt_subscription.py` beyond `resolve_runtime_credentials`; the cookbook serve pipeline and
-`_active_cookbook_endpoint_ids`' producer beyond the state-file shape cited below; the rest of the
-front end; and every other `routes-*` module.
+- `core/middleware.py` at `require_admin` (`:57-82`)
+- `src/auth_helpers.py` in full (199 lines: `get_current_user`, `effective_user`, `owner_filter`,
+  `_auth_disabled`)
+- `core/database.py` at the `ModelEndpoint` model (`:520-554`)
+- `src/endpoint_resolver.py` at `resolve_endpoint_runtime` (`:146-162`), `resolve_url` (`:209-222`),
+  `normalize_base` (`:225-234`), `_validated_endpoint_base` (`:237-242`), `_prepare_endpoint_base`
+  (`:245-247`), `build_chat_url` (`:271-283`), `build_models_url` (`:286-315`) and `build_headers`
+  (`:318-340`)
+- `core/log_safety.py` (`:1-27`)
+- `src/readiness.py` in full (61 lines — it checks the database and the data directory and does not
+  touch the model-endpoint store)
+- `src/service_health.py` at `providers_health` (`:346-382`) and the enabled-endpoint query it feeds
+  (`:435-445`)
+- `app.py` at the auth-exempt list (`:265-292`) and `/api/health` (`:956-958`)
+- `routes/diagnostics_routes.py` at `get_service_health` (`:23-30`)
+- `src/tool_security.py` at `NON_ADMIN_BLOCKED_TOOLS` (`:42-78`)
+- `src/agent_tools/admin_tools.py` at `do_manage_endpoints` (`:22-80`)
+- `routes/cookbook_routes.py` at the serve-registration block (`:1888-1925`) and
+  `save_cookbook_state` (`:3395-3415`)
+- `routes/chatgpt_subscription_routes.py` (`:55-95`) and `routes/copilot_routes.py` (`:55-90`)
+- `src/chatgpt_subscription.py` at `resolve_runtime_credentials` (`:254-286`)
+- the chat-side credential resolution (`src/ai_interaction.py:137`, `src/agent_loop.py:1029`,
+  `routes/chat_routes.py:605`, `routes/chat_helpers.py:484`)
+- `static/js/admin.js` at the add-endpoint form (`:1100-1135`), the refresh control (`:680-700`) and
+  `_normalizeBaseUrl` (`:966-1000`)
+- `static/js/markdown.js` at `_isModelEndpointUrl` (`:168-177`), `_appendEndpointAddButtons`
+  (`:1122-1142`) and `_registerEndpointFromButton` (`:1144-1180`)
+- `static/js/cookbookRunning.js` at `_removeEndpointByUrl` (`:529-543`)
+- `static/js/models.js:202`
+- the module's own tests (`tests/test_model_routes.py`, `tests/test_endpoint_probing.py`,
+  `tests/test_endpoint_owner_scope_followup.py`) for what is already pinned
 
-**Checks run:** six probes with throwaway scripts under `/tmp` (not part of the target tree), each
-quoted in the finding it settles — the URL helpers against a query-bearing base; `GET /api/models`
-and `GET /api/default-chat` and `DELETE /api/model-endpoints/{id}` with one such row visible, through
-`fastapi.testclient` with the stores stubbed; `POST /api/model-endpoints` and
-`POST /api/model-endpoints/test` with the same URL; the manual-refresh path with a subscription
-endpoint row, capturing the `api_key` the probe receives and the log record it emits;
-`POST /api/probe-selected` with five body shapes; and
-`_disable_stale_cookbook_local_endpoints` against a state file holding only a stopped serve task and
-then one holding a running task. Also a grep for the callers of `_resolve_probe_key` and of the
-model-endpoint probe helpers. The 54 suites matching `ls tests | grep -iE 'model|endpoint|ready'`
-were run over this surface — **714 passed**.
+**Not read:**
+
+- `src/llm_core.py` internals (`_detect_provider`, `httpx_get_kimi_aware`, the payload builders)
+  beyond the call signatures
+- `src/settings.py`
+- `core/database.py` beyond the `ModelEndpoint` model (the encryption column, the session store)
+- `core/middleware.py` beyond `require_admin` (the request-authentication middleware itself belongs
+  to `core-auth-session`)
+- `src/chatgpt_subscription.py` beyond `resolve_runtime_credentials`
+- the cookbook serve pipeline and `_active_cookbook_endpoint_ids`' producer beyond the state-file
+  shape cited below
+- the rest of the front end
+- every other `routes-*` module
+
+**Checks run:**
+
+- six probes with throwaway scripts under `/tmp` (not part of the target tree), each quoted in the
+  finding it settles — the URL helpers against a query-bearing base
+- `GET /api/models` and `GET /api/default-chat` and `DELETE /api/model-endpoints/{id}` with one such
+  row visible, through `fastapi.testclient` with the stores stubbed
+- `POST /api/model-endpoints` and `POST /api/model-endpoints/test` with the same URL
+- the manual-refresh path with a subscription endpoint row, capturing the `api_key` the probe
+  receives and the log record it emits
+- `POST /api/probe-selected` with five body shapes
+- `_disable_stale_cookbook_local_endpoints` against a state file holding only a stopped serve task
+  and then one holding a running task
+
+Also a grep for the callers of `_resolve_probe_key` and of the model-endpoint probe helpers. The 54
+suites matching `ls tests | grep -iE 'model|endpoint|ready'` were run over this surface — **714
+passed**.
 
 ### [BUG] An endpoint `base_url` carrying a query or fragment is accepted, then breaks the model picker and cannot be deleted
 

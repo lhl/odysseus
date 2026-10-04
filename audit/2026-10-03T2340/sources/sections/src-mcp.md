@@ -26,31 +26,44 @@ authenticate, whether the agent allowlist is sufficient, or whether the built-in
 **Read fully:** both assigned files (920 lines): `src/mcp_manager.py` (709), `src/mcp_oauth.py`
 (211).
 
-**Read partially:** the callers and boundary code the findings rest on — `routes/mcp/mcp_routes.py`
-in full (710 lines), because it is the caller set for the manager (`add_server`,
-`reconnect_server`, `toggle_server`, `delete_server`, and the OAuth authorize/callback/exchange
-handlers); `src/agent_tools/admin_tools.py` at `_validate_mcp_command` and `do_manage_mcp`'s
-add/enable/reconnect branches (`:100-360`); `core/database.py` at the `McpServer` model
-(`:570-584`) and `EncryptedText` (`:150-172`); `src/tool_execution.py` at the two MCP dispatch
-sites (`:675-700`, `:1290-1320`); `src/task_scheduler.py` at the two `call_tool` sites
-(`:1470-1480`, `:2240-2245`); `src/agent_loop.py` at the MCP prompt block (`:2746-2756`), the
-schema merge (`:2286-2289`), the plan-mode block (`:3857-3864`) and the tool-result truncation
-(`:5968-6002`); `app.py` at `load_dotenv` (`:48`), the startup connect task (`:1068-1076`) and the
-shutdown disconnect (`:1291-1296`); `src/builtin_mcp.py` at `builtin_python_env` (`:148-160`) and
-the two `connect_server` call sites; `static/js/settings.js` at the MCP server panel
-(`:4939-4980`); the SDK the manager drives — `mcp/client/stdio/__init__.py`
-(`get_default_environment`, `stdio_client`), `mcp/client/streamable_http.py`
-(`streamablehttp_client`, `streamable_http_client`), `mcp/client/session.py` and
-`mcp/shared/session.py` (the read-timeout handling), `mcp/client/auth/oauth2.py` (the refresh
-path); and the module's own tests for what is already pinned. SDK and anyio paths named in the
-findings are the installed packages (`venv/lib/python3.12/site-packages/`: `mcp` 1.30.0, anyio
-4.15.1, httpx 0.28.1), not files in the target tree.
+**Read partially:** the callers and boundary code the findings rest on:
 
-**Not read:** `src/builtin_mcp.py` beyond `builtin_python_env` and the two `connect_server` call
-sites; `mcp_servers/*`; the rest of `agent_loop.py`, `tool_execution.py`, `task_scheduler.py` and
-`admin_tools.py`; `src/settings.py`; the MCP front end beyond the server panel; the SDK beyond the
-functions named above; and every other section's paths. Line numbers are the working tree at
-`2992bf6d368a` (clean apart from this run's untracked `audit/` directory).
+- `routes/mcp/mcp_routes.py` in full (710 lines), because it is the caller set for the manager
+  (`add_server`, `reconnect_server`, `toggle_server`, `delete_server`, and the OAuth
+  authorize/callback/exchange handlers)
+- `src/agent_tools/admin_tools.py` at `_validate_mcp_command` and `do_manage_mcp`'s
+  add/enable/reconnect branches (`:100-360`)
+- `core/database.py` at the `McpServer` model (`:570-584`) and `EncryptedText` (`:150-172`)
+- `src/tool_execution.py` at the two MCP dispatch sites (`:675-700`, `:1290-1320`)
+- `src/task_scheduler.py` at the two `call_tool` sites (`:1470-1480`, `:2240-2245`)
+- `src/agent_loop.py` at the MCP prompt block (`:2746-2756`), the schema merge (`:2286-2289`), the
+  plan-mode block (`:3857-3864`) and the tool-result truncation (`:5968-6002`)
+- `app.py` at `load_dotenv` (`:48`), the startup connect task (`:1068-1076`) and the shutdown
+  disconnect (`:1291-1296`)
+- `src/builtin_mcp.py` at `builtin_python_env` (`:148-160`) and the two `connect_server` call sites
+- `static/js/settings.js` at the MCP server panel (`:4939-4980`)
+- the SDK the manager drives — `mcp/client/stdio/__init__.py` (`get_default_environment`,
+  `stdio_client`), `mcp/client/streamable_http.py` (`streamablehttp_client`,
+  `streamable_http_client`), `mcp/client/session.py` and `mcp/shared/session.py` (the read-timeout
+  handling), `mcp/client/auth/oauth2.py` (the refresh path)
+- the module's own tests for what is already pinned
+
+SDK and anyio paths named in the findings are the installed packages
+(`venv/lib/python3.12/site-packages/`: `mcp` 1.30.0, anyio 4.15.1, httpx 0.28.1), not files in the
+target tree.
+
+**Not read:**
+
+- `src/builtin_mcp.py` beyond `builtin_python_env` and the two `connect_server` call sites
+- `mcp_servers/*`
+- the rest of `agent_loop.py`, `tool_execution.py`, `task_scheduler.py` and `admin_tools.py`
+- `src/settings.py`
+- the MCP front end beyond the server panel
+- the SDK beyond the functions named above
+- every other section's paths
+
+Line numbers are the working tree at `2992bf6d368a` (clean apart from this run's untracked `audit/`
+directory).
 
 **Checks run:** a throwaway MCP server (`/tmp/mcp_probe_server.py`, a FastMCP server declaring one
 mutating tool with `readOnlyHint=False`, one tool that reports its own environment variable names,

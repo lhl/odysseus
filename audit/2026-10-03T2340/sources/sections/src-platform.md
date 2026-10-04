@@ -21,46 +21,78 @@ The boundary: the manager classes `app_initializer` constructs are defined in `s
 
 ## Coverage
 
-**Read fully:** all 22 assigned files (1,982 lines): `src/service_health.py` (506),
-`src/user_time.py` (235), `src/config.py` (208), `src/text_helpers.py` (195),
-`src/app_initializer.py` (154), `src/constants.py` (133), `src/event_bus.py` (119),
-`src/reminder_personas.py` (78), `src/app_helpers.py` (61), `src/readiness.py` (61),
-`src/database.py` (37), `src/optional_deps.py` (32), `src/runtime_paths.py` (29),
-`src/search/__init__.py` (29), `src/exceptions.py` (22), `src/search/ranking.py` (14),
-`src/search/analytics.py` (12), `src/search/core.py` (12), `src/search/providers.py` (12),
-`src/search/cache.py` (11), `src/search/content.py` (11), `src/search/query.py` (11).
+**Read fully:** all 22 assigned files (1,982 lines).
 
-**Read partially:** `services/search/core.py` at `update_search_config` (`:81-93`);
-`services/search/providers.py` at `_get_provider_key` / `_get_search_instance` (`:45-75`);
-`src/api_key_manager.py` at `save`/`load` (`:77-105`); `src/upload_handler.py` at the upload cap
-and the live extension sets (`:217`, `:375-378`); `src/chat_helpers.py` at the attachment
-extension set (`:232-244`); `app.py` at the auth-exempt list and the auth middleware
-(`:259-470`), the config import and its use (`:581`, `:721`) and the `/api/ready` route
-(`:988-997`); `routes/search/search_routes.py` at `setup_search_routes` (`:39-44`);
-`routes/diagnostics_routes.py` at the health route (`:24-30`); `routes/cleanup/cleanup_routes.py`;
-`src/cleanup_service.py` at its public functions and its only caller
-(`routes/cleanup/cleanup_routes.py:5`); `specs/runtime.md`, `specs/persistence.md`,
-`CONTRIBUTING.md` at the data-path rules, `.env.example` and the three `docker-compose*.yml`
-files at their cleanup/env blocks.
+| File | Lines |
+| --- | ---: |
+| `src/service_health.py` | 506 |
+| `src/user_time.py` | 235 |
+| `src/config.py` | 208 |
+| `src/text_helpers.py` | 195 |
+| `src/app_initializer.py` | 154 |
+| `src/constants.py` | 133 |
+| `src/event_bus.py` | 119 |
+| `src/reminder_personas.py` | 78 |
+| `src/app_helpers.py` | 61 |
+| `src/readiness.py` | 61 |
+| `src/database.py` | 37 |
+| `src/optional_deps.py` | 32 |
+| `src/runtime_paths.py` | 29 |
+| `src/search/__init__.py` | 29 |
+| `src/exceptions.py` | 22 |
+| `src/search/ranking.py` | 14 |
+| `src/search/analytics.py` | 12 |
+| `src/search/core.py` | 12 |
+| `src/search/providers.py` | 12 |
+| `src/search/cache.py` | 11 |
+| `src/search/content.py` | 11 |
+| `src/search/query.py` | 11 |
 
-**Not read:** the manager classes `app_initializer` constructs (assigned to their own sections);
-the `services/search` implementation (assigned to `services-search`); the `routes-*` handlers
-that consume these helpers beyond the cited regions; the front-end persona definitions beyond
-the ID comparison cited in the coverage checks.
+**Read partially:**
+
+- `services/search/core.py` at `update_search_config` (`:81-93`)
+- `services/search/providers.py` at `_get_provider_key` / `_get_search_instance` (`:45-75`)
+- `src/api_key_manager.py` at `save`/`load` (`:77-105`)
+- `src/upload_handler.py` at the upload cap and the live extension sets (`:217`, `:375-378`)
+- `src/chat_helpers.py` at the attachment extension set (`:232-244`)
+- `app.py` at the auth-exempt list and the auth middleware (`:259-470`), the config import and its
+  use (`:581`, `:721`) and the `/api/ready` route (`:988-997`)
+- `routes/search/search_routes.py` at `setup_search_routes` (`:39-44`)
+- `routes/diagnostics_routes.py` at the health route (`:24-30`)
+- `routes/cleanup/cleanup_routes.py`
+- `src/cleanup_service.py` at its public functions and its only caller
+  (`routes/cleanup/cleanup_routes.py:5`)
+- `specs/runtime.md`, `specs/persistence.md`, `CONTRIBUTING.md` at the data-path rules,
+  `.env.example` and the three `docker-compose*.yml` files at their cleanup/env blocks
+
+**Not read:**
+
+- the manager classes `app_initializer` constructs (assigned to their own sections)
+- the `services/search` implementation (assigned to `services-search`)
+- the `routes-*` handlers that consume these helpers beyond the cited regions
+- the front-end persona definitions beyond the ID comparison cited in the coverage checks
 
 **Checks run:** four probes for the config crash (`SECURITY_ALLOWED_ORIGINS=https://example.com`,
-`DATA_MAX_UPLOAD_SIZE=abc` and `LLM_REQUEST_TIMEOUT=30s` against `src.config`, and the first
-against `import app`), the empty-`ODYSSEUS_DATA_DIR` probe, the unused-config grep
-(`config.<field>` and `from src.config import` across the repo), the
-`APIKeyManager.save`/`load` caller grep, the `CLEANUP_*` reader grep, and a persona-ID comparison
-between `src/reminder_personas.py` and `static/js/presets.js` (identical today). Thirteen suites
-were run over this surface — `tests/test_readiness.py`, `tests/test_user_time.py`,
-`tests/test_strip_think.py`, `tests/test_strip_reasoning_prose_dataloss.py`,
-`tests/test_service_health_collect.py`, `tests/test_service_health_chromadb.py`,
-`tests/test_service_health_email.py`, `tests/test_service_health_ntfy.py`,
-`tests/test_service_health_providers.py`, `tests/test_service_health_search.py`,
-`tests/test_app_initializer_memory_vector_degraded.py`, `tests/test_runtime_paths.py`,
-`tests/test_agent_state_dir_confinement.py` — **141 passed**.
+`DATA_MAX_UPLOAD_SIZE=abc` and `LLM_REQUEST_TIMEOUT=30s` against `src.config`, and the first against
+`import app`), the empty-`ODYSSEUS_DATA_DIR` probe, the unused-config grep (`config.<field>` and
+`from src.config import` across the repo), the `APIKeyManager.save`/`load` caller grep, the
+`CLEANUP_*` reader grep, and a persona-ID comparison between `src/reminder_personas.py` and
+`static/js/presets.js` (identical today). Thirteen suites were run over this surface — the 13 test
+files listed below — **141 passed**.
+
+- `tests/test_readiness.py`
+- `tests/test_user_time.py`
+- `tests/test_strip_think.py`
+- `tests/test_strip_reasoning_prose_dataloss.py`
+- `tests/test_service_health_collect.py`
+- `tests/test_service_health_chromadb.py`
+- `tests/test_service_health_email.py`
+- `tests/test_service_health_ntfy.py`
+- `tests/test_service_health_providers.py`
+- `tests/test_service_health_search.py`
+- `tests/test_app_initializer_memory_vector_degraded.py`
+- `tests/test_runtime_paths.py`
+- `tests/test_agent_state_dir_confinement.py`
 
 ### [BUG] `src/config.py` is an unused settings tree that can still stop the server from starting
 

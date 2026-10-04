@@ -2,11 +2,6 @@
 
 ## Overview
 
-`routes/upload_routes.py`, `routes/embedding_routes.py`, `routes/editor_draft_routes.py`,
-`routes/signature_routes.py`, `routes/preset_routes.py`, `routes/prefs_routes.py`,
-`routes/font_routes.py`, `routes/emoji_routes.py`, `routes/tts_routes.py`,
-`routes/stt_routes.py`, and `routes/cookbook_output.py`.
-
 File and preference endpoints outside the chat and document-library routers: uploads,
 embedding-model downloads and endpoint configuration, editor drafts, visual signature stamps,
 presets, user preferences, custom-font discovery, the emoji proxy, and speech synthesis and
@@ -23,35 +18,49 @@ status endpoints remain in `routes-cookbook`.
 
 ## Coverage
 
-**Read fully:** all eleven assigned files, 1,882 lines: `routes/upload_routes.py` (533),
-`routes/embedding_routes.py` (376), `routes/editor_draft_routes.py` (188),
-`routes/signature_routes.py` (151), `routes/preset_routes.py` (126), `routes/prefs_routes.py`
-(125), `routes/emoji_routes.py` (109), `routes/tts_routes.py` (87),
-`routes/cookbook_output.py` (75), `routes/stt_routes.py` (57), and `routes/font_routes.py`
-(55). Boundary helpers `core/atomic_io.py` and `src/upload_limits.py` were also read fully.
-Line references are to the working tree at `2992bf6d368a`; `git status --short` showed only
-the untracked audit directory.
+**Read fully:** all eleven assigned files, 1,882 lines.
 
-**Read partially:** `app.py` at the authentication setup, exemptions and complete
-`AuthMiddleware` implementation (250–489), plus router-registration searches;
-`core/middleware.py` through line 140, including `require_admin`;
-`src/auth_helpers.py` through line 160, including identity resolution and `require_user`;
-`src/upload_handler.py` at filename/ID validation (1–89), construction, size policy,
-hashing and MIME/extension handling (187–406), index loading (776–855), and upload
-resolution, rate cleanup, statistics and the complete `save_upload` implementation
-(1100–1394), with searches for ownership and reservation helpers;
-`src/preset_manager.py` at persistence and all route-called mutators/getters (115–190),
-with searches of loading/defaults; `core/database.py` at `Signature` and `EditorDraft`;
-`services/tts/tts_service.py` at cache operations and synthesis (90–259);
-`services/stt/stt_service.py` at local/API transcription and statistics (90–199);
-`src/document_processor.py` at vision analysis (333–392);
-`routes/calendar_routes.py` at preference-writing CalDAV configuration handlers (805–984);
-`src/builtin_actions.py` at the scheduled model-serve preference update (3270–3354);
-caller searches in `routes/`, `src/caldav_sync.py`, `src/task_scheduler.py`, and
-`routes/cookbook_routes.py`. Test-source reads covered `tests/conftest.py`,
-`tests/test_prefs_routes.py`, `tests/test_editor_draft_payload.py`,
-`tests/test_preset_expand_owner_scope.py` and `tests/test_cookbook_dead_download_status.py`;
-the other selected tests were executed, not read end to end.
+| File | Lines |
+| --- | ---: |
+| `routes/upload_routes.py` | 533 |
+| `routes/embedding_routes.py` | 376 |
+| `routes/editor_draft_routes.py` | 188 |
+| `routes/signature_routes.py` | 151 |
+| `routes/preset_routes.py` | 126 |
+| `routes/prefs_routes.py` | 125 |
+| `routes/emoji_routes.py` | 109 |
+| `routes/tts_routes.py` | 87 |
+| `routes/cookbook_output.py` | 75 |
+| `routes/stt_routes.py` | 57 |
+| `routes/font_routes.py` | 55 |
+
+Boundary helpers `core/atomic_io.py` and `src/upload_limits.py` were also read fully. Line
+references are to the working tree at `2992bf6d368a`; `git status --short` showed only the untracked
+audit directory.
+
+**Read partially:**
+
+- `app.py` at the authentication setup, exemptions and complete `AuthMiddleware` implementation
+  (250–489), plus router-registration searches
+- `core/middleware.py` through line 140, including `require_admin`
+- `src/auth_helpers.py` through line 160, including identity resolution and `require_user`
+- `src/upload_handler.py` at filename/ID validation (1–89), construction, size policy, hashing and
+  MIME/extension handling (187–406), index loading (776–855), and upload resolution, rate cleanup,
+  statistics and the complete `save_upload` implementation (1100–1394), with searches for ownership
+  and reservation helpers
+- `src/preset_manager.py` at persistence and all route-called mutators/getters (115–190), with
+  searches of loading/defaults
+- `core/database.py` at `Signature` and `EditorDraft`
+- `services/tts/tts_service.py` at cache operations and synthesis (90–259)
+- `services/stt/stt_service.py` at local/API transcription and statistics (90–199)
+- `src/document_processor.py` at vision analysis (333–392)
+- `routes/calendar_routes.py` at preference-writing CalDAV configuration handlers (805–984)
+- `src/builtin_actions.py` at the scheduled model-serve preference update (3270–3354)
+- caller searches in `routes/`, `src/caldav_sync.py`, `src/task_scheduler.py`, and
+  `routes/cookbook_routes.py`. Test-source reads covered `tests/conftest.py`,
+  `tests/test_prefs_routes.py`, `tests/test_editor_draft_payload.py`,
+  `tests/test_preset_expand_owner_scope.py` and `tests/test_cookbook_dead_download_status.py`
+- the other selected tests were executed, not read end to end
 
 **Not read:** no assigned route file remains unread. Boundary modules beyond the regions
 above, the embedding/vector stores and their indexing/query paths, the rest of the speech

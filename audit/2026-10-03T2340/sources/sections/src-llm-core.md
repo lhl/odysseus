@@ -2,8 +2,6 @@
 
 ## Overview
 
-`src/ai_interaction.py`, `src/chatgpt_subscription.py`, `src/copilot.py`, `src/endpoint_resolver.py`, `src/foreground_model_routing.py`, `src/image_model_ids.py`, `src/llm_core.py`, `src/model_capabilities.py`, `src/model_capability_readers/__init__.py`, `src/model_capability_readers/base.py`, `src/model_capability_readers/generic_openai.py`, `src/model_capability_readers/google.py`, `src/model_capability_readers/google_ai_studio_mapping.py`, `src/model_capability_readers/llamacpp.py`, `src/model_capability_readers/lmstudio.py`, `src/model_capability_readers/ollama.py`, `src/model_capability_readers/openai.py`, `src/model_capability_readers/openrouter.py`, `src/model_context.py`, `src/model_discovery.py`.
-
 The outbound LLM layer. `src/llm_core.py` holds the three call entry points (`llm_call`,
 `llm_call_async`, `stream_llm`), provider detection, the per-provider URL and payload builders, the
 SSE protocol the front end and the agent loop consume, and the local-model concurrency gate.
@@ -26,86 +24,127 @@ what it does with the reply.
 
 ## Coverage
 
-**Read fully:** all 20 assigned files (10,231 lines): `src/llm_core.py` (3,730),
-`src/ai_interaction.py` (1,489), `src/model_capabilities.py` (934), `src/endpoint_resolver.py`
-(672), `src/model_context.py` (520), `src/model_capability_readers/llamacpp.py` (428),
-`src/model_capability_readers/base.py` (316), `src/chatgpt_subscription.py` (315),
-`src/model_discovery.py` (293), `src/copilot.py` (256), `src/foreground_model_routing.py` (206),
-`src/model_capability_readers/ollama.py` (204), `src/model_capability_readers/openrouter.py` (200),
-`src/model_capability_readers/lmstudio.py` (186),
-`src/model_capability_readers/google_ai_studio_mapping.py` (162),
-`src/model_capability_readers/__init__.py` (95), `src/model_capability_readers/openai.py` (65),
-`src/model_capability_readers/google.py` (60),
-`src/model_capability_readers/generic_openai.py` (58), `src/image_model_ids.py` (42).
+**Read fully:** all 20 assigned files (10,231 lines).
 
-**Read partially:** the boundary code each finding rests on — `src/tool_schemas.py` at
-`function_call_to_tool_block` (`:1370-1400`, the consumer of the streamed tool-call event);
-`src/tool_execution.py` at the `pipeline`/`manage_memory`/`ui_control` dispatch into
-`dispatch_ai_tool` (`:1169-1171`); `routes/chat_helpers.py` at the context-length, compaction and
-trim block (`:737`, `:745-805`) and the ChatGPT-subscription branch (`:455-465`);
-`routes/chat_routes.py` at `_session_url_matches_endpoint` (`:415-425`), the subscription recovery
-block (`:551-600`), `_reconcile_selected_route` (`:670-728`) and the foreground-policy block
-(`:822-880`); `src/context_compactor.py` at `trim_for_context` (`:224-236`) and `maybe_compact`
-(`:323-345`); `routes/model_routes.py` at endpoint creation (`:2000-2050`) and the probe hints
-(`:1175-1230`); `routes/cookbook_routes.py` at the local-endpoint registration (`:1800-1915`);
-`routes/chatgpt_subscription_routes.py` (`:26-95`) and `routes/copilot_routes.py` (`:38-90`);
-`core/database.py` at the `Session.headers` JSON column (`:199`) and `provider_auth_id` (`:553`);
-`core/session_manager.py` at the three `headers` normalizations (`:134-145`, `:190-200`,
-`:470-485`); `src/url_safety.py` at `check_outbound_url` (`:1-80`); `app.py` at the uvicorn start
-(`:1306`); `specs/model-capability-canonical.md` at its "Current Gaps" list (`:168-180`);
-`tests/test_resolve_model_offloaded.py` and `tests/test_llm_core_usage_finish_delta.py` in full for
-what is already pinned; `static/js/chat.js` at the interrupted-response control (`:1215-1235`).
+| File | Lines |
+| --- | ---: |
+| `src/llm_core.py` | 3,730 |
+| `src/ai_interaction.py` | 1,489 |
+| `src/model_capabilities.py` | 934 |
+| `src/endpoint_resolver.py` | 672 |
+| `src/model_context.py` | 520 |
+| `src/model_capability_readers/llamacpp.py` | 428 |
+| `src/model_capability_readers/base.py` | 316 |
+| `src/chatgpt_subscription.py` | 315 |
+| `src/model_discovery.py` | 293 |
+| `src/copilot.py` | 256 |
+| `src/foreground_model_routing.py` | 206 |
+| `src/model_capability_readers/ollama.py` | 204 |
+| `src/model_capability_readers/openrouter.py` | 200 |
+| `src/model_capability_readers/lmstudio.py` | 186 |
+| `src/model_capability_readers/google_ai_studio_mapping.py` | 162 |
+| `src/model_capability_readers/__init__.py` | 95 |
+| `src/model_capability_readers/openai.py` | 65 |
+| `src/model_capability_readers/google.py` | 60 |
+| `src/model_capability_readers/generic_openai.py` | 58 |
+| `src/image_model_ids.py` | 42 |
 
-**Not read:** `src/agent_loop.py` except the two frames a stack trace named during the checks
-(`_strip_think_blocks` at `:1253-1280`, entered from `:5572`); `src/agent_tools/*`; `src/tool_schemas.py` beyond `function_call_to_tool_block`; the
-`routes-*` handlers beyond the cited regions (they belong to their own sections); `src/settings.py`
-and the `ProviderAuthSession` schema; `core/middleware.py`; `routes/session_routes.py`,
-`routes/email_routes.py` and `routes/webhook/webhook_routes.py` (the API-chat path that combines a
-caller-supplied `base_url` with a key, `routes/webhook/webhook_routes.py:296-312`, is that section's
-to judge); the front end beyond the cited file; and every other section's files.
+**Read partially:** the boundary code each finding rests on:
 
-**Checks run:** seven probes with throwaway scripts under `/tmp/probe/` (outside the target tree),
-each quoted in the finding it settles — the event-loop stall, request log and cache behaviour of
-`get_context_length` (`p_ctx_stall.py`); the same probe against an endpoint whose `/v1/models`
-requires a key (`p_ctx_auth.py`); the probe URLs captured through a monkeypatched `httpx.get` for
-five base-URL shapes; the real `stream_llm` driven against a stub SSE server whose body is complete,
-closed after one chunk, ended with `finish_reason: "length"`, and cut mid-tool-call
-(`p_stream_cut.py`); a `200 text/html` body through `llm_call`, `llm_call_async` and
-`llm_call_async_with_route_fallback` (`p_nonjson.py`, `p_nonjson2.py`); the
-`CHATGPT_SUBSCRIPTION_BASE_URL` override through `_detect_provider`, `build_chat_url` and
-`build_headers` (`p_cgpt.py`); and the local-model gate's waiting counter with one holder and one
-waiter (`p_gate.py`). Also `httpx.get("http://slots", timeout=5)` timed directly, and greps for the
-importers of `src/model_capability_readers` (only `tests/test_model_capability_readers.py`),
-`finish_reason` across `src/`, `routes/`, `core/` and `static/js/` (one comment, no reader),
+- `src/tool_schemas.py` at `function_call_to_tool_block` (`:1370-1400`, the consumer of the streamed
+  tool-call event)
+- `src/tool_execution.py` at the `pipeline`/`manage_memory`/`ui_control` dispatch into
+  `dispatch_ai_tool` (`:1169-1171`)
+- `routes/chat_helpers.py` at the context-length, compaction and trim block (`:737`, `:745-805`) and
+  the ChatGPT-subscription branch (`:455-465`)
+- `routes/chat_routes.py` at `_session_url_matches_endpoint` (`:415-425`), the subscription recovery
+  block (`:551-600`), `_reconcile_selected_route` (`:670-728`) and the foreground-policy block
+  (`:822-880`)
+- `src/context_compactor.py` at `trim_for_context` (`:224-236`) and `maybe_compact` (`:323-345`)
+- `routes/model_routes.py` at endpoint creation (`:2000-2050`) and the probe hints (`:1175-1230`)
+- `routes/cookbook_routes.py` at the local-endpoint registration (`:1800-1915`)
+- `routes/chatgpt_subscription_routes.py` (`:26-95`) and `routes/copilot_routes.py` (`:38-90`)
+- `core/database.py` at the `Session.headers` JSON column (`:199`) and `provider_auth_id` (`:553`)
+- `core/session_manager.py` at the three `headers` normalizations (`:134-145`, `:190-200`,
+  `:470-485`)
+- `src/url_safety.py` at `check_outbound_url` (`:1-80`)
+- `app.py` at the uvicorn start (`:1306`)
+- `specs/model-capability-canonical.md` at its "Current Gaps" list (`:168-180`)
+- `tests/test_resolve_model_offloaded.py` and `tests/test_llm_core_usage_finish_delta.py` in full
+  for what is already pinned
+- `static/js/chat.js` at the interrupted-response control (`:1215-1235`)
+
+**Not read:**
+
+- `src/agent_loop.py` except the two frames a stack trace named during the checks
+  (`_strip_think_blocks` at `:1253-1280`, entered from `:5572`)
+- `src/agent_tools/*`
+- `src/tool_schemas.py` beyond `function_call_to_tool_block`
+- the `routes-*` handlers beyond the cited regions (they belong to their own sections)
+- `src/settings.py` and the `ProviderAuthSession` schema
+- `core/middleware.py`
+- `routes/session_routes.py`, `routes/email_routes.py` and `routes/webhook/webhook_routes.py` (the
+  API-chat path that combines a caller-supplied `base_url` with a key,
+  `routes/webhook/webhook_routes.py:296-312`, is that section's to judge)
+- the front end beyond the cited file
+- every other section's files
+
+**Checks run:**
+
+- seven probes with throwaway scripts under `/tmp/probe/` (outside the target tree), each quoted in
+  the finding it settles — the event-loop stall, request log and cache behaviour of
+  `get_context_length` (`p_ctx_stall.py`)
+- the same probe against an endpoint whose `/v1/models` requires a key (`p_ctx_auth.py`)
+- the probe URLs captured through a monkeypatched `httpx.get` for five base-URL shapes
+- the real `stream_llm` driven against a stub SSE server whose body is complete, closed after one
+  chunk, ended with `finish_reason: "length"`, and cut mid-tool-call (`p_stream_cut.py`)
+- a `200 text/html` body through `llm_call`, `llm_call_async` and
+  `llm_call_async_with_route_fallback` (`p_nonjson.py`, `p_nonjson2.py`)
+- the `CHATGPT_SUBSCRIPTION_BASE_URL` override through `_detect_provider`, `build_chat_url` and
+  `build_headers` (`p_cgpt.py`)
+- the local-model gate's waiting counter with one holder and one waiter (`p_gate.py`)
+
+Also `httpx.get("http://slots", timeout=5)` timed directly, and greps for the importers of
+`src/model_capability_readers` (only `tests/test_model_capability_readers.py`), `finish_reason`
+across `src/`, `routes/`, `core/` and `static/js/` (one comment, no reader),
 `CHATGPT_SUBSCRIPTION_BASE_URL` writers, producers of a list-content `system` message, writers of a
 string-typed `Session.headers`, and the credential-forwarding shape in `_reconcile_selected_route`
-(`routes/chat_routes.py:670-700`). On the SSRF question specifically: nothing in this section accepts
-a caller-supplied endpoint URL. `_resolve_model` (`src/ai_interaction.py:78-213`) matches a model
-name against the caller's enabled `ModelEndpoint` rows and takes the URL *and* the key from the same
-row via `resolve_endpoint_runtime`, and `_reconcile_selected_route` uses a form-supplied
+(`routes/chat_routes.py:670-700`). On the SSRF question specifically: nothing in this section
+accepts a caller-supplied endpoint URL. `_resolve_model` (`src/ai_interaction.py:78-213`) matches a
+model name against the caller's enabled `ModelEndpoint` rows and takes the URL *and* the key from
+the same row via `resolve_endpoint_runtime`, and `_reconcile_selected_route` uses a form-supplied
 `selected_endpoint_url` only to match a stored row, building the request from that row
 (`routes/chat_routes.py:697-700`). The two `check_outbound_url` calls in `src/ai_interaction.py`
 (`:1149`, `:1431`) guard the *provider-supplied* image result URL, not an endpoint.
 
 One ordering artifact, recorded because it is a check result rather than a finding: run in a
 non-alphabetical order (`test_llm_core_*.py` before `test_foreground_model_routing.py`) the same 44
-suites hang. The stack trace at the hang names
-`tests/test_foreground_model_routing.py:2257` → `src/agent_loop.py:5572` →
-`_strip_think_blocks` (`:1272`), where a `Mock` reached the `text` argument, so
-`lowered.find(" thinking", pos)` never returns `-1` and the loop spins until GC. It does not
-reproduce in the suite's natural order (604 passed, 8.5s), so the CI job is unaffected; the leaking
-suite is outside this section and was not chased.
-The 44 suites matching this surface — `tests/test_llm_core_*.py` (22 files),
-`tests/test_model_context.py`, `tests/test_model_capabilities.py`,
-`tests/test_model_capability_readers.py`, `tests/test_model_defaults.py`,
-`tests/test_model_discovery_status.py`, `tests/test_context_budget.py`,
-`tests/test_context_cache_per_endpoint.py`, `tests/test_context_compactor*.py`,
-`tests/test_compact_truncate_tool_call_args.py`, `tests/test_estimate_tokens_tool_calls.py`,
-`tests/test_endpoint_resolver_{headers,models,urls}.py`, `tests/test_resolve_endpoint_fallbacks.py`,
-`tests/test_resolve_model_offloaded.py`, `tests/test_resolve_session_auth_chatgpt.py`,
-`tests/test_foreground_model_routing.py`, `tests/test_copilot*.py`,
-`tests/test_chatgpt_subscription_routes.py`, `tests/test_ai_interaction_owner_scope.py` — were run
-over this surface in their natural order: **604 passed**.
+suites hang. The stack trace at the hang names `tests/test_foreground_model_routing.py:2257` →
+`src/agent_loop.py:5572` → `_strip_think_blocks` (`:1272`), where a `Mock` reached the `text`
+argument, so `lowered.find(" thinking", pos)` never returns `-1` and the loop spins until GC. It
+does not reproduce in the suite's natural order (604 passed, 8.5s), so the CI job is unaffected; the
+leaking suite is outside this section and was not chased. The 44 suites matching this surface — the
+19 test files listed below — were run over this surface in their natural order: **604 passed**.
+
+- `tests/test_llm_core_*.py` (22 files)
+- `tests/test_model_context.py`
+- `tests/test_model_capabilities.py`
+- `tests/test_model_capability_readers.py`
+- `tests/test_model_defaults.py`
+- `tests/test_model_discovery_status.py`
+- `tests/test_context_budget.py`
+- `tests/test_context_cache_per_endpoint.py`
+- `tests/test_context_compactor*.py`
+- `tests/test_compact_truncate_tool_call_args.py`
+- `tests/test_estimate_tokens_tool_calls.py`
+- `tests/test_endpoint_resolver_{headers,models,urls}.py`
+- `tests/test_resolve_endpoint_fallbacks.py`
+- `tests/test_resolve_model_offloaded.py`
+- `tests/test_resolve_session_auth_chatgpt.py`
+- `tests/test_foreground_model_routing.py`
+- `tests/test_copilot*.py`
+- `tests/test_chatgpt_subscription_routes.py`
+- `tests/test_ai_interaction_owner_scope.py`
 
 Four hypotheses did not survive checking and are not findings. (1) A `Session.headers` value that is
 a JSON string would raise `ValueError` in the Ollama branch (`h.update(headers)`,

@@ -2,8 +2,6 @@
 
 ## Overview
 
-`src/action_intents.py`, `src/agent_loop.py`, `src/agent_runs.py`, `src/goal_based_extractor.py`, `src/interactive_gate.py`, `src/task_action_policy.py`, `src/tool_approval_scopes.py`, `src/tool_approvals.py`.
-
 This section covers the loop that turns a chat message into tool calls: intent routing and tool
 retrieval, system-prompt assembly, the multi-round execution loop, the detached-run manager, the
 background-activity gate, and the exact-action approval store. The tool implementations are in
@@ -12,10 +10,20 @@ a decision the loop makes, not about whether a tool implementation is correct.
 
 ## Coverage
 
-**Read fully:** all eight files — `src/agent_loop.py` (6,456 lines), `src/tool_approvals.py`
-(513), `src/agent_runs.py` (271), `src/interactive_gate.py` (219), `src/action_intents.py` (165),
-`src/tool_approval_scopes.py` (160), `src/task_action_policy.py` (47),
-`src/goal_based_extractor.py` (23). Every cited line was re-read at `2992bf6d368a`.
+**Read fully:** all eight files.
+
+| File | Lines |
+| --- | ---: |
+| `src/agent_loop.py` | 6,456 |
+| `src/tool_approvals.py` | 513 |
+| `src/agent_runs.py` | 271 |
+| `src/interactive_gate.py` | 219 |
+| `src/action_intents.py` | 165 |
+| `src/tool_approval_scopes.py` | 160 |
+| `src/task_action_policy.py` | 47 |
+| `src/goal_based_extractor.py` | 23 |
+
+Every cited line was re-read at `2992bf6d368a`.
 
 **Not read:** the tool dispatcher and tool implementations (`src/agent_tools/`, assigned to
 `src-agent-tools`), the routes that build the initial message list and consume the loop's events

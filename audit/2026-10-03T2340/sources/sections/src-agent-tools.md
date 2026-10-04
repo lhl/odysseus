@@ -2,8 +2,6 @@
 
 ## Overview
 
-`src/agent_tools/__init__.py`, `src/agent_tools/admin_tools.py`, `src/agent_tools/bg_job_tools.py`, `src/agent_tools/coding_tools.py`, `src/agent_tools/document_tools.py`, `src/agent_tools/filesystem_tools.py`, `src/agent_tools/interaction_tools.py`, `src/agent_tools/model_interaction_tools.py`, `src/agent_tools/session_tools.py`, `src/agent_tools/subprocess_tools.py`, `src/agent_tools/web_tools.py`, `src/tools/__init__.py`, `src/tools/_common.py`, `src/tools/calendar.py`, `src/tools/contacts.py`, `src/tools/cookbook.py`, `src/tools/image.py`, `src/tools/notes.py`, `src/tools/research.py`, `src/tools/search.py`, `src/tools/system.py`, `src/tools/vault.py`.
-
 This section covers what a tool does once the dispatcher reaches it: the `TOOL_HANDLERS`
 registry and the filesystem, shell, web, document, session, model-interaction, and admin tool
 classes, plus the domain functions under `src/tools/` for notes, calendar, contacts, vault,
@@ -15,24 +13,45 @@ is about a tool's own behaviour, not about whether the dispatcher should have al
 
 ## Coverage
 
-**Read fully:** all 22 files (8,537 lines) — `src/tools/cookbook.py` (1,713),
-`src/agent_tools/filesystem_tools.py` (1,140), `src/agent_tools/document_tools.py` (894),
-`src/agent_tools/admin_tools.py` (804), `src/tools/system.py` (737), `src/tools/calendar.py`
-(568), `src/agent_tools/session_tools.py` (493), `src/agent_tools/subprocess_tools.py` (383),
-`src/tools/notes.py` (332), `src/agent_tools/model_interaction_tools.py` (215), `src/tools/vault.py`
-(189), `src/agent_tools/web_tools.py` (171), `src/tools/contacts.py` (161),
-`src/agent_tools/__init__.py` (158), `src/tools/research.py` (146), `src/agent_tools/bg_job_tools.py`
-(98), `src/agent_tools/interaction_tools.py` (94), `src/agent_tools/coding_tools.py` (67),
-`src/tools/image.py` (66), `src/tools/search.py` (51), `src/tools/__init__.py` (32),
-`src/tools/_common.py` (25). Every cited line was re-read at `2992bf6d368a`.
+**Read fully:** all 22 files (8,537 lines).
 
-**Read partially:** `src/tool_execution.py` only at the dispatch branches cited, to establish
-which handler runs with which `owner`; its policy logic belongs to `src-tools-capabilities-policy`. `app.py` only at
-the bearer-token branch (`:314-337`, `:417-440`) cited in the `manage_tokens` finding; the rest of
-the file belongs to `repository-root` and `build-install-deploy`. `routes/chat_routes.py` only at
-`:1552-1566`, the privilege-to-disabled-tools mapping that establishes `manage_research`'s
-reachability. `src/tool_security.py` only at the blocklist memberships quoted. `src/tool_schemas.py`
-only at the two schema entries quoted.
+| File | Lines |
+| --- | ---: |
+| `src/tools/cookbook.py` | 1,713 |
+| `src/agent_tools/filesystem_tools.py` | 1,140 |
+| `src/agent_tools/document_tools.py` | 894 |
+| `src/agent_tools/admin_tools.py` | 804 |
+| `src/tools/system.py` | 737 |
+| `src/tools/calendar.py` | 568 |
+| `src/agent_tools/session_tools.py` | 493 |
+| `src/agent_tools/subprocess_tools.py` | 383 |
+| `src/tools/notes.py` | 332 |
+| `src/agent_tools/model_interaction_tools.py` | 215 |
+| `src/tools/vault.py` | 189 |
+| `src/agent_tools/web_tools.py` | 171 |
+| `src/tools/contacts.py` | 161 |
+| `src/agent_tools/__init__.py` | 158 |
+| `src/tools/research.py` | 146 |
+| `src/agent_tools/bg_job_tools.py` | 98 |
+| `src/agent_tools/interaction_tools.py` | 94 |
+| `src/agent_tools/coding_tools.py` | 67 |
+| `src/tools/image.py` | 66 |
+| `src/tools/search.py` | 51 |
+| `src/tools/__init__.py` | 32 |
+| `src/tools/_common.py` | 25 |
+
+Every cited line was re-read at `2992bf6d368a`.
+
+**Read partially:**
+
+- `src/tool_execution.py` only at the dispatch branches cited, to establish which handler runs with
+  which `owner`
+- its policy logic belongs to `src-tools-capabilities-policy`. `app.py` only at the bearer-token
+  branch (`:314-337`, `:417-440`) cited in the `manage_tokens` finding
+- the rest of the file belongs to `repository-root` and `build-install-deploy`.
+  `routes/chat_routes.py` only at `:1552-1566`, the privilege-to-disabled-tools mapping that
+  establishes `manage_research`'s reachability. `src/tool_security.py` only at the blocklist
+  memberships quoted. `src/tool_schemas.py` only at the two schema entries quoted
 
 **Not read:** the route implementations these tools call (`routes/gallery/gallery_routes.py`,
 `routes/email_routes.py`, `routes/research/research_routes.py`, `routes/cookbook_routes.py`, and

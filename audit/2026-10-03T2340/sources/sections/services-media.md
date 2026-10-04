@@ -2,8 +2,6 @@
 
 ## Overview
 
-`services/__init__.py`, `services/faces/__init__.py`, `services/shell/__init__.py`, `services/shell/service.py`, `services/stt/__init__.py`, `services/stt/stt_service.py`, `services/tts/__init__.py`, `services/tts/tts_service.py`, `services/youtube/__init__.py`, `services/youtube/youtube_handler.py`.
-
 The service-layer modules behind command execution, speech and YouTube context:
 `services/shell/service.py` is a standalone `ShellService` subprocess wrapper; `services/stt/stt_service.py`
 and `services/tts/tts_service.py` are the multi-provider speech services (local Whisper/Kokoro, an
@@ -29,48 +27,80 @@ registration in `app.py` belong to other sections and are read here only where a
 Line numbers refer to `2992bf6d368a` in the working tree; `git log --oneline -1` is `2992bf6d` and
 `git status --porcelain` shows only the untracked `audit/` directory.
 
-**Read fully:** all ten assigned files (1,101 lines): `services/tts/tts_service.py` (350),
-`services/youtube/youtube_handler.py` (302), `services/stt/stt_service.py` (208),
-`services/shell/service.py` (163), `services/__init__.py` (37), `services/youtube/__init__.py` (22),
-`services/tts/__init__.py` (9), `services/shell/__init__.py` (6), `services/stt/__init__.py` (3),
-`services/faces/__init__.py` (1). The faces package is one docstring line with no code and no importer
-(`grep -rn 'services\.faces' --include='*.py' .` returns nothing outside the audit directory), so there is
-nothing in it to review beyond that claim.
+**Read fully:** all ten assigned files (1,101 lines).
 
-**Read partially:** the boundary code and callers the findings rest on — `src/chat_handler.py` at the
-YouTube preprocessing loop (`:145-175`); `src/chat_processor.py` at the non-YouTube URL filter
-(`:455-500`); `src/chat_helpers.py` at `extract_urls` (`:21-36`); `src/youtube_handler.py` in full
-(37 lines — it replaces its own `sys.modules` entry with the canonical module); the two speech routers
-`routes/stt_routes.py` and `routes/tts_routes.py` in full (57 and 87 lines); `routes/diagnostics_routes.py`
-at `GET /api/test/youtube` (`:73-92`); `app.py` at the service construction and router registration
-(`:556-557`, `:611-614`, `:756-763`); `src/settings.py` at `load_settings` and its cache (`:232-259`) and
-at the speech defaults (`:57-65`); `src/upload_limits.py` at the STT byte cap (`:56-58`, `:64-67`);
-`static/js/settings.js` at the STT and TTS forms (`:925-985`); `static/js/tts-ai.js` at the stats read
-and the client-side speed application (`:47`, `:50`, `:208`, `:316-317`); `static/js/voiceRecorder.js:31`;
-`specs/search.md` at the YouTube section (`:105-109`); `specs/shell-mcp.md` at the `ShellService`
-description (`:7-11`, `:48`, `:139`); `requirements.txt`, `requirements-optional.txt` and `Dockerfile`
-(`:20-100`) for what the project actually installs; `tests/test_shell_service.py` and
-`tests/test_stt_leak.py` in full; and, for the cross-references above, the first finding of
-`routes-shell.md` and the whole of `routes-rest-media-files.md`.
+| File | Lines |
+| --- | ---: |
+| `services/tts/tts_service.py` | 350 |
+| `services/youtube/youtube_handler.py` | 302 |
+| `services/stt/stt_service.py` | 208 |
+| `services/shell/service.py` | 163 |
+| `services/__init__.py` | 37 |
+| `services/youtube/__init__.py` | 22 |
+| `services/tts/__init__.py` | 9 |
+| `services/shell/__init__.py` | 6 |
+| `services/stt/__init__.py` | 3 |
+| `services/faces/__init__.py` | 1 |
 
-**Not read:** `routes/shell_routes.py` itself (another section's file — only that section's written
-findings were read); `routes/diagnostics_routes.py` beyond the YouTube test route; `src/settings.py`
-beyond the cited region, so the settings POST route that writes the speech keys was not read here; the
-`ModelEndpoint` model and the endpoint-probe machinery (`core/database.py`, `routes/model_routes.py`)
-the API-provider branches call; the `faster-whisper`, `kokoro` and `yt-dlp` implementations themselves
-(none of the three is installed in this checkout, so their real load and fetch paths were exercised with
-fakes only); the rest of the front end's speech UI; and every test file other than the two named above.
+The faces package is one docstring line with no code and no importer (`grep -rn 'services\.faces'
+--include='*.py' .` returns nothing outside the audit directory), so there is nothing in it to
+review beyond that claim.
 
-**Checks run:** eight URLs through the real `is_youtube_url` / `extract_youtube_id`; a peak-RSS probe of
-`ShellService.execute` with `max_output=10` against an 80 MB stdout; a probe that loads the STT model
-stand-in, changes the setting and calls `_get_whisper` / `get_stats`; a probe that calls the real
-`get_stats()` of both speech services with the heavy imports faked to record what they construct;
-`-X importtime` for `import services.stt.stt_service` against loading the same file directly by spec, and
-a check that importing `src.youtube_handler` still executes `services/__init__.py`; and greps for the
-`ShellService` callers, the `services.*` importers, the `is_youtube_url` callers, the `get_stt_service`
-callers, and `yt-dlp` across the repository, both requirement files and the Dockerfile. The 23 suites
-matching `ls tests | grep -iE 'shell|stt|tts|youtube|face|kokoro|speech|audio'` were run —
-**150 passed**.
+**Read partially:** the boundary code and callers the findings rest on:
+
+- `src/chat_handler.py` at the YouTube preprocessing loop (`:145-175`)
+- `src/chat_processor.py` at the non-YouTube URL filter (`:455-500`)
+- `src/chat_helpers.py` at `extract_urls` (`:21-36`)
+- `src/youtube_handler.py` in full (37 lines — it replaces its own `sys.modules` entry with the
+  canonical module)
+- the two speech routers `routes/stt_routes.py` and `routes/tts_routes.py` in full (57 and 87 lines)
+- `routes/diagnostics_routes.py` at `GET /api/test/youtube` (`:73-92`)
+- `app.py` at the service construction and router registration (`:556-557`, `:611-614`, `:756-763`)
+- `src/settings.py` at `load_settings` and its cache (`:232-259`) and at the speech defaults
+  (`:57-65`)
+- `src/upload_limits.py` at the STT byte cap (`:56-58`, `:64-67`)
+- `static/js/settings.js` at the STT and TTS forms (`:925-985`)
+- `static/js/tts-ai.js` at the stats read and the client-side speed application (`:47`, `:50`,
+  `:208`, `:316-317`)
+- `static/js/voiceRecorder.js:31`
+- `specs/search.md` at the YouTube section (`:105-109`)
+- `specs/shell-mcp.md` at the `ShellService` description (`:7-11`, `:48`, `:139`)
+- `requirements.txt`, `requirements-optional.txt` and `Dockerfile` (`:20-100`) for what the project
+  actually installs
+- `tests/test_shell_service.py` and `tests/test_stt_leak.py` in full
+- and, for the cross-references above, the first finding of `routes-shell.md` and the whole of
+  `routes-rest-media-files.md`
+
+**Not read:**
+
+- `routes/shell_routes.py` itself (another section's file — only that section's written findings
+  were read)
+- `routes/diagnostics_routes.py` beyond the YouTube test route
+- `src/settings.py` beyond the cited region, so the settings POST route that writes the speech keys
+  was not read here
+- the `ModelEndpoint` model and the endpoint-probe machinery (`core/database.py`,
+  `routes/model_routes.py`) the API-provider branches call
+- the `faster-whisper`, `kokoro` and `yt-dlp` implementations themselves (none of the three is
+  installed in this checkout, so their real load and fetch paths were exercised with fakes only)
+- the rest of the front end's speech UI
+- every test file other than the two named above
+
+**Checks run:**
+
+- eight URLs through the real `is_youtube_url` / `extract_youtube_id`
+- a peak-RSS probe of `ShellService.execute` with `max_output=10` against an 80 MB stdout
+- a probe that loads the STT model stand-in, changes the setting and calls `_get_whisper` /
+  `get_stats`
+- a probe that calls the real `get_stats()` of both speech services with the heavy imports faked to
+  record what they construct
+- `-X importtime` for `import services.stt.stt_service` against loading the same file directly by
+  spec, and a check that importing `src.youtube_handler` still executes `services/__init__.py`
+- greps for the `ShellService` callers, the `services.*` importers, the `is_youtube_url` callers,
+  the `get_stt_service` callers, and `yt-dlp` across the repository, both requirement files and the
+  Dockerfile
+
+The 23 suites matching `ls tests | grep -iE 'shell|stt|tts|youtube|face|kokoro|speech|audio'` were
+run — **150 passed**.
 
 ### [BUG] A YouTube-shaped URL with no extractable video id is dropped from both the transcript path and the web-fetch path
 

@@ -24,32 +24,48 @@ what the server then runs, not whether the stores or the tools underneath are co
 **Read fully:** both assigned files (6,065 lines): `routes/cookbook_routes.py` (4,583),
 `routes/cookbook_helpers.py` (1,482). Every cited line was re-read at `2992bf6d368a`.
 
-**Read partially:** the callees the findings rest on — `routes/model_routes.py` at `_probe_endpoint`
-(`:958-998`, the synchronous `httpx` probe of a base URL's `/v1/models`); `core/middleware.py` at
-`require_admin` (`:57-82`); `app.py` at the auth-exempt lists (`:264-296`); `core/atomic_io.py` at
-`atomic_write_json` (`:22-45`); `core/platform_compat.py` at `safe_chmod` (`:40-52`);
-`routes/_validators.py` (the whole 31-line file: `validate_remote_host`, `validate_ssh_port`);
-`src/constants.py` at `COOKBOOK_STATE_FILE` (`:32`); `services/hwfit/hardware.py` at `detect_system`
-(`:792-816`) and its `_run` helper (`:27-45`); `src/tools/cookbook.py` at the `serve_model` HTTP call
-(`:755-800`); `src/builtin_actions.py` at `action_cookbook_serve` (`:3151-3300`);
-`src/task_action_policy.py` (`:1-40`); `static/js/cookbookServe.js` at `_isMiniMaxM3Model` (`:425-434`)
-and the MiniMax M3 launch path (`:1440-1465`).
+**Read partially:** the callees the findings rest on:
 
-**Not read:** `routes/cookbook_output.py` (`error_aware_output_tail`, `classify_dead_download`), which
-the status handler imports; the `ModelEndpoint` table definition and the endpoint CRUD routes in
-`routes/model_routes.py` beyond `_probe_endpoint`; `src/secret_storage.py` beyond the two function
-signatures; `src/host_docker_access.py`; `core/platform_compat.py` beyond `safe_chmod` and
-`_ssh_exec_argv`; `src/task_scheduler.py`'s dispatch of the `cookbook_serve` action; the front end
-beyond the two regions named above; and the `routes-*` / `src-*` sections that own the modules these
-routes call.
+- `routes/model_routes.py` at `_probe_endpoint` (`:958-998`, the synchronous `httpx` probe of a base
+  URL's `/v1/models`)
+- `core/middleware.py` at `require_admin` (`:57-82`)
+- `app.py` at the auth-exempt lists (`:264-296`)
+- `core/atomic_io.py` at `atomic_write_json` (`:22-45`)
+- `core/platform_compat.py` at `safe_chmod` (`:40-52`)
+- `routes/_validators.py` (the whole 31-line file: `validate_remote_host`, `validate_ssh_port`)
+- `src/constants.py` at `COOKBOOK_STATE_FILE` (`:32`)
+- `services/hwfit/hardware.py` at `detect_system` (`:792-816`) and its `_run` helper (`:27-45`)
+- `src/tools/cookbook.py` at the `serve_model` HTTP call (`:755-800`)
+- `src/builtin_actions.py` at `action_cookbook_serve` (`:3151-3300`)
+- `src/task_action_policy.py` (`:1-40`)
+- `static/js/cookbookServe.js` at `_isMiniMaxM3Model` (`:425-434`) and the MiniMax M3 launch path
+  (`:1440-1465`)
 
-**Checks run:** four throwaway probes under `/tmp` (not part of the target tree), plus the cookbook
-suites. The probes were: the `/api/cookbook/setup` handler driven with a stub `ssh` on `PATH` and the
-real shell, once per platform branch, with each captured command also replayed through `sh -c`
-(first finding); `POST /api/model/serve` driven the same way with a placeholder token, then
-`stat` on the runner script it wrote (fourth finding); `GET /api/cookbook/hf-gguf-files` with
-`httpx.AsyncClient` replaced by a constructor that raises (fifth finding); and `_validate_serve_cmd`
-called directly with the shipped GGUF prelude and a modified one (third finding).
+**Not read:**
+
+- `routes/cookbook_output.py` (`error_aware_output_tail`, `classify_dead_download`), which the
+  status handler imports
+- the `ModelEndpoint` table definition and the endpoint CRUD routes in `routes/model_routes.py`
+  beyond `_probe_endpoint`
+- `src/secret_storage.py` beyond the two function signatures
+- `src/host_docker_access.py`
+- `core/platform_compat.py` beyond `safe_chmod` and `_ssh_exec_argv`
+- `src/task_scheduler.py`'s dispatch of the `cookbook_serve` action
+- the front end beyond the two regions named above
+- the `routes-*` / `src-*` sections that own the modules these routes call
+
+**Checks run:**
+
+- four throwaway probes under `/tmp` (not part of the target tree), plus the cookbook suites. The
+  probes were: the `/api/cookbook/setup` handler driven with a stub `ssh` on `PATH` and the real
+  shell, once per platform branch, with each captured command also replayed through `sh -c` (first
+  finding)
+- `POST /api/model/serve` driven the same way with a placeholder token, then `stat` on the runner
+  script it wrote (fourth finding)
+- `GET /api/cookbook/hf-gguf-files` with `httpx.AsyncClient` replaced by a constructor that raises
+  (fifth finding)
+- `_validate_serve_cmd` called directly with the shipped GGUF prelude and a modified one (third
+  finding)
 
 Twenty-six suites were run over this surface — `ls tests | grep -iE 'cookbook'`, plus
 `tests/test_task_cookbook_admin_gate.py`: `tests/test_cookbook_helpers.py`,

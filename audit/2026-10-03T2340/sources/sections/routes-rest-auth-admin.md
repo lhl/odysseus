@@ -17,52 +17,91 @@ scopes correctly, not whether the store underneath is safe.
 
 ## Coverage
 
-**Read fully:** all eleven files (2,114 lines): `routes/auth_routes.py` (919),
-`routes/api_token_routes.py` (209), `routes/backup_routes.py` (221), `routes/device_flow.py` (193),
-`routes/admin_wipe/admin_wipe_routes.py` (176), `routes/copilot_routes.py` (173),
-`routes/chatgpt_subscription_routes.py` (170), `routes/admin_wipe_routes.py` (17),
-`routes/_validators.py` (31), `routes/admin_wipe/__init__.py` (5), `routes/__init__.py` (0).
+**Read fully:** all eleven files (2,114 lines).
 
-**Read partially:** the callees the findings rest on — `core/auth.py` at `setup`/`create_user`
-(`:255-283`), `set_privileges` (`:387-403`), `status`/`policy` (`:669-680`); `src/integrations.py`
-at `add_integration`/`update_integration` (`:269-315`); `src/rate_limiter.py` (`check`, `:25-36`);
-`core/database.py` at `ProviderAuthSession` (`:556-568`) and `GalleryImage` (`:344-359`);
-`routes/session_routes.py` at `/sessions/all` (`:677-731`); `routes/prefs_routes.py` at
-`_load`/`_load_for_user` (`:17-52`); `src/memory.py` at `load_all_for_update`/`save` (`:180-187`,
-`:261-278`); `core/database.py` at the transcript-FTS triggers (`:2178-2256`); `app.py` at the
-auth-exempt list (`:265-289`), `_is_trusted_loopback` (`:348-362`) and the uvicorn launch
-(`:1301-1306`); `launcher.py:135-149`; `core/middleware.py` at `require_admin`;
-`src/agent_tools/admin_tools.py` at `do_manage_tokens` (`:445-489`); `static/js/admin.js` at the
-token list (`:2555-2600`) and the Danger Zone (`:2896-2945`); `static/index.html` at the Danger Zone
-modal (`:2455-2522`); `docker-compose.yml` at the app service (`:1-32`) and the other services'
-port bindings; `website/setup.md` at the reverse-proxy guidance (`:530-540`) and the environment
-table (`:716`); `.env.example` at `APP_BIND` (`:74-75`).
+| File | Lines |
+| --- | ---: |
+| `routes/auth_routes.py` | 919 |
+| `routes/api_token_routes.py` | 209 |
+| `routes/backup_routes.py` | 221 |
+| `routes/device_flow.py` | 193 |
+| `routes/admin_wipe/admin_wipe_routes.py` | 176 |
+| `routes/copilot_routes.py` | 173 |
+| `routes/chatgpt_subscription_routes.py` | 170 |
+| `routes/admin_wipe_routes.py` | 17 |
+| `routes/_validators.py` | 31 |
+| `routes/admin_wipe/__init__.py` | 5 |
+| `routes/__init__.py` | 0 |
 
-**Not read:** the middleware, `AuthManager` internals and models beyond the functions cited (their
-sections); the settings, integrations, memory and skills stores beyond the call sites cited; the
-front end beyond the token list and Danger Zone regions; the `routes-*` sections that own the
-modules these routes call.
+**Read partially:** the callees the findings rest on:
 
-**Checks run:** a Docker peer-address probe (a container serving on a published
-`127.0.0.1` port, curled from the host) and a `uvicorn.middleware.proxy_headers` probe under the
-default trusted list, both quoted in the first finding; a bcrypt timing measurement; a route-level
-probe that built the auth router with a stub manager (mirroring
-`tests/test_integrations_store_shape.py`) and posted non-object bodies to the JSON endpoints,
-quoted in the last finding; and a read of the callers of `APIKeyManager`/token rows. Twenty-seven
-suites were run over this surface — `tests/test_api_token_routes.py`,
-`tests/test_api_token_user_route_gate.py`, `tests/test_device_flow_routes.py`,
-`tests/test_copilot_routes.py`, `tests/test_admin_wipe_gallery.py`,
-`tests/test_admin_wipe_routes_shim.py`, `tests/test_backup_cli_security.py`,
-`tests/test_backup_import_cross_user_dedup.py`, `tests/test_backup_import_skills.py`,
-`tests/test_backup_import_skills_dedup.py`, `tests/test_auth_policy.py`,
-`tests/test_auth_regressions.py`, `tests/test_auth_require_privilege_nondict.py`,
-`tests/test_auth_root_path.py`, `tests/test_auth_session_revocation.py`,
-`tests/test_rename_user_case_insensitive.py`, `tests/test_rename_user_owner_sync.py`,
-`tests/test_rename_user_token_cache.py`, `tests/test_delete_user_invalidates_token_cache.py`,
-`tests/test_delete_user_revokes_api_tokens.py`, `tests/test_setup_admin_user.py`,
-`tests/test_rate_limiter.py`, `tests/test_totp_failclosed.py`, `tests/test_route_validators.py`,
-`tests/test_integrations_store_shape.py`, `tests/test_cors_preflight.py`,
-`tests/test_reserved_username_admin_escalation.py` — **203 passed**.
+- `core/auth.py` at `setup`/`create_user` (`:255-283`), `set_privileges` (`:387-403`),
+  `status`/`policy` (`:669-680`)
+- `src/integrations.py` at `add_integration`/`update_integration` (`:269-315`)
+- `src/rate_limiter.py` (`check`, `:25-36`)
+- `core/database.py` at `ProviderAuthSession` (`:556-568`) and `GalleryImage` (`:344-359`)
+- `routes/session_routes.py` at `/sessions/all` (`:677-731`)
+- `routes/prefs_routes.py` at `_load`/`_load_for_user` (`:17-52`)
+- `src/memory.py` at `load_all_for_update`/`save` (`:180-187`, `:261-278`)
+- `core/database.py` at the transcript-FTS triggers (`:2178-2256`)
+- `app.py` at the auth-exempt list (`:265-289`), `_is_trusted_loopback` (`:348-362`) and the uvicorn
+  launch (`:1301-1306`)
+- `launcher.py:135-149`
+- `core/middleware.py` at `require_admin`
+- `src/agent_tools/admin_tools.py` at `do_manage_tokens` (`:445-489`)
+- `static/js/admin.js` at the token list (`:2555-2600`) and the Danger Zone (`:2896-2945`)
+- `static/index.html` at the Danger Zone modal (`:2455-2522`)
+- `docker-compose.yml` at the app service (`:1-32`) and the other services' port bindings
+- `website/setup.md` at the reverse-proxy guidance (`:530-540`) and the environment table (`:716`)
+- `.env.example` at `APP_BIND` (`:74-75`)
+
+**Not read:**
+
+- the middleware, `AuthManager` internals and models beyond the functions cited (their sections)
+- the settings, integrations, memory and skills stores beyond the call sites cited
+- the front end beyond the token list and Danger Zone regions
+- the `routes-*` sections that own the modules these routes call
+
+**Checks run:**
+
+- a Docker peer-address probe (a container serving on a published `127.0.0.1` port, curled from the
+  host) and a `uvicorn.middleware.proxy_headers` probe under the default trusted list, both quoted
+  in the first finding
+- a bcrypt timing measurement
+- a route-level probe that built the auth router with a stub manager (mirroring
+  `tests/test_integrations_store_shape.py`) and posted non-object bodies to the JSON endpoints,
+  quoted in the last finding
+- a read of the callers of `APIKeyManager`/token rows
+
+Twenty-seven suites were run over this surface — the 27 test files listed below — **203 passed**.
+
+- `tests/test_api_token_routes.py`
+- `tests/test_api_token_user_route_gate.py`
+- `tests/test_device_flow_routes.py`
+- `tests/test_copilot_routes.py`
+- `tests/test_admin_wipe_gallery.py`
+- `tests/test_admin_wipe_routes_shim.py`
+- `tests/test_backup_cli_security.py`
+- `tests/test_backup_import_cross_user_dedup.py`
+- `tests/test_backup_import_skills.py`
+- `tests/test_backup_import_skills_dedup.py`
+- `tests/test_auth_policy.py`
+- `tests/test_auth_regressions.py`
+- `tests/test_auth_require_privilege_nondict.py`
+- `tests/test_auth_root_path.py`
+- `tests/test_auth_session_revocation.py`
+- `tests/test_rename_user_case_insensitive.py`
+- `tests/test_rename_user_owner_sync.py`
+- `tests/test_rename_user_token_cache.py`
+- `tests/test_delete_user_invalidates_token_cache.py`
+- `tests/test_delete_user_revokes_api_tokens.py`
+- `tests/test_setup_admin_user.py`
+- `tests/test_rate_limiter.py`
+- `tests/test_totp_failclosed.py`
+- `tests/test_route_validators.py`
+- `tests/test_integrations_store_shape.py`
+- `tests/test_cors_preflight.py`
+- `tests/test_reserved_username_admin_escalation.py`
 
 ### [SECURITY] The login, signup and setup limiters key on the socket peer, which the documented deployment makes identical for every client
 

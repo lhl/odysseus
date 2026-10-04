@@ -22,45 +22,65 @@ authenticates, scopes and confines correctly, not whether the stores underneath 
 
 ## Coverage
 
-**Read fully:** all six assigned files (4,548 lines): `routes/gallery/gallery_routes.py` (2,338),
-`routes/document/document_routes.py` (1,810), `routes/document/document_helpers.py` (243),
-`routes/gallery/gallery_helpers.py` (145), `routes/gallery/__init__.py` (6),
-`routes/document/__init__.py` (6).
+**Read fully:** all six assigned files (4,548 lines).
 
-**Read partially:** the boundary code the findings rest on — `src/auth_helpers.py` in full
-(`get_current_user`, `effective_user`, `require_user`, `require_privilege`, `owner_filter`,
-`_auth_disabled`); `app.py` at the `/api/generated-image/{filename}` handler (`:513-553`) and the
-auth-exempt lists (`:263-296`); `core/database.py` at the `Document`/`DocumentVersion`/`GalleryAlbum`/
-`GalleryImage` definitions (`:283-383`); `src/upload_limits.py` in full (the gallery caps and
-`read_upload_limited`); `src/upload_handler.py` at `max_upload_size` (`:217`), `detect_content_type`
-(`:282-302`), `is_safe_file_type` (`:366-385`) and `save_upload` (`:1205-1250`);
-`src/document_processor.py` at `_process_pdf` (`:112-152`) and `analyze_image_with_vl_result` /
-`analyze_image_with_vl` (`:333-392`); `src/llm_core.py` at `llm_call` (`:1969-2045`) and
-`httpx_post_kimi_aware` (`:934-947`); `src/pdf_runtime.py` in full; `src/generated_images.py` at
-`GENERATED_IMAGE_HEADERS` and `resolve_generated_image_path` (`:14-22`); `routes/session_routes.py`
-at the all-sessions delete path (`:677-731`); `routes/upload_routes.py` at
-`_promote_chat_image_to_gallery` (`:195-250`); `src/chat_handler.py` at
-`_sync_upload_vision_to_gallery` (`:33-53`); `routes/email_helpers.py` at
-`_attach_compose_uploads` / `_cleanup_compose_uploads` (`:515-551`); `static/js/gallery.js` at the
-library render (`:625-629`), the patch/delete helpers (`:190-226`), rotate (`:1810-1830`), the
-set-as-cover button (`:1843-1858`) and rename (`:1887`); `static/js/document.js` at the AI-fill call
-(`:1796`) and the compose-attachment removal (`:3610-3618`).
+| File | Lines |
+| --- | ---: |
+| `routes/gallery/gallery_routes.py` | 2,338 |
+| `routes/document/document_routes.py` | 1,810 |
+| `routes/document/document_helpers.py` | 243 |
+| `routes/gallery/gallery_helpers.py` | 145 |
+| `routes/gallery/__init__.py` | 6 |
+| `routes/document/__init__.py` | 6 |
 
-**Not read:** the auth middleware itself (`core/middleware.py` and `app.py`'s `AuthMiddleware`),
-assigned to `core-auth-session` and `build-install-deploy`; the `UploadHandler` internals other than
-the functions named above (`src-documents`); the `Signature` model and the PDF form builders
-(`src-documents`); the front end beyond the regions named above; the other `routes-*` sections that
-call into these modules.
+**Read partially:** the boundary code the findings rest on:
 
-**Checks run:** the 46 suites matching `ls tests | grep -iE 'gallery|document|image'` — **182
-passed**; a request-level probe that mounts both routers in a FastAPI app with a real SQLite session
-factory (the shape `tests/test_gallery_null_user_routes.py` uses) and posts a JSON array and a JSON
-string to every raw-body endpoint, quoted in the non-object-body finding; the same probe with a
-seeded album row for the three album sub-routes; an end-to-end probe of the set-cover → delete →
-list-albums sequence, quoted in the album-cover finding; a probe that runs the vision call
-`_process_pdf` makes inside a live event loop with a heartbeat task, quoted in the blocking-work
-finding; and greps for `to_thread` / `run_in_threadpool` in these two files, for `request.json()`,
-for `file_hash` readers, for `is_active = False` sites and for `import fitz`.
+- `src/auth_helpers.py` in full (`get_current_user`, `effective_user`, `require_user`,
+  `require_privilege`, `owner_filter`, `_auth_disabled`)
+- `app.py` at the `/api/generated-image/{filename}` handler (`:513-553`) and the auth-exempt lists
+  (`:263-296`)
+- `core/database.py` at the `Document`/`DocumentVersion`/`GalleryAlbum`/ `GalleryImage` definitions
+  (`:283-383`)
+- `src/upload_limits.py` in full (the gallery caps and `read_upload_limited`)
+- `src/upload_handler.py` at `max_upload_size` (`:217`), `detect_content_type` (`:282-302`),
+  `is_safe_file_type` (`:366-385`) and `save_upload` (`:1205-1250`)
+- `src/document_processor.py` at `_process_pdf` (`:112-152`) and `analyze_image_with_vl_result` /
+  `analyze_image_with_vl` (`:333-392`)
+- `src/llm_core.py` at `llm_call` (`:1969-2045`) and `httpx_post_kimi_aware` (`:934-947`)
+- `src/pdf_runtime.py` in full
+- `src/generated_images.py` at `GENERATED_IMAGE_HEADERS` and `resolve_generated_image_path`
+  (`:14-22`)
+- `routes/session_routes.py` at the all-sessions delete path (`:677-731`)
+- `routes/upload_routes.py` at `_promote_chat_image_to_gallery` (`:195-250`)
+- `src/chat_handler.py` at `_sync_upload_vision_to_gallery` (`:33-53`)
+- `routes/email_helpers.py` at `_attach_compose_uploads` / `_cleanup_compose_uploads` (`:515-551`)
+- `static/js/gallery.js` at the library render (`:625-629`), the patch/delete helpers (`:190-226`),
+  rotate (`:1810-1830`), the set-as-cover button (`:1843-1858`) and rename (`:1887`)
+- `static/js/document.js` at the AI-fill call (`:1796`) and the compose-attachment removal
+  (`:3610-3618`)
+
+**Not read:**
+
+- the auth middleware itself (`core/middleware.py` and `app.py`'s `AuthMiddleware`), assigned to
+  `core-auth-session` and `build-install-deploy`
+- the `UploadHandler` internals other than the functions named above (`src-documents`)
+- the `Signature` model and the PDF form builders (`src-documents`)
+- the front end beyond the regions named above
+- the other `routes-*` sections that call into these modules
+
+**Checks run:**
+
+- the 46 suites matching `ls tests | grep -iE 'gallery|document|image'` — **182 passed**
+- a request-level probe that mounts both routers in a FastAPI app with a real SQLite session factory
+  (the shape `tests/test_gallery_null_user_routes.py` uses) and posts a JSON array and a JSON string
+  to every raw-body endpoint, quoted in the non-object-body finding
+- the same probe with a seeded album row for the three album sub-routes
+- an end-to-end probe of the set-cover → delete → list-albums sequence, quoted in the album-cover
+  finding
+- a probe that runs the vision call `_process_pdf` makes inside a live event loop with a heartbeat
+  task, quoted in the blocking-work finding
+- greps for `to_thread` / `run_in_threadpool` in these two files, for `request.json()`, for
+  `file_hash` readers, for `is_active = False` sites and for `import fitz`
 
 ### [PERF] PDF and image processing runs synchronously inside the async handlers
 

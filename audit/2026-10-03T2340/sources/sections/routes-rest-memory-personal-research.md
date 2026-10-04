@@ -2,14 +2,6 @@
 
 ## Overview
 
-`routes/memory/__init__.py`,
-`routes/memory/memory_routes.py`,
-`routes/memory_routes.py`,
-`routes/personal_routes.py`,
-`routes/research/__init__.py`,
-`routes/research/research_routes.py`,
-`routes/research_routes.py`.
-
 Memory CRUD and search, the personal-file library and its indexing, and the research job API
 with report listing and HTML rendering. The stores and vector lanes they call are
 `src-memory-rag` and `services-memory`; the live research handler is `src/research_handler.py`
@@ -18,30 +10,44 @@ Authentication is the `core-auth-session` boundary and the middleware in `app.py
 
 ## Coverage
 
-**Read fully:** all seven assigned files (1,861 lines): `routes/memory/memory_routes.py` (568),
-`routes/personal_routes.py` (465), `routes/research/research_routes.py` (783),
-`routes/memory_routes.py` (18), `routes/research_routes.py` (17), and
-`routes/memory/__init__.py` and `routes/research/__init__.py` (5 each). Boundary files read fully:
-`src/auth_helpers.py`, `core/middleware.py`, `services/memory/__init__.py`, and
-`services/memory/memory.py` (the compatibility import of `src.memory.MemoryManager`).
-Working-tree line numbers refer to `2992bf6d368a`; `git status --short` showed only the untracked
-`audit/` directory before and after the checks.
+**Read fully:** all seven assigned files (1,861 lines).
 
-**Read partially:** `app.py` at authentication, exemptions, identity stamping and adjacent
-static/image setup (250–549), plus the memory/research router registration search;
-`src/app_initializer.py` at the `ResearchHandler` import, construction and return sites;
-`src/memory.py` (1–310: reads, owner filtering, validation, save and entry construction);
-`services/memory/memory_extractor.py` at `audit_memories` (495 through end), including its
-owner-scoped merge and vector rebuild; `src/research_handler.py` (35–89 and 240–859: path
-confinement, task launch, cancellation, timeout/error recovery, persistence, report/image access,
-and the live research-service call); `src/personal_docs.py` (230–344: tracking and exclusions);
-`src/rag_vector.py` (495–624 and 678 through end: owner metadata on indexing, directory/source
-deletion); `src/request_models.py` (1–110: memory and directory body models); `core/auth.py`
-(15–64: privilege defaults); `static/js/admin.js` and `static/js/init.js` by
-`can_manage_memory` search. Tests read: `tests/test_memory_owner_isolation.py`,
-`tests/test_research_owner_scope_routes.py` and `tests/test_personal_delete_file_confinement.py`
-in full; the other executed tests were not read. The non-runtime
-`services/research/research_handler.py` was searched for task/owner methods, not read fully.
+| File | Lines |
+| --- | ---: |
+| `routes/memory/memory_routes.py` | 568 |
+| `routes/personal_routes.py` | 465 |
+| `routes/research/research_routes.py` | 783 |
+| `routes/memory_routes.py` | 18 |
+| `routes/research_routes.py` | 17 |
+
+And `routes/memory/__init__.py` and `routes/research/__init__.py` (5 each). Boundary files read
+fully: `src/auth_helpers.py`, `core/middleware.py`, `services/memory/__init__.py`, and
+`services/memory/memory.py` (the compatibility import of `src.memory.MemoryManager`). Working-tree
+line numbers refer to `2992bf6d368a`; `git status --short` showed only the untracked `audit/`
+directory before and after the checks.
+
+**Read partially:**
+
+- `app.py` at authentication, exemptions, identity stamping and adjacent static/image setup
+  (250–549), plus the memory/research router registration search
+- `src/app_initializer.py` at the `ResearchHandler` import, construction and return sites
+- `src/memory.py` (1–310: reads, owner filtering, validation, save and entry construction)
+- `services/memory/memory_extractor.py` at `audit_memories` (495 through end), including its
+  owner-scoped merge and vector rebuild
+- `src/research_handler.py` (35–89 and 240–859: path confinement, task launch, cancellation,
+  timeout/error recovery, persistence, report/image access, and the live research-service call)
+- `src/personal_docs.py` (230–344: tracking and exclusions)
+- `src/rag_vector.py` (495–624 and 678 through end: owner metadata on indexing, directory/source
+  deletion)
+- `src/request_models.py` (1–110: memory and directory body models)
+- `core/auth.py` (15–64: privilege defaults)
+- `static/js/admin.js` and `static/js/init.js` by `can_manage_memory` search. Tests read:
+  `tests/test_memory_owner_isolation.py`, `tests/test_research_owner_scope_routes.py` and
+  `tests/test_personal_delete_file_confinement.py` in full
+- the other executed tests were not read
+
+The non-runtime `services/research/research_handler.py` was searched for task/owner methods, not
+read fully.
 
 **Not read:** no assigned route file remains unread. The rest of the authentication, memory,
 vector, personal-document and research implementations beyond the regions above; the deep
@@ -60,19 +66,27 @@ there is no `await request.json()` in these assigned routes, so the auth/admin s
 non-object-body error does not recur here. The two module-alias suites passed, including
 legacy/canonical object identity and monkeypatch behavior.
 
-`venv/bin/python -m pytest -q` was run with these fourteen files:
-`tests/test_memory_owner_isolation.py`, `tests/test_memory_routes_session_owner.py`,
-`tests/test_memory_routes_shim.py`, `tests/test_personal_delete_file_confinement.py`,
-`tests/test_personal_dir_symlink_escape.py`, `tests/test_personal_remove_dir_confinement.py`,
-`tests/test_personal_upload_isolation.py`, `tests/test_personal_upload_privilege.py`,
-`tests/test_research_endpoint_owner_scope.py`, `tests/test_research_owner_scope_routes.py`,
-`tests/test_research_report_read.py`, `tests/test_research_routes_path_confinement.py`,
-`tests/test_research_routes_shim.py`, `tests/test_research_session_id_validation.py` —
+`venv/bin/python -m pytest -q` was run with these fourteen files: the 14 test files listed below —
 **113 passed**, three deprecation warnings. A second invocation with
 `tests/test_memory_bullet_extraction.py` and `tests/test_memory_store_unreadable_no_wipe.py`
-returned **16 passed**, one deprecation warning. Total: **129 passed across 16 suites**.
-The full suite and `audit.py` were not run; run-level generation, counts and secret-gate
-validation belong to the coordinating reviewer.
+returned **16 passed**, one deprecation warning. Total: **129 passed across 16 suites**. The full
+suite and `audit.py` were not run; run-level generation, counts and secret-gate validation belong to
+the coordinating reviewer.
+
+- `tests/test_memory_owner_isolation.py`
+- `tests/test_memory_routes_session_owner.py`
+- `tests/test_memory_routes_shim.py`
+- `tests/test_personal_delete_file_confinement.py`
+- `tests/test_personal_dir_symlink_escape.py`
+- `tests/test_personal_remove_dir_confinement.py`
+- `tests/test_personal_upload_isolation.py`
+- `tests/test_personal_upload_privilege.py`
+- `tests/test_research_endpoint_owner_scope.py`
+- `tests/test_research_owner_scope_routes.py`
+- `tests/test_research_report_read.py`
+- `tests/test_research_routes_path_confinement.py`
+- `tests/test_research_routes_shim.py`
+- `tests/test_research_session_id_validation.py`
 
 ### [SECURITY] Memory pin, edit, delete and audit bypass the memory-management privilege
 

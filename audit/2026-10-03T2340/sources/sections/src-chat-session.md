@@ -27,61 +27,93 @@ store, or the transport are themselves correct.
 
 ## Coverage
 
-**Read fully:** all 11 assigned files (2,840 lines): `src/context_compactor.py` (527),
-`src/chat_processor.py` (525), `src/session_search.py` (369), `src/chat_handler.py` (352),
-`src/chat_helpers.py` (316), `src/session_actions.py` (250), `src/request_models.py` (137),
-`src/session_image_cleanup.py` (130), `src/topic_analyzer.py` (104), `src/context_budget.py`
-(82), `src/assistant_log.py` (48). Line numbers refer to `2992bf6d368a`.
+**Read fully:** all 11 assigned files (2,840 lines).
 
-**Read partially:** the boundary code the findings rest on — `core/session_manager.py` at
-`get_session` / `sync_session_metadata` / `_touch_session` (`:421-539`), `_persist_message`
-(`:244-255`), `replace_messages` (`:352-412`) and `delete_session` (`:587-627`);
-`core/models.py` in full (191 lines — `ChatMessage`, `Session`, `get_context_messages`);
-`routes/chat_helpers.py` at `build_chat_context` (`:588-830`), `preprocess` (`:328-350`) and
-`add_user_message` (`:409-418`); `routes/chat_routes.py` at the chat-endpoint context build
-(`:780-870`) and `GET /api/search` (`:2696-2717`); `routes/session_routes.py` at
-`_verify_session_owner` (`:104-131`) and the auto-sort route's Phase 1 (`:1120-1145`);
-`src/agent_loop.py` at the compaction call sites (`:4276-4300`, `:4827-4840`) and the
-`_protected` context messages (`:2430-2455`, `:2515-2530`); `src/llm_core.py` at
-`_sanitize_llm_messages` (`:1673-1740`) and the response parse in both call paths (`:2061`,
-`:2436-2465`); `src/document_processor.py` at `analyze_image_with_vl_result` (`:333-393`);
-`src/task_scheduler.py` at `_execute_action` (`:1242-1275`), `HOUSEKEEPING_DEFAULTS`
-(`:251-263`) and `ensure_defaults` (`:2313-2340`); `src/builtin_actions.py` at
-`action_tidy_sessions` (`:433-446`); `routes/task/task_routes.py` at `_owner` and the create
-handler (`:301-302`, `:453`, `:528-545`); `src/prompt_security.py` at
-`untrusted_context_message` (`:64-96`); `src/tool_execution.py:1151`; `app.py` at the
-assistant-log wiring (`:589-590`), the housekeeping seeding (`:1155-1177`) and the uvicorn
-launch (`:1306`).
+| File | Lines |
+| --- | ---: |
+| `src/context_compactor.py` | 527 |
+| `src/chat_processor.py` | 525 |
+| `src/session_search.py` | 369 |
+| `src/chat_handler.py` | 352 |
+| `src/chat_helpers.py` | 316 |
+| `src/session_actions.py` | 250 |
+| `src/request_models.py` | 137 |
+| `src/session_image_cleanup.py` | 130 |
+| `src/topic_analyzer.py` | 104 |
+| `src/context_budget.py` | 82 |
+| `src/assistant_log.py` | 48 |
 
-**Not read:** the rest of `routes/chat_routes.py` and `routes/session_routes.py` (assigned to
-`routes-chat-session`); `core/middleware.py` and the auth middleware in `app.py` (assigned to
-`core-auth-session` / `build-install-deploy`) — the findings here rest on the
-`effective_user` / `_verify_session_owner` call sites quoted, not on the middleware; the LLM
-transport beyond the cited lines (`src/model_context.py`, `src/endpoint_resolver.py`);
-`src/upload_handler.py` and the document pipeline behind `build_user_content` (assigned to
-`src-documents`); the tool dispatcher beyond the one `do_search_chats` call site; the front
-end; and every other `src-*` module.
+Line numbers refer to `2992bf6d368a`.
 
-**Checks run:** five throwaway probes under `/tmp` (not part of the target tree), each quoted
-in the finding it settles — `maybe_compact` with a realistic preface and an 11-message history;
-the same call with the summary model returning `""`; a 1.0 s blocking VL call against a ticker
-task on the same loop; `search_session_messages` against a 2,000-message in-memory DB with a
-statement-counting event listener, plus `EXPLAIN QUERY PLAN` for its LIKE leg; and
-`run_auto_sort("")` against a temp app DB holding one empty session for each of two owners.
-Also greps for the unused symbols cited in the dead-code finding and for the callers of
-`run_auto_sort`, `search_session_messages`, `maybe_compact`, `model_supports_vision` and
-`_sanitize_tool_messages`. Suites: `ls tests | grep -iE
-'chat|session|context|topic|compactor|request_models|assistant_log'` yields 64 files; running
-them gives **1 failed, 523 passed**. The failure is the order-dependent pair already documented
-in `routes-chat-session` (`tests/test_session_list_owner_scope.py` passes alone — 2 passed; with
-`tests/test_archived_sessions_model_filter.py` ahead of it, 1 failed / 4 passed). The
-compactor's own suites outside that glob (`tests/test_compaction_summary_failure.py`,
+**Read partially:** the boundary code the findings rest on:
+
+- `core/session_manager.py` at `get_session` / `sync_session_metadata` / `_touch_session`
+  (`:421-539`), `_persist_message` (`:244-255`), `replace_messages` (`:352-412`) and
+  `delete_session` (`:587-627`)
+- `core/models.py` in full (191 lines — `ChatMessage`, `Session`, `get_context_messages`)
+- `routes/chat_helpers.py` at `build_chat_context` (`:588-830`), `preprocess` (`:328-350`) and
+  `add_user_message` (`:409-418`)
+- `routes/chat_routes.py` at the chat-endpoint context build (`:780-870`) and `GET /api/search`
+  (`:2696-2717`)
+- `routes/session_routes.py` at `_verify_session_owner` (`:104-131`) and the auto-sort route's Phase
+  1 (`:1120-1145`)
+- `src/agent_loop.py` at the compaction call sites (`:4276-4300`, `:4827-4840`) and the `_protected`
+  context messages (`:2430-2455`, `:2515-2530`)
+- `src/llm_core.py` at `_sanitize_llm_messages` (`:1673-1740`) and the response parse in both call
+  paths (`:2061`, `:2436-2465`)
+- `src/document_processor.py` at `analyze_image_with_vl_result` (`:333-393`)
+- `src/task_scheduler.py` at `_execute_action` (`:1242-1275`), `HOUSEKEEPING_DEFAULTS` (`:251-263`)
+  and `ensure_defaults` (`:2313-2340`)
+- `src/builtin_actions.py` at `action_tidy_sessions` (`:433-446`)
+- `routes/task/task_routes.py` at `_owner` and the create handler (`:301-302`, `:453`, `:528-545`)
+- `src/prompt_security.py` at `untrusted_context_message` (`:64-96`)
+- `src/tool_execution.py:1151`
+- `app.py` at the assistant-log wiring (`:589-590`), the housekeeping seeding (`:1155-1177`) and the
+  uvicorn launch (`:1306`)
+
+**Not read:**
+
+- the rest of `routes/chat_routes.py` and `routes/session_routes.py` (assigned to
+  `routes-chat-session`)
+- `core/middleware.py` and the auth middleware in `app.py` (assigned to `core-auth-session` /
+  `build-install-deploy`) — the findings here rest on the `effective_user` / `_verify_session_owner`
+  call sites quoted, not on the middleware
+- the LLM transport beyond the cited lines (`src/model_context.py`, `src/endpoint_resolver.py`)
+- `src/upload_handler.py` and the document pipeline behind `build_user_content` (assigned to
+  `src-documents`)
+- the tool dispatcher beyond the one `do_search_chats` call site
+- the front end
+- every other `src-*` module
+
+**Checks run:**
+
+- five throwaway probes under `/tmp` (not part of the target tree), each quoted in the finding it
+  settles — `maybe_compact` with a realistic preface and an 11-message history
+- the same call with the summary model returning `""`
+- a 1.0 s blocking VL call against a ticker task on the same loop
+- `search_session_messages` against a 2,000-message in-memory DB with a statement-counting event
+  listener, plus `EXPLAIN QUERY PLAN` for its LIKE leg
+- `run_auto_sort("")` against a temp app DB holding one empty session for each of two owners. Also
+  greps for the unused symbols cited in the dead-code finding and for the callers of
+  `run_auto_sort`, `search_session_messages`, `maybe_compact`, `model_supports_vision` and
+  `_sanitize_tool_messages`. Suites: `ls tests | grep -iE
+  'chat|session|context|topic|compactor|request_models|assistant_log'` yields 64 files
+- running them gives **1 failed, 523 passed**
+
+The failure is the order-dependent pair already documented in `routes-chat-session`
+(`tests/test_session_list_owner_scope.py` passes alone — 2 passed; with
+`tests/test_archived_sessions_model_filter.py` ahead of it, 1 failed / 4 passed). The compactor's
+own suites outside that glob (`tests/test_compaction_summary_failure.py`,
 `tests/test_context_compactor.py`, `tests/test_context_compactor_nonstring.py`,
-`tests/test_context_budget.py`) are **41 passed**, and the neighbouring budget suites
-(`tests/test_compact_truncate_tool_call_args.py`, `tests/test_agent_tool_budget_nonnumeric.py`,
-`tests/test_budget_auto_sentinel.py`, `tests/test_manage_settings_token_budget.py`,
-`tests/test_history_compact_tool_calls.py`, `tests/test_document_processor_attachment_budget.py`)
-are **25 passed**.
+`tests/test_context_budget.py`) are **41 passed**, and the neighbouring budget suites (the 6 test
+files listed below) are **25 passed**.
+
+- `tests/test_compact_truncate_tool_call_args.py`
+- `tests/test_agent_tool_budget_nonnumeric.py`
+- `tests/test_budget_auto_sentinel.py`
+- `tests/test_manage_settings_token_budget.py`
+- `tests/test_history_compact_tool_calls.py`
+- `tests/test_document_processor_attachment_budget.py`
 
 ### [BUG] Compaction rewrites the wrong slice of the session history, dropping messages it never summarized
 

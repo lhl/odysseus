@@ -18,41 +18,67 @@ handlers that read the schema are the `routes-*` sections; the secret stores tha
 
 ## Coverage
 
-**Read fully:** `core/atomic_io.py` (66 lines), `core/constants.py` (12), `core/exceptions.py`
-(29), `core/platform_compat.py` (452), `core/database.py` (2,737), `core/__init__.py` (53);
+**Read fully:**
+
+| File | Lines |
+| --- | ---: |
+| `core/atomic_io.py` | 66 |
+| `core/constants.py` | 12 |
+| `core/exceptions.py` | 29 |
+| `core/platform_compat.py` | 452 |
+| `core/database.py` | 2,737 |
+| `core/__init__.py` | 53 |
+
 `specs/persistence.md`. Supporting reads for the findings: `src/memory.py` at the
 `MemoryStoreUnreadable` paths (`:120-210`), `src/secret_storage.py` at the import block and key
 chmod (`:20-50`), `src/settings.py` at the default settings and `save_settings` (`:85-95`,
-`:252-253`), `src/api_key_manager.py` at the chmod sites (`:23`, `:33`), `src/integrations.py`
-at `save_integrations` (`:253-258`), `routes/prefs_routes.py` at `_save` (`:26-27`),
+`:252-253`), `src/api_key_manager.py` at the chmod sites (`:23`, `:33`), `src/integrations.py` at
+`save_integrations` (`:253-258`), `routes/prefs_routes.py` at `_save` (`:26-27`),
 `routes/mcp/mcp_routes.py` at the env parse/store (`:142`, `:235-258`),
-`src/agent_tools/admin_tools.py` at the MCP create (`:260-270`),
-`routes/webhook/webhook_routes.py` at the secret write (`:116-131`).
+`src/agent_tools/admin_tools.py` at the MCP create (`:260-270`), `routes/webhook/webhook_routes.py`
+at the secret write (`:116-131`).
 
-**Read partially:** `app.py` at the null-owner sweep (`:1214-1228`); `services/hwfit/hardware.py`
-at `_run` (`:26-40`); `routes/hwfit_routes.py` at `_validate_detection_target` and its call
-sites (`:21-25`, `:190`, `:204`, `:331`, `:417`); `src/database.py` as the re-export shim;
-`tests/test_atomic_io.py`, `tests/test_app_db_permissions.py`,
-`tests/test_memory_store_unreadable_no_wipe.py`, `tests/test_prefs_atomic_write.py`,
-`tests/test_security_regressions.py` at their permission and durability assertions.
+**Read partially:**
 
-**Not read:** the bodies of the route and service modules named above beyond the cited regions;
-the front end's consumers of the schema; `src/settings.py`, `src/api_key_manager.py`,
-`src/integrations.py` and `src/secret_storage.py` outside the regions cited (assigned to
-`src-platform` and `src-security`).
+- `app.py` at the null-owner sweep (`:1214-1228`)
+- `services/hwfit/hardware.py` at `_run` (`:26-40`)
+- `routes/hwfit_routes.py` at `_validate_detection_target` and its call sites (`:21-25`, `:190`,
+  `:204`, `:331`, `:417`)
+- `src/database.py` as the re-export shim
+- `tests/test_atomic_io.py`, `tests/test_app_db_permissions.py`,
+  `tests/test_memory_store_unreadable_no_wipe.py`, `tests/test_prefs_atomic_write.py`,
+  `tests/test_security_regressions.py` at their permission and durability assertions
 
-**Checks run:** a temp-SQLite probe that seeded 20,000 messages and timed
-`_migrate_chat_messages_fts()` at four sizes, with `EXPLAIN QUERY PLAN` and two alternative
-implementations (finding 1); a temp-directory probe that wrote a 0o600 file through
-`atomic_write_json` and re-stat'ed it, plus `stat -c '%a %n'` on this checkout's `data/` and a
-repo-wide chmod grep (finding 2); `bulk_insert_messages` called with its real signature
-(finding 3); import probes for `routes.email_helpers`, `src.secret_storage` and `app` under a
-temp data dir (finding 4); `grep -rn` for the env writers and the `EncryptedText` columns
-(finding 5). Nine suites were run for the surface this section read — `tests/test_atomic_io.py`,
-`tests/test_app_db_permissions.py`, `tests/test_memory_store_unreadable_no_wipe.py`,
-`tests/test_prefs_atomic_write.py`, `tests/test_database_utcnow.py`,
-`tests/test_sqlite_foreign_keys.py`, `tests/test_update_database_script.py`,
-`tests/test_api_key_file_permissions.py`, `tests/test_security_regressions.py` — **148 passed**.
+**Not read:**
+
+- the bodies of the route and service modules named above beyond the cited regions
+- the front end's consumers of the schema
+- `src/settings.py`, `src/api_key_manager.py`, `src/integrations.py` and `src/secret_storage.py`
+  outside the regions cited (assigned to `src-platform` and `src-security`)
+
+**Checks run:**
+
+- a temp-SQLite probe that seeded 20,000 messages and timed `_migrate_chat_messages_fts()` at four
+  sizes, with `EXPLAIN QUERY PLAN` and two alternative implementations (finding 1)
+- a temp-directory probe that wrote a 0o600 file through `atomic_write_json` and re-stat'ed it, plus
+  `stat -c '%a %n'` on this checkout's `data/` and a repo-wide chmod grep (finding 2)
+- `bulk_insert_messages` called with its real signature (finding 3)
+- import probes for `routes.email_helpers`, `src.secret_storage` and `app` under a temp data dir
+  (finding 4)
+- `grep -rn` for the env writers and the `EncryptedText` columns (finding 5)
+
+Nine suites were run for the surface this section read — the 9 test files listed below — **148
+passed**.
+
+- `tests/test_atomic_io.py`
+- `tests/test_app_db_permissions.py`
+- `tests/test_memory_store_unreadable_no_wipe.py`
+- `tests/test_prefs_atomic_write.py`
+- `tests/test_database_utcnow.py`
+- `tests/test_sqlite_foreign_keys.py`
+- `tests/test_update_database_script.py`
+- `tests/test_api_key_file_permissions.py`
+- `tests/test_security_regressions.py`
 
 ### [SECURITY] `atomic_write_json` leaves the auth and settings stores at the umask default
 

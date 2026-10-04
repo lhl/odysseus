@@ -19,30 +19,49 @@ the handlers the tables admit; `src-mcp` owns `mcp_manager.py` (read here only a
 
 ## Coverage
 
-**Read fully:** `src/tool_capabilities.py` (708 lines), `src/tool_policy.py` (242),
-`src/tool_security.py` (284), `src/tool_utils.py` (92), `src/builtin_mcp.py` (386);
-`tests/test_tool_policy.py` (479) and `tests/test_email_registry_sync.py` (86), the two suites
-that pin this section's policy partitions.
+**Read fully:**
 
-**Read partially:** `tests/test_external_context_tool_gate.py` (the capability assertions and
-the gate/approval cases, not all 1,473 lines); `tests/test_builtin_mcp_npx_cache.py`;
-`src/mcp_manager.py` at `_connect_stdio` (`:180-200`); `src/agent_loop.py` at the
-`capabilities_for_action` call sites (`:3055-3090`, `:5745-5775`); `src/tool_approvals.py` at
-`_matches_unlocked` (`:235-275`); `src/agent_tools/coding_tools.py` (the `todowrite` handler,
-74 lines); `src/agent_tools/session_tools.py` at `manage_session` (`:248-470`);
-`src/agent_tools/document_tools.py` at `ManageDocumentTool.execute` (`:740-900`);
-`src/tools/system.py` at `do_manage_skills` (`:24-130`) and `do_manage_tasks` (`:274-520`);
-`src/tools/calendar.py`, `src/tools/notes.py`, `src/tools/research.py`,
-`src/tools/contacts.py` at their action dispatch; `src/ai_interaction.py` at
-`do_manage_memory` (`:341-560`); `website/setup.md:735-755`; `specs/shell-mcp.md:88-100`;
-`specs/testing-devops.md:218`.
+| File | Lines |
+| --- | ---: |
+| `src/tool_capabilities.py` | 708 |
+| `src/tool_policy.py` | 242 |
+| `src/tool_security.py` | 284 |
+| `src/tool_utils.py` | 92 |
+| `src/builtin_mcp.py` | 386 |
+| `tests/test_tool_policy.py` | 479 |
+| `tests/test_email_registry_sync.py` | 86 |
 
-**Not read:** `src/tool_schemas.py`, `src/tool_index.py`, `src/tool_approval_scopes.py`,
-`src/tool_implementations.py` (assigned to `src-tools-schema-index`), `src/tool_execution.py`
-(assigned to `src-tools-parse-exec`);
-`src/agent_tools/*` beyond the handlers named above; `mcp_servers/*`; `src/mcp_manager.py`
-beyond `_connect_stdio`; `src/teacher_escalation.py` beyond its `capabilities_for_action` call;
-the JS/UI side of the tool toggles.
+The two suites that pin this section's policy partitions.
+
+**Read partially:**
+
+- `tests/test_external_context_tool_gate.py` (the capability assertions and the gate/approval cases,
+  not all 1,473 lines)
+- `tests/test_builtin_mcp_npx_cache.py`
+- `src/mcp_manager.py` at `_connect_stdio` (`:180-200`)
+- `src/agent_loop.py` at the `capabilities_for_action` call sites (`:3055-3090`, `:5745-5775`)
+- `src/tool_approvals.py` at `_matches_unlocked` (`:235-275`)
+- `src/agent_tools/coding_tools.py` (the `todowrite` handler, 74 lines)
+- `src/agent_tools/session_tools.py` at `manage_session` (`:248-470`)
+- `src/agent_tools/document_tools.py` at `ManageDocumentTool.execute` (`:740-900`)
+- `src/tools/system.py` at `do_manage_skills` (`:24-130`) and `do_manage_tasks` (`:274-520`)
+- `src/tools/calendar.py`, `src/tools/notes.py`, `src/tools/research.py`, `src/tools/contacts.py` at
+  their action dispatch
+- `src/ai_interaction.py` at `do_manage_memory` (`:341-560`)
+- `website/setup.md:735-755`
+- `specs/shell-mcp.md:88-100`
+- `specs/testing-devops.md:218`
+
+**Not read:**
+
+- `src/tool_schemas.py`, `src/tool_index.py`, `src/tool_approval_scopes.py`,
+  `src/tool_implementations.py` (assigned to `src-tools-schema-index`), `src/tool_execution.py`
+  (assigned to `src-tools-parse-exec`)
+- `src/agent_tools/*` beyond the handlers named above
+- `mcp_servers/*`
+- `src/mcp_manager.py` beyond `_connect_stdio`
+- `src/teacher_escalation.py` beyond its `capabilities_for_action` call
+- the JS/UI side of the tool toggles
 
 **Checks run:** the seven gate/policy suites above under `venv/bin/python -m pytest -q` —
 `240 passed` in 2.0s. A script that diffs each multiplexed tool's read/write action sets in
