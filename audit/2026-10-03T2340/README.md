@@ -27,7 +27,9 @@ number after the code has moved.
   was not read.
 - **Counting.** The tables under [Findings at a glance](#findings-at-a-glance) are computed
   from the findings by `./audit.py build`. `./audit.py check` fails when the counts in this
-  header disagree with the sections, so the two cannot drift apart.
+  header disagree with the sections, so the two cannot drift apart. The `head` field in
+  `metrics/snapshots/` is the commit the metrics were taken at, so it names the commit before the
+  one that publishes it — a commit cannot record its own hash.
 - **Editing.** Edit `sources/` and rebuild. `README.md` is generated, and `check` fails on
   a hand edit.
 - **Credentials.** `./audit.py check` reads every secret-looking assignment in the target
