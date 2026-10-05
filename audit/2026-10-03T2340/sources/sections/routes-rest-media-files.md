@@ -56,10 +56,14 @@ audit directory.
 - `src/document_processor.py` at vision analysis (333–392)
 - `routes/calendar_routes.py` at preference-writing CalDAV configuration handlers (805–984)
 - `src/builtin_actions.py` at the scheduled model-serve preference update (3270–3354)
-- caller searches in `routes/`, `src/caldav_sync.py`, `src/task_scheduler.py`, and
-  `routes/cookbook_routes.py`. Test-source reads covered `tests/conftest.py`,
-  `tests/test_prefs_routes.py`, `tests/test_editor_draft_payload.py`,
-  `tests/test_preset_expand_owner_scope.py` and `tests/test_cookbook_dead_download_status.py`
+- caller searches in `routes/`, `src/caldav_sync.py`, `src/task_scheduler.py` and
+  `routes/cookbook_routes.py`
+- test source:
+  - `tests/conftest.py`
+  - `tests/test_prefs_routes.py`
+  - `tests/test_editor_draft_payload.py`
+  - `tests/test_preset_expand_owner_scope.py`
+  - `tests/test_cookbook_dead_download_status.py`
 - the other selected tests were executed, not read end to end
 
 **Not read:** no assigned route file remains unread. Boundary modules beyond the regions

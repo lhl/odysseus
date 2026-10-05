@@ -24,27 +24,43 @@ routes read.
 
 ## Coverage
 
-**Read fully:** all five assigned files (805 lines): `services/research/research_handler.py` (487),
-`services/research/service.py` (167), `services/docs/service.py` (121), `services/docs/__init__.py`
-(18), `services/research/__init__.py` (12). Working-tree line numbers refer to `2992bf6d368a`
-(`git rev-parse --short=12 HEAD`); `git status --short` showed only the untracked `audit/`
-directory, and the five files are unmodified against `HEAD`.
+**Read fully:** all five assigned files, 805 lines.
 
-**Read partially:** the boundary code the findings rest on — the live handler
-`src/research_handler.py` at `_research_json_path` (`:53-62`), `start_research` (`:240-364`), the
-status/result/sources/raw-findings readers (`:407-521`) and `_handle_research_failure` (`:943-949`);
-`src/rag_manager.py` in full (70 lines); `src/rag_vector.py` at `__init__`/`healthy` (`:76-142`),
-`search` and its keyword fallback (`:348-443`), `index_personal_documents` (`:495-556`) and the
-owner-scoped document-id helper (`:48-55`); `src/rag_singleton.py` in full (63 lines);
-`src/constants.py` at the data-path constants (`:41-56`); `services/__init__.py` in full (27 lines);
-`services/search/service.py` at the offloaded `comprehensive_web_search` call (`:64-77`);
-`src/chat_processor.py:366`; `routes/personal_routes.py` at `_rag()`, the index-job lock and the
-add-directory route (`:150-260`); `routes/research/research_routes.py` at the library owner gate
-(`:367-386`); `src/app_initializer.py:117-124`; `app.py:713`; `src/task_scheduler.py:2014-2024` and
-`:2122-2132`; `src/deep_research.py` at the round loop and the time budget (`:296`, `:536`,
-`:796-797`); `specs/research.md:105-157` and `specs/documents-rag-uploads.md:150-170`. Tests read in
-full: `tests/test_docs_query_nondict_rows.py`, `tests/test_research_handler_path_confinement.py`,
-`tests/test_services_research_low_quality_sources.py`; the suites named under *Checks run* were
+| File | Lines |
+| --- | ---: |
+| `services/research/research_handler.py` | 487 |
+| `services/research/service.py` | 167 |
+| `services/docs/service.py` | 121 |
+| `services/docs/__init__.py` | 18 |
+| `services/research/__init__.py` | 12 |
+
+Working-tree line numbers refer to `2992bf6d368a` (`git rev-parse --short=12 HEAD`); `git status
+--short` showed only the untracked `audit/`, and the five files are unmodified against `HEAD`.
+
+**Read partially:** the boundary code the findings rest on.
+
+| File | Regions read |
+| --- | --- |
+| `src/research_handler.py` (the live handler) | `_research_json_path` (`:53-62`), `start_research` (`:240-364`), the status, result, sources and raw-findings readers (`:407-521`), `_handle_research_failure` (`:943-949`) |
+| `src/rag_manager.py` | In full (70 lines) |
+| `src/rag_vector.py` | `__init__` and `healthy` (`:76-142`), `search` and its keyword fallback (`:348-443`), `index_personal_documents` (`:495-556`), the owner-scoped document-id helper (`:48-55`) |
+| `src/rag_singleton.py` | In full (63 lines) |
+| `src/constants.py` | The data-path constants (`:41-56`) |
+| `services/__init__.py` | In full (27 lines) |
+| `services/search/service.py` | The offloaded `comprehensive_web_search` call (`:64-77`) |
+| `src/chat_processor.py` | `:366` |
+| `routes/personal_routes.py` | `_rag()`, the index-job lock and the add-directory route (`:150-260`) |
+| `routes/research/research_routes.py` | The library owner gate (`:367-386`) |
+| `src/app_initializer.py` | `:117-124` |
+| `app.py` | `:713` |
+| `src/task_scheduler.py` | `:2014-2024` and `:2122-2132` |
+| `src/deep_research.py` | The round loop and the time budget (`:296`, `:536`, `:796-797`) |
+| `specs/research.md` | `:105-157` |
+| `specs/documents-rag-uploads.md` | `:150-170` |
+
+Three test files were read in full: `tests/test_docs_query_nondict_rows.py`,
+`tests/test_research_handler_path_confinement.py` and
+`tests/test_services_research_low_quality_sources.py`. The suites named under *Checks run* were
 otherwise read only by result.
 
 **Not read:** the live handler's other ~630 lines (`rename_owner`, the report HTML and image-hide
@@ -79,14 +95,20 @@ it settles:
 - **Import probe.** `import services.search` was timed and inspected in `sys.modules` to see what the
   package `__init__` pulls in.
 
-`venv/bin/python -m pytest -q` was run with the 41 files matching `ls tests | grep -iE
-'research|docs|report'` (the docs/RAG, research, deep-research, personal-docs and visual-report
-suites, `tests/run_order_report.py` and `tests/test_run_order_report.py` included) — **245 passed**,
-3 warnings in 3.86s. The suites that pin this section's own modules
-(`tests/test_docs_query_nondict_rows.py`, `tests/test_research_service.py`,
-`tests/test_services_research_low_quality_sources.py`, `tests/test_svc_research_sources_nondict.py`,
-`tests/test_research_handler_analyzed_urls.py`) are among them. The full suite and `audit.py` were not
-run; run-level generation, counts and secret-gate validation belong to the coordinating reviewer.
+`venv/bin/python -m pytest -q` was run with the 41 files matching
+`ls tests | grep -iE 'research|docs|report'`: the docs and RAG, research, deep-research,
+personal-docs and visual-report suites, including `tests/run_order_report.py` and
+`tests/test_run_order_report.py`. Result: **245 passed**, 3 warnings in 3.86s. The suites that pin
+this section's own modules are among them:
+
+- `tests/test_docs_query_nondict_rows.py`
+- `tests/test_research_service.py`
+- `tests/test_services_research_low_quality_sources.py`
+- `tests/test_svc_research_sources_nondict.py`
+- `tests/test_research_handler_analyzed_urls.py`
+
+The full suite and `audit.py` were not run; run-level generation, counts and secret-gate validation
+belong to the coordinating reviewer.
 
 ### [SECURITY] The compatibility research handler joins an unvalidated session id into its report path
 
@@ -94,8 +116,15 @@ run; run-level generation, counts and secret-gate validation belong to the coord
 - **Severity:** low
 - **Disposition:** next
 - **Evidence:** five methods build the on-disk report path by joining the caller's id with no
-  validation — `get_status` (`:117`), `get_result` (`:154`), `get_sources` (`:174`), `clear_result`
-  (`:202`, which unlinks it) and `_save_result` (`:219`, which overwrites it):
+  validation:
+
+  | Method | Line | Effect on the file |
+  | --- | ---: | --- |
+  | `get_status` | `:117` | Reads it |
+  | `get_result` | `:154` | Reads it |
+  | `get_sources` | `:174` | Reads it |
+  | `clear_result` | `:202` | Unlinks it |
+  | `_save_result` | `:219` | Overwrites it |
 
   ```python
   path = RESEARCH_DATA_DIR / f"{session_id}.json"

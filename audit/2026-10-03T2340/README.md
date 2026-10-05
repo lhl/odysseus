@@ -637,8 +637,10 @@ whether the root documents describe them correctly.
 - the other sections' paths outside the regions above
 - `static/` beyond the lines named
 - the minified bundles beyond their first bytes and version strings
-- `specs/`, `swift/`, `companion/`, `integrations/`, `mcp_servers/`, `data/` and the rest of
-  `website/`
+- these trees, outside the section's scope:
+  - `specs/`, `swift/` and `companion/`
+  - `integrations/`, `mcp_servers/` and `data/`
+  - the rest of `website/`
 
 **Checks run** (all from the repository root; `venv/bin/python` is Python 3.12.13):
 
@@ -820,18 +822,23 @@ tree, not assumed):
   ```
 
   `validate_public_http_url` (`src/url_security.py:81-93`) rejects anything `is_public_http_url`
-  (`:74`) does not accept, and its own docstring states the residual limit — "DNS checks reduce
+  (`:74`) does not accept, and its own docstring states the residual limit: "DNS checks reduce
   obvious private-network targets but do not eliminate every DNS rebinding race by themselves"
-  (`:86-87`). Gap 3 says `analytics`, `cache`, `content`, `query` and `ranking` under `src/search/`
-  "are still independent copies that can drift"; all five are compatibility modules of 11-14 lines
-  that alias the `services.search` implementation (`wc -l` → 12, 11, 11, 11, 14), e.g.
-  `src/search/cache.py`: "the implementation now lives in `services.search.cache` so the two cannot
-  drift". Gap 1's headline still holds — `bash` is unconfined — but its detail does not: it says the
-  `read_file`/`write_file` tools have "no … filesystem confinement", while those handlers resolve
-  every model-supplied path through `_resolve_tool_path`, which denies sensitive and app-state paths
-  and requires containment in an allowlist (data subdirectories and temp roots) or in the active
-  workspace (`src/tool_execution.py:357-405`; callers at `src/agent_tools/filesystem_tools.py:197`,
-  `:257`, `:369`, `:467`). Gap 4, the coarse token scopes, is not challenged here.
+  (`:86-87`).
+
+  Gap 3 says five modules under `src/search/` (analytics, cache, content, query and ranking)
+  "are still independent copies that can drift". All five are compatibility modules of 11-14 lines
+  that alias the `services.search` implementation (`wc -l` → 12, 11, 11, 11, 14), for example
+  `src/search/cache.py`: "the implementation now lives in `services.search.cache` so the two
+  cannot drift".
+
+  Gap 1's headline still holds, because `bash` is unconfined, but its detail does not. It says the
+  `read_file` and `write_file` tools have "no … filesystem confinement", while those handlers
+  resolve every model-supplied path through `_resolve_tool_path`. That function denies sensitive and
+  app-state paths and requires containment in an allowlist (data subdirectories and temp roots) or
+  in the active workspace (`src/tool_execution.py:357-405`; callers at
+  `src/agent_tools/filesystem_tools.py` lines 197, 257, 369 and 467). Gap 4, the coarse token
+  scopes, is not challenged here.
 - **Impact:** the register is what a security reviewer, packager or contributor reads to judge where
   the project is exposed and where help is wanted. A stale entry overstates exposure and misdirects
   work — someone could re-implement the `base_url` guard or redo the search consolidation — and an
@@ -878,11 +885,15 @@ tree, not assumed):
 - **Disposition:** next
 - **Evidence:** the section is headed "Python dependencies — Core (`requirements.txt`) and optional
   (`requirements-optional.txt`)", so the table reads as the inventory of those two files. It has 27
-  rows; the two files install 31 and 6 package lines. Missing from the core list are `nh3`, `httpcore`,
-  `httpx2`, `python-dateutil` and `psycopg2-binary` (`requirements.txt:28,6,53,34,58`), and from the
-  optional list `faster-whisper`, `soundfile` and `kokoro` (`requirements-optional.txt:13,22,23`).
+  rows; the two files install 31 and 6 package lines. The omissions are:
+
+  | List | Missing packages | Where declared |
+  | --- | --- | --- |
+  | Core | `nh3`, `httpcore`, `httpx2`, `python-dateutil`, `psycopg2-binary` | `requirements.txt:28,6,53,34,58` |
+  | Optional | `faster-whisper`, `soundfile`, `kokoro` | `requirements-optional.txt:13,22,23` |
+
   One omission matters beyond completeness: `psycopg2-binary` is LGPL, which the document's own
-  compatibility note treats as the category it has cleared — "chardet (LGPL-2.1) has been removed
+  compatibility note treats as the category it has cleared: "chardet (LGPL-2.1) has been removed
   entirely" (`:153-155`). The installed distribution's metadata says so:
 
   ```
@@ -1188,18 +1199,24 @@ The one skip in each run is `tests/test_docker_devops_hardening.py:149`, which n
 odysseus-odysseus:latest`. The Docker CLI is present (`docker version` → server 29.8.0) but the image
 is not, so the real-entrypoint ownership probe did not run here.
 
-Beyond the suites: `git check-ignore -q` over the runtime-state and secret paths; a `.env` parser
-probe that replays `start-macos.sh:23-29` against a synthetic fixture and compares the result with
-`python-dotenv`; a mode probe that replays `setup.py`'s two writes under `umask 022`; an AST walk
-over `core/`, `routes/`, `src/`, `services/`, `mcp_servers/`, `integrations/`, `companion/`,
-`scripts/` and `app.py` collecting module-level third-party imports (22 distinct modules; guarded
-imports inside `try` blocks are not in that set, so `pdfminer` was checked with a repository-wide
-`grep` instead) for comparison against both requirement files; `pip`-level checks that the imports
-resolve in the project venv; a PyPI metadata query for the binary dependencies the Dockerfile
-installs on Python 3.14; and `docker pull python:3.14-slim` followed by
-`apt-get install -s --no-install-recommends` for the Dockerfile's exact apt list, to check that every
-package name resolves on the base image's Debian release. Those last two came back clean and are
-recorded as rejected hypotheses in the report, not as
+Beyond the suites:
+
+- `git check-ignore -q` over the runtime-state and secret paths
+- a `.env` parser probe that replays `start-macos.sh:23-29` against a synthetic fixture and compares
+  the result with `python-dotenv`
+- a mode probe that replays `setup.py`'s two writes under `umask 022`
+- an AST walk collecting module-level third-party imports (22 distinct modules) from nine
+  locations, for comparison against both requirement files. The locations are `app.py` and the
+  directories core, routes, src, services, mcp_servers, integrations, companion and scripts.
+  Guarded imports inside `try` blocks are not in that set, so `pdfminer` was checked with a
+  repository-wide `grep` instead.
+- `pip`-level checks that the imports resolve in the project venv
+- a PyPI metadata query for the binary dependencies the Dockerfile installs on Python 3.14
+- `docker pull python:3.14-slim` followed by `apt-get install -s --no-install-recommends` for the
+  Dockerfile's exact apt list, to check that every package name resolves on the base image's Debian
+  release
+
+The last two came back clean and are recorded as rejected hypotheses in the report, not as
 findings.
 
 #### [DEPENDENCY] `pdfminer.six` is imported at module level but declared in no requirement file, so every fetched PDF yields no text
@@ -1534,12 +1551,13 @@ findings.
 - **Location:** `.env.example:23` (the API-key block; missing `HF_TOKEN`/`HUGGING_FACE_HUB_TOKEN` and `ODYSSEUS_ADMIN_USER`)
 - **Severity:** low
 - **Disposition:** next
-- **Evidence:** the file is 268 lines and documents 52 variables; an extraction of every
-  `os.environ.get`/`os.getenv` name in `core/`, `routes/`, `src/`, `services/`, `scripts/`,
-  `mcp_servers/`, `integrations/`, `app.py`, `launcher.py` and `setup.py` (129 names) minus the
-  documented set leaves 98 names, most of them internal (`PATH`, `APPDATA`, `TMPDIR`) or
-  feature-internal. Three of the remainder are operator-facing credentials or identities that all
-  three compose files already forward into the container:
+- **Evidence:** the file is 268 lines and documents 52 variables. An extraction of every
+  `os.environ.get` and `os.getenv` name across ten locations (129 names) minus the documented set
+  leaves 98 names, most of them internal (`PATH`, `APPDATA`, `TMPDIR`) or feature-internal. The
+  locations are `app.py`, `launcher.py` and `setup.py`, and the directories core,
+  routes, src, services, scripts, mcp_servers and integrations. Three of the remainder are
+  operator-facing credentials or identities that all three compose files already forward into the
+  container:
 
   ```
   $ grep -n "HF_TOKEN\|HUGGING_FACE_HUB_TOKEN\|ODYSSEUS_ADMIN_USER" docker-compose.yml
@@ -1588,13 +1606,13 @@ findings.
   ```
 
   (`./.env` is this checkout's local file, copied from the template by `setup.py:166` and untracked;
-  `./.env.example:28` is the tracked line. The other three are the compose files.) A search of
-  `core/`, `routes/`, `src/`, `services/`, `app.py` and `setup.py` for `research_llm`,
-  `research_endpoint` or `RESEARCH_` returns only `DEEP_RESEARCH_DIR` and unrelated identifiers. This
-  is the same class as the `CLEANUP_INTERVAL_HOURS`/`CLEANUP_ENABLED` pair already reported in
-  `src-platform.md` — a knob that survives the whole trip from `.env` into the container and dies at
-  the far end — but it is a different variable, in this section's files, and that section's finding
-  does not cover it.
+  `./.env.example:28` is the tracked line. The other three are the compose files.) A search of the
+  core, routes, source and services trees, `app.py` and `setup.py` for `research_llm`,
+  `research_endpoint` or `RESEARCH_` returns only `DEEP_RESEARCH_DIR` and unrelated identifiers.
+  This is the same class as the `CLEANUP_INTERVAL_HOURS` and `CLEANUP_ENABLED` pair already
+  reported in `src-platform.md`, a knob that survives the whole trip from `.env` into the container
+  and dies at the far end. But it is a different variable, in this section's files, and that
+  section's finding does not cover it.
 - **Impact:** an operator who points `RESEARCH_LLM_ENDPOINT` at a dedicated research model gets the
   default routing with no warning and no error; the deep-research feature keeps using whatever the
   normal model path resolves to. The cost is an afternoon of debugging a setting that is documented,
@@ -1856,17 +1874,23 @@ provider specs:
 They are not claimed as reviewed; the citation check in `Checks run` covers them mechanically, which
 is not the same as reading them.
 
-**Checks run.** (1) A throwaway script (`/tmp/check_refs.py`, `/tmp/check_refs2.py`) that extracts
-every `` `path:line` `` citation from `specs/*.md`, resolves the path, compares the line against the
-file length, and — where the prose names a backticked symbol — measures the distance from the cited
-line to the nearest occurrence of that symbol. Result: 0 missing files, 0 out-of-range lines, 2
-symbol anchors more than three lines off, both on `specs/auth-security.md:89`. (2) `git cat-file -t`
-and a scan of every commit object for the four distinct stamps in the set. (3) `ls`, `grep` and
-`git log --all` over the files the findings name (`docs/`, `website/`, `.github/workflows/`,
-`package.json`, `static/backgrounds.html`, `src/tool_index.py`, `src/model_capability_readers/`,
-`services/search/core.py`, `services/shell/service.py`). (4) A probe script
-(`/tmp/probe_backgrounds.py`) that calls `serve_html_with_nonce` with the path the `/backgrounds`
-route builds. Line numbers are the working tree at `2992bf6d368a`.
+**Checks run.**
+
+1. A throwaway script (`/tmp/check_refs.py`, `/tmp/check_refs2.py`) that extracts every
+   `` `path:line` `` citation from `specs/*.md`, resolves the path, compares the line against the
+   file length, and, where the prose names a backticked symbol, measures the distance from the
+   cited line to the nearest occurrence of that symbol. Result: 0 missing files, 0 out-of-range
+   lines, and 2 symbol anchors more than three lines off, both on `specs/auth-security.md:89`.
+2. `git cat-file -t` and a scan of every commit object for the four distinct stamps in the set.
+3. `ls`, `grep` and `git log --all` over the files the findings name:
+   - `docs/`, `website/`, `.github/workflows/` and `package.json`
+   - `static/backgrounds.html`
+   - `src/tool_index.py`, `src/model_capability_readers/`
+   - `services/search/core.py`, `services/shell/service.py`
+4. A probe script (`/tmp/probe_backgrounds.py`) that calls `serve_html_with_nonce` with the path the
+   `/backgrounds` route builds.
+
+Line numbers are the working tree at `2992bf6d368a`.
 
 #### [DOC-DRIFT] `testing-devops.md` tells maintainers not to add the CodeQL workflow the repo added a month before the spec's own baseline
 
@@ -1930,17 +1954,20 @@ route builds. Line numbers are the working tree at `2992bf6d368a`.
   ```
 
   The clone is not shallow and the July dates themselves are represented in history, so this is not
-  a missing-fetch artifact: no object with either prefix exists. The 26 affected files are the 17
-  `specs/model-providers/*.md` at `dev@28d27ee` (`atlas-cloud`, `azure-openai`, `bedrock`,
-  `cerebras`, `cloudflare-workers-ai`, `fireworks`, `github-models`, `groq`,
-  `local-compatible-engines`, `minimax`, `moonshot-kimi`, `nvidia-nim`, `perplexity`,
-  `siliconflow`, `venice`, `xai`, `zai`) and the 9 at `dev@e57f60b` (`chatgpt-subscription`,
-  `cohere`, `github-copilot`, `hugging-face`, `llama-cpp`, `lm-studio`, `sglang`, `together`,
-  `vllm`); the 35 files at `dev@e71f8ce` (27) and `dev@2e2bb52` (8) resolve. The repository carries
-  both a history-rewrite marker (`origin/backup/main-before-history-cleanup-20260910`) and a
-  mid-July repository transfer (`cc4c7f42 chore: update repository URLs after organization transfer
+  a missing-fetch artifact: no object with either prefix exists. The 26 affected files are:
+
+  - the 17 `specs/model-providers/*.md` files at `dev@28d27ee`: atlas-cloud, azure-openai,
+    bedrock, cerebras, cloudflare-workers-ai, fireworks, github-models, groq,
+    local-compatible-engines, minimax, moonshot-kimi, nvidia-nim, perplexity, siliconflow, venice,
+    xai and zai
+  - the 9 files at `dev@e57f60b`: chatgpt-subscription, cohere, github-copilot, hugging-face,
+    llama-cpp, lm-studio, sglang, together and vllm
+
+  The 35 files at `dev@e71f8ce` (27) and `dev@2e2bb52` (8) resolve. The repository carries both a
+  history-rewrite marker (`origin/backup/main-before-history-cleanup-20260910`) and a mid-July
+  repository transfer (`cc4c7f42 chore: update repository URLs after organization transfer
   (#5622)`, 2026-07-20), either of which could explain stamps taken from a tree this clone does not
-  contain — the backup branch does not contain them either, so the two stamps cannot be recovered
+  contain. The backup branch does not contain them either, so the two stamps cannot be recovered
   from this clone at all.
 - **Impact:** For 26 of 61 specs — the ones covering every provider except Anthropic, Mistral,
   Moonshot/Kimi, Ollama and OpenAI — the documented workflow of reading a spec against its baseline
@@ -2016,20 +2043,21 @@ route builds. Line numbers are the working tree at `2992bf6d368a`.
   })
   ```
 
-  The list the spec describes resembles a different constant with a different job — the Personal
+  The list the spec describes resembles a different constant with a different job: the Personal
   Assistant's scheduled-task set at `src/tool_index.py:49-62` (`list_emails`, `send_email`,
-  `manage_calendar`, `web_search`, `read_file`, `api_call`, `ui_control`, ...) — and neither
-  constant contains `shell`, `python`, `app_api`, or a Cookbook serve control. The comment above the
-  real set states the intent the spec contradicts: "Keep this deliberately tiny. Domain tools (web,
+  `manage_calendar` and `web_search`, then `read_file`, `api_call`, `ui_control` and more). Neither constant
+  contains `shell`, `python`, `app_api` or a Cookbook serve control. The comment above the real set
+  states the intent the spec contradicts: "Keep this deliberately tiny. Domain tools (web,
   documents, email, cookbook/model serving, files, settings, etc.) are injected by retrieval or
   keyword intent". `grep -rn ALWAYS_AVAILABLE audit/2026-10-03T2340/sources/sections/` finds no
   other section reporting this.
-- **Impact:** A maintainer reading the spec to decide what is unconditionally in the prompt gets
-  the wrong answer for `web_search`, `read_file`, `write_file`, `edit_file`, `bash`, `python`,
-  `app_api` and the Cookbook controls, and may add a tool to `ALWAYS_AVAILABLE` believing it is
-  already there (or assume a small-context model already carries those schemas). The next sentence
-  in the spec — "Current prompt/schema assembly preserves only selected base tools
-  unconditionally" — is the accurate one, which makes the pair self-contradictory.
+- **Impact:** a maintainer reading the spec to decide what is unconditionally in the prompt gets
+  the wrong answer for the web, file and shell tools and the Cookbook controls, and may add a tool
+  to `ALWAYS_AVAILABLE` believing it is already there (or assume a small-context model already
+  carries those schemas). The tools are `web_search`, the three file tools (`read_file`,
+  `write_file`, `edit_file`), `bash`, `python` and `app_api`. The next sentence in the spec, "Current prompt/schema assembly
+  preserves only selected base tools unconditionally", is the accurate one, which makes the pair
+  self-contradictory.
 - **Fix:** Rewrite the sentence to say what `ALWAYS_AVAILABLE` is (the three ambient tools:
   memory, `ask_user`, `update_plan`) and name `ASSISTANT_ALWAYS_AVAILABLE` separately for the
   scheduled-check-in set.
@@ -2354,19 +2382,16 @@ tests/test_searxng_settings_migration.py tests/test_memory_cli_add_nondict.py
 tests/test_amd_gpu_check_args.py tests/test_pr_blocker_audit.py tests/test_docs_no_orphan_images.py
 tests/test_email_account_default_serialization.py` → **202 passed, 3 warnings in 2.72s**.
 
-The suite reaches these scripts unevenly, which is worth stating before the findings: the twenty
-`odysseus-*` CLIs, `scripts/odysseus`, `_lib/cli.py`, `claim_ownerless.py`,
-`migrate_faiss_to_chroma.py`, `agent_migration_manifest.py`, `migrate_searxng_settings.py` and both
-image servers have dedicated tests. `update_database.py` is covered only by an assertion that it
-has one `__main__` guard (`tests/test_update_database_script.py`, eight lines whose only test
-reads the script and counts the guard), `check-docker-gpu.sh`
-has no test at all (`tests/test_amd_gpu_check_args.py:5` covers `check-docker-amd-gpu.sh`), and
-`encode_previews.sh` is covered by two string assertions
-(`tests/test_docs_no_orphan_images.py:142-146`). `demo_account.py` is exercised once, through its
-`teardown()` (`tests/test_email_account_default_serialization.py:489-522`). No test executes
-`hf_download.py` (the only mention is `tests/test_cookbook_helpers.py:264`, which tests the
-Cookbook's repo-id validator), `fix_paths.py`, `index_documents.py`, `add_hwfit_models.py`,
-`import_from_vllm_recipes.py`, `seed_demo_emails.py` or `manage.sh`.
+The suite reaches these scripts unevenly, which is worth stating before the findings:
+
+| Coverage | Scripts |
+| --- | --- |
+| Dedicated tests | The twenty `odysseus-*` CLIs, `scripts/odysseus`, `_lib/cli.py`, `claim_ownerless.py`, `migrate_faiss_to_chroma.py`, `agent_migration_manifest.py`, `migrate_searxng_settings.py` and both image servers |
+| One assertion on the script text | `update_database.py`: `tests/test_update_database_script.py` is eight lines whose only test reads the script and counts the `__main__` guard |
+| A sibling's test only | `check-docker-gpu.sh` has no test; `tests/test_amd_gpu_check_args.py:5` covers `check-docker-amd-gpu.sh` |
+| Two string assertions | `encode_previews.sh` (`tests/test_docs_no_orphan_images.py:142-146`) |
+| Exercised once | `demo_account.py`, through its `teardown()` (`tests/test_email_account_default_serialization.py:489-522`) |
+| Not executed by any test | `hf_download.py` (its only mention is `tests/test_cookbook_helpers.py:264`, which tests the Cookbook's repo-id validator), `fix_paths.py`, `index_documents.py`, `add_hwfit_models.py`, `import_from_vllm_recipes.py`, `seed_demo_emails.py` and `manage.sh` |
 
 Probes for the findings below ran from `/tmp/audit_probe/` against throwaway data directories;
 nothing in the repository was written.
@@ -2430,13 +2455,21 @@ nothing in the repository was written.
 - **Severity:** medium
 - **Disposition:** next
 - **Evidence:** each of these builds its own path from `_REPO_ROOT` instead of importing the
-  application's constants: `odysseus-theme:30`
-  (`_USER_PREFS_PATH = _REPO_ROOT / "data" / "user_prefs.json"`), `odysseus-preset:24` (`_PATH`),
-  `odysseus-memory:39` (`_DATA_DIR`), `odysseus-personal:34` (`_DATA_DIR`), `odysseus-research:26`
-  (`_DATA_DIR = _REPO_ROOT / "data" / "deep_research"`), `odysseus-skills:33`,
-  `odysseus-cookbook:42`, `odysseus-backup:31`, and `scripts/demo_email/seed_demo_emails.py:53`
-  (`CACHE_DB = _REPO_ROOT / "data" / "scheduled_emails.db"`). Loading each module with
-  `ODYSSEUS_DATA_DIR=/tmp/env_data` set (`/tmp/audit_probe/datadir_probe.py`):
+  application's constants:
+
+  | Script | Line | Path variable |
+  | --- | ---: | --- |
+  | `odysseus-theme` | `:30` | `_USER_PREFS_PATH = _REPO_ROOT / "data" / "user_prefs.json"` |
+  | `odysseus-preset` | `:24` | `_PATH` |
+  | `odysseus-memory` | `:39` | `_DATA_DIR` |
+  | `odysseus-personal` | `:34` | `_DATA_DIR` |
+  | `odysseus-research` | `:26` | `_DATA_DIR = _REPO_ROOT / "data" / "deep_research"` |
+  | `odysseus-skills` | `:33` | |
+  | `odysseus-cookbook` | `:42` | |
+  | `odysseus-backup` | `:31` | |
+  | `scripts/demo_email/seed_demo_emails.py` | `:53` | `CACHE_DB = _REPO_ROOT / "data" / "scheduled_emails.db"` |
+
+  Loading each module with `ODYSSEUS_DATA_DIR=/tmp/env_data` set (`/tmp/audit_probe/datadir_probe.py`):
 
   ```
   ODYSSEUS_DATA_DIR: /tmp/env_data
@@ -2999,13 +3032,20 @@ nothing in the repository was written.
 - **Disposition:** backlog
 - **Evidence:** `odysseus-mail` imports the helpers at `:35`
   (`from cli import quiet_logs, emit, fail, common_parser, run, REPO_ROOT as _REPO_ROOT`) and then
-  defines all three again later in the same module (`quiet_logs` at `:55`, `emit` at `:91`,
-  `fail` at `:100`), so the import is dead — the later `def` rebinds the name for the whole
-  module. The same pattern is in `odysseus-calendar` (`:25` import, `:38`/`:59` locals),
-  `odysseus-contacts` (`:24`, `:35`/`:58`), `odysseus-cookbook` (`:26`, `:54`), `odysseus-tasks`
-  (`:15`) and `odysseus-notes` (`:17`). Comparing the AST-extracted bodies against
-  `scripts/_lib/cli.py`, the copies are behaviorally identical today — the only differences are
-  docstrings and code formatting.
+  defines all three again later in the same module (`quiet_logs` at `:55`, `emit` at `:91`, `fail`
+  at `:100`), so the import is dead: the later `def` rebinds the name for the whole module. The same
+  pattern is in five more scripts:
+
+  | Script | Import | Local definitions |
+  | --- | ---: | ---: |
+  | `odysseus-calendar` | `:25` | `:38`, `:59` |
+  | `odysseus-contacts` | `:24` | `:35`, `:58` |
+  | `odysseus-cookbook` | `:26` | `:54` |
+  | `odysseus-tasks` | `:15` | |
+  | `odysseus-notes` | `:17` | |
+
+  Comparing the AST-extracted bodies against `scripts/_lib/cli.py`, the copies are behaviorally
+  identical today. The only differences are docstrings and code formatting.
 - **Impact:** none at runtime. The copies are the ones that run, so a fix to `cli.emit` (for
   example the `default=str` handling of datetimes) does not reach these six commands, and no test
   compares the copies against `cli.py` — the AST comparison above was written for this review.
@@ -3402,9 +3442,12 @@ at the secret write (`:116-131`).
 - `routes/hwfit_routes.py` at `_validate_detection_target` and its call sites (`:21-25`, `:190`,
   `:204`, `:331`, `:417`)
 - `src/database.py` as the re-export shim
-- `tests/test_atomic_io.py`, `tests/test_app_db_permissions.py`,
-  `tests/test_memory_store_unreadable_no_wipe.py`, `tests/test_prefs_atomic_write.py`,
-  `tests/test_security_regressions.py` at their permission and durability assertions
+- these tests, at their permission and durability assertions:
+  - `tests/test_atomic_io.py`
+  - `tests/test_app_db_permissions.py`
+  - `tests/test_memory_store_unreadable_no_wipe.py`
+  - `tests/test_prefs_atomic_write.py`
+  - `tests/test_security_regressions.py`
 
 **Not read:**
 
@@ -3785,11 +3828,11 @@ One hypothesis was tested and rejected; it is recorded in `sources/coverage-boun
 
   `_classify_agent_request` (`:1390`) routes "add a meeting on Friday" to `notes_calendar_tasks`,
   which seeds `manage_calendar` into `_relevant_tools` at `:3957-3958`; the replacement at `:3990`
-  discards it. `_WORKSPACE_TERMINUS_TOOLS` (`:542`) is the `files` domain plus `manage_skills`,
-  `ask_teacher`, `web_search`, `web_fetch`, `ask_user`, and `update_plan` — no email, calendar,
-  notes, memory, contacts, documents, or UI tools. `_assemble_prompt` (`:847`) builds the system
-  prompt from that set and `_tool_schemas_for_route` (`:4486`) filters the schema list the same
-  way, so the dropped tools are absent from both channels.
+  discards it. `_WORKSPACE_TERMINUS_TOOLS` (`:542`) is the `files` domain plus six named tools
+  (`manage_skills`, `ask_teacher`, the two web tools, `ask_user` and `update_plan`). It has no
+  email, calendar, notes, memory, contacts, documents or UI tools. `_assemble_prompt` (`:847`) builds the
+  system prompt from that set and `_tool_schemas_for_route` (`:4486`) filters the schema list the
+  same way, so the dropped tools are absent from both channels.
 
 - **Impact:** A turn whose text contains "on X" or "from X" — a common English construction, not
   only a machine name — loses the domain tools it needs and is given the coding toolset instead.
@@ -4094,18 +4137,23 @@ what it does with the reply.
   `build_headers` (`p_cgpt.py`)
 - the local-model gate's waiting counter with one holder and one waiter (`p_gate.py`)
 
-Also `httpx.get("http://slots", timeout=5)` timed directly, and greps for the importers of
-`src/model_capability_readers` (only `tests/test_model_capability_readers.py`), `finish_reason`
-across `src/`, `routes/`, `core/` and `static/js/` (one comment, no reader),
-`CHATGPT_SUBSCRIPTION_BASE_URL` writers, producers of a list-content `system` message, writers of a
-string-typed `Session.headers`, and the credential-forwarding shape in `_reconcile_selected_route`
-(`routes/chat_routes.py:670-700`). On the SSRF question specifically: nothing in this section
-accepts a caller-supplied endpoint URL. `_resolve_model` (`src/ai_interaction.py:78-213`) matches a
-model name against the caller's enabled `ModelEndpoint` rows and takes the URL *and* the key from
-the same row via `resolve_endpoint_runtime`, and `_reconcile_selected_route` uses a form-supplied
-`selected_endpoint_url` only to match a stored row, building the request from that row
-(`routes/chat_routes.py:697-700`). The two `check_outbound_url` calls in `src/ai_interaction.py`
-(`:1149`, `:1431`) guard the *provider-supplied* image result URL, not an endpoint.
+Also checked:
+
+- `httpx.get("http://slots", timeout=5)`, timed directly
+- importers of `src/model_capability_readers` (only `tests/test_model_capability_readers.py`)
+- `finish_reason` across `src/`, `routes/`, `core/` and `static/js/` (one comment, no reader)
+- writers of `CHATGPT_SUBSCRIPTION_BASE_URL`
+- producers of a list-content `system` message
+- writers of a string-typed `Session.headers`
+- the credential-forwarding shape in `_reconcile_selected_route` (`routes/chat_routes.py:670-700`)
+
+On the SSRF question specifically: nothing in this section accepts a caller-supplied endpoint URL.
+`_resolve_model` (`src/ai_interaction.py:78-213`) matches a model name against the caller's enabled
+`ModelEndpoint` rows and takes the URL *and* the key from the same row via
+`resolve_endpoint_runtime`. `_reconcile_selected_route` uses a form-supplied `selected_endpoint_url`
+only to match a stored row, building the request from that row (`routes/chat_routes.py:697-700`).
+The two `check_outbound_url` calls in `src/ai_interaction.py` (`:1149`, `:1431`) guard the
+*provider-supplied* image result URL, not an endpoint.
 
 One ordering artifact, recorded because it is a check result rather than a finding: run in a
 non-alphabetical order (`test_llm_core_*.py` before `test_foreground_model_routing.py`) the same 44
@@ -4136,19 +4184,21 @@ leaking suite is outside this section and was not chased. The 44 suites matching
 - `tests/test_chatgpt_subscription_routes.py`
 - `tests/test_ai_interaction_owner_scope.py`
 
-Four hypotheses did not survive checking and are not findings. (1) A `Session.headers` value that is
-a JSON string would raise `ValueError` in the Ollama branch (`h.update(headers)`,
-`src/llm_core.py:2620`) and `AttributeError` in the Anthropic branch (`_build_anthropic_headers`),
-where the sync `llm_call` explicitly tolerates one (`:180`); no live writer stores a string — the
-three assignment sites pass `build_headers(...)` or `{}`, and `core/session_manager.py` normalizes a
-string to a dict on load. (2) A `system` message whose `content` is a list would raise `TypeError` in
-`_sanitize_llm_messages`; no caller in `src/`, `routes/` or `core/` builds one. (3) The reader
-modules in `src/model_capability_readers/` have no production caller (only their own test file
-imports the package) — that is the documented state, not a defect:
-`specs/model-capability-canonical.md:170` records "Canonical records are not yet used by runtime
-discovery, endpoint resolution, model context, request shaping, or frontend pickers." (4) A
-caller-supplied endpoint URL or model name cannot redirect a request to a chosen address or attach a
-stored credential — see the SSRF note in the checks above.
+Four hypotheses did not survive checking and are not findings.
+
+1. A `Session.headers` value that is a JSON string would raise `ValueError` in the Ollama branch
+   (`h.update(headers)`, `src/llm_core.py:2620`) and `AttributeError` in the Anthropic branch
+   (`_build_anthropic_headers`), where the sync `llm_call` explicitly tolerates one (`:180`). No
+   live writer stores a string: the three assignment sites pass `build_headers(...)` or `{}`, and
+   `core/session_manager.py` normalizes a string to a dict on load.
+2. A `system` message whose `content` is a list would raise `TypeError` in
+   `_sanitize_llm_messages`. No caller in `src/`, `routes/` or `core/` builds one.
+3. The reader modules in `src/model_capability_readers/` have no production caller (only their own
+   test file imports the package). That is the documented state, not a defect:
+   `specs/model-capability-canonical.md:170` records "Canonical records are not yet used by runtime
+   discovery, endpoint resolution, model context, request shaping, or frontend pickers."
+4. A caller-supplied endpoint URL or model name cannot redirect a request to a chosen address or
+   attach a stored credential. See the SSRF note in the checks above.
 
 #### [PERF] Context-length discovery runs two synchronous HTTP probes on the event loop, once per local request
 
@@ -4254,12 +4304,18 @@ stored credential — see the SSRF note in the checks above.
   truncated there"). A real window *larger* than the default only costs an early compaction. The
   known-model table covers most well-known ids, which is why the fallback is invisible for common
   models.
-- **Fix:** add `headers: Optional[dict] = None` to `get_context_length`, `get_context_length_known`,
-  `_get_context_length_cached`, `_query_context_length` and `_proxy_catalog_context`, and pass
-  `headers=headers` to the three `httpx.get` calls; every caller in this section already has the
-  headers in scope. The cache key is `(endpoint_url, model)` today; the probe shows the same endpoint
-  answers differently with and without a key, so a keyless result cached under that key would
-  outlive the fix unless the key is cleared or the cache key includes the credential.
+- **Fix:** add `headers: Optional[dict] = None` to these five functions and pass `headers=headers`
+  to the three `httpx.get` calls; every caller in this section already has the headers in scope.
+
+  - `get_context_length`
+  - `get_context_length_known`
+  - `_get_context_length_cached`
+  - `_query_context_length`
+  - `_proxy_catalog_context`
+
+  The cache key is `(endpoint_url, model)` today. The probe shows the same endpoint answers
+  differently with and without a key, so a keyless result cached under that key would outlive the
+  fix unless the key is cleared or the cache key includes the credential.
 
 #### [ERROR-HANDLING] A stream that ends without `[DONE]`, or is cut off at the token limit, is reported as a complete answer
 
@@ -4540,8 +4596,10 @@ Every cited line was re-read at `2992bf6d368a`.
 
 **Not read:**
 
-- `src/tool_capabilities.py`, `src/tool_policy.py`, `src/tool_security.py`, `src/tool_approvals.py`,
-  `src/tool_schemas.py`, `src/tool_utils.py` (other sections)
+- the tool-gate files, which belong to other sections: `src/tool_capabilities.py`,
+  `src/tool_policy.py`, `src/tool_security.py` and `src/tool_approvals.py`
+- the schema and utility files, which also belong to other sections: `src/tool_schemas.py` and
+  `src/tool_utils.py`
 - the `src/agent_tools/*` handlers beyond the `ctx` reads cited here
 - the MCP servers under `mcp_servers/`
 - `src/ai_interaction.py`
@@ -4781,19 +4839,23 @@ No test suite was run.
 ### Overview
 
 The tables and helpers every tool call is gated by, plus the built-in MCP registration:
-`src/tool_capabilities.py` (708 lines) classifies each tool's effects and result integrity and
-holds the run-local `ToolRunSecurityContext` that blocks high-impact tools once untrusted
-context has entered the run; `src/tool_security.py` (284) holds the non-admin blocklist, the
-plan-mode allowlist and its mutator backstop, and the owner-admin check; `src/tool_policy.py`
-(242) composes the per-turn policy (the caller's disabled set, the guide-only detector, the web
-toggles); `src/tool_utils.py` (92) is the leaf module for the MCP-manager and upload-handler
-globals, output truncation, and the shared tool-arg parser; `src/builtin_mcp.py` (386)
-registers the built-in stdio MCP servers (Python and the npx browser server) at startup. The
-boundary with a neighbouring section: `src-tools-parse-exec` owns the dispatcher that calls
-these tables (`execute_tool_block`) and the path-confinement helpers; `src-agent-tools` owns
-the handlers the tables admit; `src-mcp` owns `mcp_manager.py` (read here only at
-`_connect_stdio`); `src-tools-schema-index` owns the schema/index sources that
-`plan_mode_disabled_tools` and `known_tool_names` read.
+
+| File | Lines | Role |
+| --- | ---: | --- |
+| `src/tool_capabilities.py` | 708 | Classifies each tool's effects and result integrity; holds the run-local `ToolRunSecurityContext` that blocks high-impact tools once untrusted context has entered the run |
+| `src/tool_security.py` | 284 | The non-admin blocklist, the plan-mode allowlist and its mutator backstop, and the owner-admin check |
+| `src/tool_policy.py` | 242 | Composes the per-turn policy: the caller's disabled set, the guide-only detector, the web toggles |
+| `src/tool_utils.py` | 92 | The leaf module for the MCP-manager and upload-handler globals, output truncation and the shared tool-arg parser |
+| `src/builtin_mcp.py` | 386 | Registers the built-in stdio MCP servers (Python and the npx browser server) at startup |
+
+Four neighbouring sections own the code on the other side:
+
+- `src-tools-parse-exec` owns the dispatcher that calls these tables (`execute_tool_block`) and the
+  path-confinement helpers.
+- `src-agent-tools` owns the handlers the tables admit.
+- `src-mcp` owns `mcp_manager.py`, read here only at `_connect_stdio`.
+- `src-tools-schema-index` owns the schema and index sources that `plan_mode_disabled_tools` and
+  `known_tool_names` read.
 
 ### Coverage
 
@@ -4832,23 +4894,24 @@ The two suites that pin this section's policy partitions.
 
 **Not read:**
 
-- `src/tool_schemas.py`, `src/tool_index.py`, `src/tool_approval_scopes.py`,
-  `src/tool_implementations.py` (assigned to `src-tools-schema-index`), `src/tool_execution.py`
-  (assigned to `src-tools-parse-exec`)
+- assigned to `src-tools-schema-index`: `src/tool_schemas.py`, `src/tool_index.py`,
+  `src/tool_approval_scopes.py` and `src/tool_implementations.py`
+- assigned to `src-tools-parse-exec`: `src/tool_execution.py`
 - `src/agent_tools/*` beyond the handlers named above
 - `mcp_servers/*`
 - `src/mcp_manager.py` beyond `_connect_stdio`
 - `src/teacher_escalation.py` beyond its `capabilities_for_action` call
 - the JS/UI side of the tool toggles
 
-**Checks run:** the seven gate/policy suites above under `venv/bin/python -m pytest -q` —
-`240 passed` in 2.0s. A script that diffs each multiplexed tool's read/write action sets in
-`_PRIVATE_ACTION_READS`/`_PRIVATE_ACTION_WRITES` against its handler's `action ==` branches
-(`manage_calendar`, `manage_contact`, `manage_documents`, `manage_memory`, `manage_notes`,
-`manage_research`, `manage_session`, `manage_skills`, `manage_tasks`): no read action mutates
-and no write action is classified read. A script computing
-`TOOL_TAGS - plan_mode_disabled_tools() - PLAN_MODE_READONLY_TOOLS`: empty, so every
-fence-callable tool is either allowlisted or denied in plan mode.
+**Checks run:**
+
+- the seven gate and policy suites above under `venv/bin/python -m pytest -q`: `240 passed` in 2.0s
+- a script that diffs each multiplexed tool's read and write action sets in
+  `_PRIVATE_ACTION_READS` and `_PRIVATE_ACTION_WRITES` against its handler's `action ==` branches,
+  for the nine multiplexed `manage_*` tools (calendar, contact, documents, memory, notes, research,
+  session, skills and tasks). No read action mutates and no write action is classified read.
+- a script computing `TOOL_TAGS - plan_mode_disabled_tools() - PLAN_MODE_READONLY_TOOLS`. The result
+  is empty, so every fence-callable tool is either allowlisted or denied in plan mode.
 
 ### Findings
 
@@ -5009,10 +5072,10 @@ capability tables) belong to `src-tools-capabilities-policy`.
   if required_args and not any(str(args.get(key) or "").strip() for key in required_args):
   ```
 
-  `_REQUIRED_NATIVE_TOOL_ARGS` (`:22-29`) lists `web_search`, `web_fetch`, `read_file`,
-  `write_file`, `edit_file`, `apply_patch` — not `bash`, `python` or `create_document`. The
-  converters that wrap the value in `json.dumps` (`grep`, `edit_file`, `todowrite`, `ls`,
-  `glob`) are safe; the concatenating ones are not. Measured with the project's
+  `_REQUIRED_NATIVE_TOOL_ARGS` (`:22-29`) lists the web tools (`web_search`, `web_fetch`) and the file tools
+  (`read_file`, `write_file`, `edit_file`, `apply_patch`). It does not list `bash`, `python` or
+  `create_document`. The converters that wrap the value in `json.dumps` (`grep`, `ls`, `glob`,
+  and the `edit_file` and `todowrite` converters) are safe; the concatenating ones are not. Measured with the project's
   `venv/bin/python`, converter output and then the first consumer of that output:
 
   ```
@@ -5659,8 +5722,13 @@ established here only where a finding cites it. No test file was read.
   (`routes/research/research_routes.py:381-385`.) `manage_research` is not in
   `NON_ADMIN_BLOCKED_TOOLS` (`src/tool_security.py:42-70`), and no privilege disables it. The
   per-user privilege block at `routes/chat_routes.py:1546-1566` adds tools to `disabled_tools` for
-  `can_use_bash`, `can_use_browser`, `can_use_documents`, `can_generate_images` and
-  `can_manage_memory`; for `can_use_research` it only clears a flag:
+  these five privileges; for `can_use_research` it only clears a flag:
+
+  - `can_use_bash`
+  - `can_use_browser`
+  - `can_use_documents`
+  - `can_generate_images`
+  - `can_manage_memory`
 
   ```python
   if not _privs.get("can_use_research", True):
@@ -6235,19 +6303,20 @@ input budget, `src/request_models.py` holds the pydantic bodies, `src/session_se
 `src/session_image_cleanup.py` tidy and delete session data, `src/chat_helpers.py` is the
 URL/validation helper set, and `src/assistant_log.py` is the activity-log shim.
 
-The boundary: the routes that call these modules (`routes/chat_routes.py`,
-`routes/session_routes.py`, `routes/chat_helpers.py`) are `routes-chat-session`; the session
-store, its cache and the message writes are `core/session_manager.py` / `core/models.py`, in
-`core-auth-session`, whose findings (the global 100-row sidebar cache, the no-op
-`save_sessions`) this section relies on rather than restates; the middleware that stamps the
-caller is `core-auth-session` and `build-install-deploy`; the LLM transport and model-window
-lookup (`src/llm_core.py`, `src/model_context.py`, `src/endpoint_resolver.py`) are
-`src-llm-core`; the upload resolver is `src-documents`; the tool dispatcher that calls
-`search_chats` is `src-tools-parse-exec`; and the scheduler that fires the tidy action is
-`src-research-scheduling` / `src-tools-builtin-actions`. This section covers what these modules
-do to a conversation once a route hands it over — what compaction keeps, what they read or
-delete and on whose behalf, and what runs on the event loop — not whether the routes, the
-store, or the transport are themselves correct.
+This section covers what these modules do to a conversation once a route hands it over: what
+compaction keeps, what they read or delete and on whose behalf, and what runs on the event loop. It
+does not cover whether the routes, the store or the transport are themselves correct. Each
+neighbour owns one piece:
+
+| Owner | What it owns |
+| --- | --- |
+| `routes-chat-session` | The routes that call these modules: `routes/chat_routes.py`, `routes/session_routes.py`, `routes/chat_helpers.py` |
+| `core-auth-session` | The session store, its cache and the message writes (`core/session_manager.py`, `core/models.py`). Its findings (the global 100-row sidebar cache, the no-op `save_sessions`) are relied on here, not restated. |
+| `core-auth-session`, `build-install-deploy` | The middleware that stamps the caller |
+| `src-llm-core` | The LLM transport and model-window lookup: `src/llm_core.py`, `src/model_context.py`, `src/endpoint_resolver.py` |
+| `src-documents` | The upload resolver |
+| `src-tools-parse-exec` | The tool dispatcher that calls `search_chats` |
+| `src-research-scheduling`, `src-tools-builtin-actions` | The scheduler that fires the tidy action |
 
 ### Coverage
 
@@ -6317,11 +6386,12 @@ Line numbers refer to `2992bf6d368a`.
 - a 1.0 s blocking VL call against a ticker task on the same loop
 - `search_session_messages` against a 2,000-message in-memory DB with a statement-counting event
   listener, plus `EXPLAIN QUERY PLAN` for its LIKE leg
-- `run_auto_sort("")` against a temp app DB holding one empty session for each of two owners. Also
-  greps for the unused symbols cited in the dead-code finding and for the callers of
-  `run_auto_sort`, `search_session_messages`, `maybe_compact`, `model_supports_vision` and
-  `_sanitize_tool_messages`. Suites: `ls tests | grep -iE
-  'chat|session|context|topic|compactor|request_models|assistant_log'` yields 64 files
+- `run_auto_sort("")` against a temp app DB holding one empty session for each of two owners
+- greps for the unused symbols cited in the dead-code finding
+- greps for the callers of `run_auto_sort`, `search_session_messages`, `maybe_compact` and
+  `model_supports_vision`, and of `_sanitize_tool_messages`
+- the suites matching `ls tests | grep -iE 'chat|session|context|topic|compactor|request_models|assistant_log'`,
+  which yields 64 files
 - running them gives **1 failed, 523 passed**
 
 The failure is the order-dependent pair already documented in `routes-chat-session`
@@ -6652,15 +6722,20 @@ files listed below) are **25 passed**.
   $ grep -rn "\bvalidate_file_upload\b" ...  → src/chat_helpers.py:188:def validate_file_upload(file: UploadFile) -> UploadFile:
   ```
 
-  and the same for `enhance_message_if_needed` (`src/chat_handler.py:115`),
-  `MemoryUpdateRequest`, `ErrorResponse`, `UploadResponse` and `MemoryResponse`. `MAX_CONTEXT_MESSAGES`
-  (`src/constants.py:87`) is read only by the dead `trim_history_if_needed`. In
-  `src/assistant_log.py` the module global is assigned by `set_session_manager` (`:19-24`, called
-  from `app.py:589-590`) and never read, the `_LEGACY_TAG_RE` regex has no reader, and
-  `log_to_assistant` logs at DEBUG and returns (`:47-48`) while four production call sites still
-  call it (`src/task_scheduler.py:1236`, `src/tools/vault.py:126`,
-  `routes/cookbook_routes.py:1395`, `:2820`) — the no-op is deliberate per its docstring, but the
-  callers read as if the assistant's activity feed receives the text.
+  and the same for `enhance_message_if_needed` (`src/chat_handler.py:115`) and for four model classes:
+  `MemoryUpdateRequest`, `ErrorResponse`, `UploadResponse` and `MemoryResponse`.
+  `MAX_CONTEXT_MESSAGES` (`src/constants.py:87`) is read only by the dead
+  `trim_history_if_needed`. In `src/assistant_log.py`:
+
+  - the module global is assigned by `set_session_manager` (`:19-24`, called from
+    `app.py:589-590`) and never read
+  - the `_LEGACY_TAG_RE` regex has no reader
+  - `log_to_assistant` logs at DEBUG and returns (`:47-48`), while four production call sites still
+    call it: `src/task_scheduler.py:1236`, `src/tools/vault.py:126` and
+    `routes/cookbook_routes.py` at `:1395` and `:2820`
+
+  The no-op is deliberate per its docstring, but the callers read as if the assistant's activity
+  feed receives the text.
 - **Impact:** a reader or a new caller can pick up `trim_history_if_needed` (which slices
   `session.history` without the tool-pairing repair `_sanitize_tool_messages` performs for
   `trim_for_context`), `validate_file_upload`, or a request model no route validates against, and
@@ -6937,11 +7012,11 @@ external store, not the code under test.
   ```
 
   With a custom endpoint configured, `_embed()` returns vectors from the custom model while
-  `collection` is the fastembed lane's collection. Nothing calls either today — a grep for
-  `_embed`/`.collection` across `routes/`, `src/`, `mcp_servers/`, `core/` and `app.py` finds no
-  external user, and `_embed` has no caller at all — but `collection` is documented as the public
-  access point for route code ("Expose the ChromaDB collection for direct access by personal_routes
-  etc.", `:93-95`). The same bootstrap is repeated in `src/memory_vector.py:34-52` and
+  `collection` is the fastembed lane's collection. Nothing calls either today: a grep for `_embed`
+  and `.collection` across `routes/`, `src/`, `mcp_servers/` and `core/`, and in `app.py`, finds no external
+  user, and `_embed` has no caller at all. But `collection` is documented as the public access
+  point for route code ("Expose the ChromaDB collection for direct access by personal_routes etc.",
+  `:93-95`). The same bootstrap is repeated in `src/memory_vector.py:34-52` and
   `src/tool_index.py:150-162`, which is why the three copies can disagree.
 - **Impact:** the next caller to pair the documented property with the private encoder writes or
   searches vectors from the wrong model. A dimension mismatch fails loudly; equal dimensions (two
@@ -6998,8 +7073,12 @@ untracked `audit/` directory.
 - `routes/document/document_routes.py` at the PDF import (`:225-300`), the tidy route (`:852-965`),
   the render/export/AI-fill handlers (`:1380-1440`, `:1491-1625`) and the unguarded `import fitz`
   (`:1247-1255`)
-- `routes/document/document_helpers.py` at `_verify_doc_owner`, `_owner_session_filter`,
-  `_resolve_user_upload_path`, `_locate_upload` and `_assert_pdf_marker_upload_owned` (`:1-215`)
+- `routes/document/document_helpers.py` (`:1-215`), at:
+  - `_verify_doc_owner`
+  - `_owner_session_filter`
+  - `_resolve_user_upload_path`
+  - `_locate_upload`
+  - `_assert_pdf_marker_upload_owned`
 - `routes/upload_routes.py` at the download handler (`:360-425`) and the offloaded cleanup
   (`:325-327`)
 - `app.py` at `/api/generated-image/{filename}` (`:513-553`), the exception handlers (`:616-633`)
@@ -7025,9 +7104,14 @@ untracked `audit/` directory.
 
 **Not read:**
 
-- the rest of `routes/document/document_routes.py`, `routes/chat_routes.py`, `src/agent_loop.py`,
-  `src/tool_execution.py`, `src/agent_tools/document_tools.py`, `core/session_manager.py` and
-  `src/task_scheduler.py` (each assigned to another section)
+- the rest of these files, each assigned to another section:
+  - `routes/document/document_routes.py`
+  - `routes/chat_routes.py`
+  - `src/agent_loop.py`
+  - `src/tool_execution.py`
+  - `src/agent_tools/document_tools.py`
+  - `core/session_manager.py`
+  - `src/task_scheduler.py`
 - the front end that renders attachments, documents and the PDF editor
 - the RAG indexer's use of markitdown (`src/personal_docs.py`, assigned elsewhere)
 - the other `routes-*` and `src-*` sections
@@ -7039,9 +7123,13 @@ The library's own tests were executed, not read end to end.
 
 **Checks run:**
 
-- `git log --oneline -1` / `git status --porcelain` (clean apart from `audit/`), the
-  optional-dependency imports (`markitdown`, `fitz`, `magic`, `pypdf`, `PIL`, `charset_normalizer`),
-  and eleven throwaway probe scripts under `/tmp` (not part of the target tree)
+- `git log --oneline -1` and `git status --porcelain` (clean apart from `audit/`)
+- the optional-dependency imports: `markitdown`, `fitz`, `magic` and `pypdf`
+- the imaging imports: `PIL` and `charset_normalizer`
+  - `pypdf`
+  - `PIL`
+  - `charset_normalizer`
+- eleven throwaway probe scripts under `/tmp` (not part of the target tree)
 - the ones quoted below are: a crafted `.docx` with the zip encryption bit set, one with compression
   method 9, and one with ten zeroed bytes in its deflate stream, through `_extract_docx_native`,
   `convert_to_markdown` and `build_user_content`
@@ -7055,10 +7143,18 @@ The library's own tests were executed, not read end to end.
 - `_process_pdf` on six malformed or hostile PDFs
 - the `DATA_URL_RE` match set over six data-URL shapes
 
-Also greps for the callers of `resolve_upload`, `reserve_upload`, `get_upload_info`,
-`persistable_message_content`, `strip_inline_data_urls`, `build_user_content`, `run_document_tidy`,
-`set_active_document` and `TaskNoop`, and an AST scan for functions in these ten files with no
-reference outside their file.
+Also greps for the callers of these symbols, and an AST scan for functions in these ten files with
+no reference outside their file:
+
+- `resolve_upload`
+- `reserve_upload`
+- `get_upload_info`
+- `persistable_message_content`
+- `strip_inline_data_urls`
+- `build_user_content`
+- `run_document_tidy`
+- `set_active_document`
+- `TaskNoop`
 
 The required discovery command, `ls tests | grep -iE
 'upload|document|markitdown|pdf|office|attachment|generated_image'`, selected 48 suites. Running
@@ -7389,24 +7485,32 @@ The other sections' findings were read only where a cross-reference is named.
 
 **Checks run:**
 
-- the 32 suites matching `ls tests | grep -iE
-  'caldav|integrations|webhook|youtube|email_thread|carddav'` — `venv/bin/python -m pytest -q -p
-  no:cacheprovider <32 files>` from the repository root → **163 passed** in 4.59s, 7 warnings (the
-  `datetime.utcnow()` deprecations at `src/caldav_sync.py:309-310` and one at
-  `tests/test_caldav_google_principal_url.py:45`). Thirteen throwaway probe scripts under `/tmp`,
-  outside the target tree. The ones the findings quote: the CalDAV DNS-flip probe (three runs; two
-  quoted below), the VEVENT-UID collision probe (three runs, including one with a non-colliding
-  second event), the parser probes (four runs: a nesting-depth sweep, a sibling-count sweep, a
-  deep-chain run, and a smoke set of six real-world bodies), and the webhook guard probe (two runs,
-  comparing the accepted address list with `src/url_safety._classify`). The last is the `api_call`
-  path-join probe recorded under the dropped hypotheses. Also the greps each finding records: the
-  `parse_thread` caller set, the `turns_json` writer set, the `validate_webhook_url` /
-  `_is_private_url` callers, the `_join_integration_url` / `mask_integration_secret` /
-  `load_integrations` callers, the `set_loop` / `fire_and_forget` callers, the `untrusted_content`
-  consumers, `uvicorn.run`'s worker count, and `_find_integration` / `_stable_cal_id` call sites.
-  Four hypotheses were checked and dropped rather than reported: a `//host` path cannot move the
-  `api_call` request to another host (`_join_integration_url` strips every leading slash before
-  `urljoin`, measured)
+- the 32 suites matching `ls tests | grep -iE 'caldav|integrations|webhook|youtube|email_thread|carddav'`,
+  run with `venv/bin/python -m pytest -q -p no:cacheprovider <32 files>` from the repository root:
+  **163 passed** in 4.59s, 7 warnings. Six are the `datetime.utcnow()` deprecations at
+  `src/caldav_sync.py:309-310`, and one is at `tests/test_caldav_google_principal_url.py:45`.
+- thirteen throwaway probe scripts under `/tmp`, outside the target tree. The ones the findings
+  quote:
+  - the CalDAV DNS-flip probe (three runs; two quoted below)
+  - the VEVENT-UID collision probe (three runs, including one with a non-colliding second event)
+  - the parser probes (four runs: a nesting-depth sweep, a sibling-count sweep, a deep-chain run,
+    and a smoke set of six real-world bodies)
+  - the webhook guard probe (two runs, comparing the accepted address list with
+    `src/url_safety._classify`)
+  - the `api_call` path-join probe, recorded under the dropped hypotheses
+- the greps each finding records, over these callers and consumers:
+  - the `parse_thread` callers and the `turns_json` writers
+  - the `validate_webhook_url` and `_is_private_url` callers
+  - the `_join_integration_url`, `mask_integration_secret` and `load_integrations` callers
+  - the `set_loop` and `fire_and_forget` callers
+  - the `untrusted_content` consumers
+  - `uvicorn.run`'s worker count
+  - the `_find_integration` and `_stable_cal_id` call sites
+
+Four hypotheses were checked and dropped rather than reported:
+
+- a `//host` path cannot move the `api_call` request to another host (`_join_integration_url`
+  strips every leading slash before `urljoin`, measured)
 - the parser's turn HTML is not a new XSS surface (the client runs `body_html` through
   `_sanitizeHtml`)
 - the integration store's read-modify-write has no interleaving caller (every writer is an `async`
@@ -7629,9 +7733,9 @@ The other sections' findings were read only where a cross-reference is named.
   ```
 
   `_validated_public_ips` re-uses the same predicate, so the delivery transport pins the connection
-  to that address too. `tests/test_webhook_ssrf_resilience.py` lists the address classes it pins
-  (`[::]`, `::ffff:127.0.0.1`, `::ffff:169.254.169.254`, `127.0.0.1`, `0.0.0.0`) and does not
-  include this one.
+  to that address too. `tests/test_webhook_ssrf_resilience.py` lists the address classes it pins,
+  and this one is not among them. The pinned classes are `[::]`, `::ffff:127.0.0.1` and
+  `::ffff:169.254.169.254`, plus the plain `127.0.0.1` and `0.0.0.0`.
 - **Impact:** a stored webhook URL can target a tailnet or cluster address that this guard exists
   to refuse, and each delivery then sends the event payload and its HMAC signature there. The
   mitigation that keeps this low is that only an admin can register a webhook
@@ -7724,23 +7828,30 @@ directories in `/tmp`, outside the checkout:
 - **Endpoint predicate probe.** The substring predicate from `src/task_scheduler.py:1889` evaluated
   with the real `normalize_base` over two endpoint base URLs.
 
-`venv/bin/python -m pytest -q` was run with these thirty-eight suites: `tests/test_bg_jobs_store.py`,
-`tests/test_bg_job_tools.py`, `tests/test_bg_monitor_stream.py`, `tests/test_cleanup_owner_scope.py`,
-`tests/test_cleanup_routes_shim.py`, `tests/test_cleanup_service_utcnow.py`,
-`tests/test_cookbook_serve_lifecycle.py`, `tests/test_builtin_actions_cookbook_serve_state.py`,
-the five `tests/test_deep_research_*.py`, `tests/test_research_handler_path_confinement.py`,
-`tests/test_research_handler_raw_nondict.py`, `tests/test_research_handler_sources_nondict.py`,
-`tests/test_research_handler_analyzed_urls.py`, `tests/test_research_status_avg_duration.py`,
-`tests/test_research_report_read.py`, `tests/test_research_session_id_validation.py`,
-`tests/test_research_utils.py`, `tests/test_research_utils_low_quality_nonstring.py`,
-`tests/test_research_source_link_xss.py`, `tests/test_research_probe_errors.py`,
-`tests/test_research_query_fallback.py`, `tests/test_task_endpoint_normalization.py`,
-`tests/test_task_scheduler_cache.py`, `tests/test_task_scheduler_cancel.py`,
-`tests/test_task_scheduler_session_delivery.py`, `tests/test_task_routes_shim.py`,
-`tests/test_teacher_eval_tier2.py`, `tests/test_teacher_eval_nonstring_reply.py`,
-`tests/test_teacher_audit_owner_scope.py`, and the five `tests/test_visual_report*.py` —
+`venv/bin/python -m pytest -q` was run with thirty-eight suites, all under `tests/`:
 **168 passed**, one SQLAlchemy deprecation warning. The full suite and `audit.py` were not run;
 run-level generation, counts and secret-gate validation belong to the coordinating reviewer.
+
+- background jobs: `test_bg_jobs_store.py`, `test_bg_job_tools.py`, `test_bg_monitor_stream.py`
+- cleanup: `test_cleanup_owner_scope.py`, `test_cleanup_routes_shim.py`,
+  `test_cleanup_service_utcnow.py`
+- Cookbook serving: `test_cookbook_serve_lifecycle.py`,
+  `test_builtin_actions_cookbook_serve_state.py`
+- deep research: the five `test_deep_research_*.py`
+- research handler: `test_research_handler_path_confinement.py`,
+  `test_research_handler_raw_nondict.py`, `test_research_handler_sources_nondict.py`,
+  `test_research_handler_analyzed_urls.py`
+- research status and reports: `test_research_status_avg_duration.py`,
+  `test_research_report_read.py`, `test_research_session_id_validation.py`
+- research sources and probes: `test_research_source_link_xss.py`,
+  `test_research_probe_errors.py`, `test_research_query_fallback.py`
+- research utilities: `test_research_utils.py`, `test_research_utils_low_quality_nonstring.py`
+- task scheduler: `test_task_endpoint_normalization.py`, `test_task_scheduler_cache.py`,
+  `test_task_scheduler_cancel.py`
+- task delivery and routes: `test_task_scheduler_session_delivery.py`, `test_task_routes_shim.py`
+- teacher: `test_teacher_eval_tier2.py`, `test_teacher_eval_nonstring_reply.py`,
+  `test_teacher_audit_owner_scope.py`
+- visual reports: the five `test_visual_report*.py`
 
 #### [RACE] A killed background job can still be auto-continued — the job store has no writer lock
 
@@ -7863,12 +7974,18 @@ run-level generation, counts and secret-gate validation belong to the coordinati
   The same file fences this class of content for the skill-distillation prompt
   (`_UNTRUSTED_TRACE_GUARD` `:133-146`, `_format_trace` `:347-359`), and the repo wraps untrusted
   tool output elsewhere (`untrusted_context_message`, used for the same job output in
-  `src/bg_monitor.py:27-36`). The patterns are reachable from any tool result: `^Unknown action`,
-  `^Failed to`, `^Invalid`, `\bnot found\b`, `\berror:\s` (`:74-88`). Mitigations: the student's
-  `external_untrusted_context_seen` is forwarded to the teacher run
-  (`src/agent_loop.py:6446-6448`), so its tool calls run under the tainted-run policy; a
-  teacher-generated skill is persisted only through an exact-approval card
-  (`tool_approval_store.create` `:747`); and the takeover is streamed to the user as it happens.
+  `src/bg_monitor.py:27-36`). The patterns are reachable from any tool result (`:74-88`):
+
+  - `^Unknown action`
+  - `^Failed to`
+  - `^Invalid`
+  - `\bnot found\b`
+  - `\berror:\s`
+
+  Three mitigations apply. The student's `external_untrusted_context_seen` is forwarded to the
+  teacher run (`src/agent_loop.py:6446-6448`), so its tool calls run under the tainted-run policy.
+  A teacher-generated skill is persisted only through an exact-approval card
+  (`tool_approval_store.create` `:747`). And the takeover is streamed to the user as it happens.
 - **Impact:** a page, email or document that gets its first 120 characters copied into the
   failure signal lands in the teacher's instruction context as if the user had written it, in a
   run that then calls tools with the user's authority. A payload only needs to appear at the head
@@ -7891,12 +8008,16 @@ run-level generation, counts and secret-gate validation belong to the coordinati
           break
   ```
 
-  `normalize_base` (`src/endpoint_resolver.py:225-234`) strips only known suffixes (`/models`,
-  `/chat/completions`, `/completions`, `/v1/messages`, `/responses`, `/api/chat`, `/api/tags`,
-  `/api/generate`); it neither reduces the URL to an origin nor requires a path boundary. Running
-  that predicate with the real `normalize_base` over two enabled endpoints —
+  `normalize_base` (`src/endpoint_resolver.py:225-234`) strips only known suffixes, and it neither
+  reduces the URL to an origin nor requires a path boundary. The suffixes are:
+
+  - `/models`, `/completions` and `/responses`
+  - `/chat/completions` and `/v1/messages`
+  - `/api/chat`, `/api/tags` and `/api/generate`
+
+  Running that predicate with the real `normalize_base` over two enabled endpoints,
   `http://gw.example.com/v1` and `http://gw.example.com/v1-beta`, with the resolved task URL
-  `http://gw.example.com/v1-beta/chat/completions` — selects `http://gw.example.com/v1`, i.e. the
+  `http://gw.example.com/v1-beta/chat/completions`, selects `http://gw.example.com/v1`. So the
   other endpoint's key is attached to a request aimed at `v1-beta`. The surrounding block is
   wrapped in `except Exception: pass`, so a resolution failure is silent.
 - **Impact:** an endpoint's API key is sent to a different endpoint — a different service or
@@ -7913,17 +8034,21 @@ run-level generation, counts and secret-gate validation belong to the coordinati
 - **Location:** `src/research_handler.py:601-631` (record built at `:611-629`)
 - **Severity:** low
 - **Disposition:** next
-- **Evidence:** `_save_result` builds a fresh dict — `query`, `status`, `result`, `raw_report`,
-  `sources`, `raw_findings`, `stats`, `category`, `started_at`, `completed_at`, `owner` — and
-  writes it over the whole file, while two other writers keep their state in the same file:
-  `hide_image` appends to `hidden_images` (`:691-695`) and `clear_result` sets `consumed`
-  (`:594-597`). Neither key is in the fresh dict. Measured: a record holding
-  `hidden_images: ["https://a/x.jpg", "https://b/y.jpg"]` and `consumed: true`, after
-  `_save_result` writes, has keys `category, completed_at, owner, query, raw_findings, raw_report,
-  result, sources, started_at, stats, status` — both keys gone. Reachable: a chat-side
-  continuation reuses the session id (`routes/chat_routes.py:1700-1745` reads the prior record via
-  `_get_session_json` and calls `start_research(..., prior_report=…)` with the same session), so
-  the record the user's hide choices live in is the one that gets overwritten.
+- **Evidence:** `_save_result` builds a fresh dict with eleven keys and writes it over the whole
+  file. The keys are:
+
+  - `query`, `status`, `result`, `raw_report`
+  - `sources`, `raw_findings`, `stats`, `category`
+  - `started_at`, `completed_at`, `owner`
+
+  Two other writers keep their state in the same file: `hide_image` appends to `hidden_images`
+  (`:691-695`) and `clear_result` sets `consumed` (`:594-597`). Neither key is in the fresh dict.
+  Measured: a record holding `hidden_images: ["https://a/x.jpg", "https://b/y.jpg"]` and
+  `consumed: true`, after `_save_result` writes, has only the eleven keys, so both are gone.
+  Reachable: a chat-side continuation reuses the session id (`routes/chat_routes.py:1700-1745`
+  reads the prior record via `_get_session_json` and calls `start_research(..., prior_report=…)`
+  with the same session), so the record the user's hide choices live in is the one that gets
+  overwritten.
 - **Impact:** images the user hid on a report reappear after continuing that research, and a
   consumed report re-renders as new. The same write is not atomic (see the finding below), so a
   crash during it leaves a record no reader can parse.
@@ -8042,10 +8167,11 @@ authenticate, whether the agent allowlist is sufficient, or whether the built-in
   disconnect (`:1291-1296`)
 - `src/builtin_mcp.py` at `builtin_python_env` (`:148-160`) and the two `connect_server` call sites
 - `static/js/settings.js` at the MCP server panel (`:4939-4980`)
-- the SDK the manager drives — `mcp/client/stdio/__init__.py` (`get_default_environment`,
-  `stdio_client`), `mcp/client/streamable_http.py` (`streamablehttp_client`,
-  `streamable_http_client`), `mcp/client/session.py` and `mcp/shared/session.py` (the read-timeout
-  handling), `mcp/client/auth/oauth2.py` (the refresh path)
+- the SDK the manager drives:
+  - `mcp/client/stdio/__init__.py` (`get_default_environment`, `stdio_client`)
+  - `mcp/client/streamable_http.py` (`streamablehttp_client`, `streamable_http_client`)
+  - `mcp/client/session.py` and `mcp/shared/session.py` (the read-timeout handling)
+  - `mcp/client/auth/oauth2.py` (the refresh path)
 - the module's own tests for what is already pinned
 
 SDK and anyio paths named in the findings are the installed packages
@@ -8065,16 +8191,20 @@ target tree.
 Line numbers are the working tree at `2992bf6d368a` (clean apart from this run's untracked `audit/`
 directory).
 
-**Checks run:** a throwaway MCP server (`/tmp/mcp_probe_server.py`, a FastMCP server declaring one
-mutating tool with `readOnlyHint=False`, one tool that reports its own environment variable names,
-and one that sleeps for 600s) driven by four probe scripts under `/tmp`, none of them part of the
-target tree; each probe's output is quoted in the finding it settles. Also a direct call of
-`_format_mcp_params` with malformed `required` values, a `grep` for timeouts in the callers, and a
-uvicorn probe confirming that two requests run in two different tasks (each request is a
-`RequestResponseCycle.run_asgi()` task; three requests produced three distinct task objects). The
-18 suites matching this surface — the 17 files from `ls tests | grep -iE 'mcp'` plus
-`tests/test_plan_mode.py`, which pins the classifier the annotation finding touches — were run:
-**127 passed**.
+**Checks run:**
+
+- a throwaway MCP server (`/tmp/mcp_probe_server.py`) driven by four probe scripts under `/tmp`,
+  none of them part of the target tree. It is a FastMCP server declaring one mutating tool with
+  `readOnlyHint=False`, one tool that reports its own environment variable names, and one that
+  sleeps for 600s. Each probe's output is quoted in the finding it settles.
+- a direct call of `_format_mcp_params` with malformed `required` values
+- a `grep` for timeouts in the callers
+- a uvicorn probe confirming that two requests run in two different tasks (each request is a
+  `RequestResponseCycle.run_asgi()` task; three requests produced three distinct task objects)
+
+The 18 suites matching this surface were run: **127 passed**. They are the 17 files from
+`ls tests | grep -iE 'mcp'` plus `tests/test_plan_mode.py`, which pins the classifier the annotation
+finding touches.
 
 #### [BUG] Nothing bounds an MCP session call, so a server that stops answering wedges whatever is waiting on it
 
@@ -8157,13 +8287,13 @@ uvicorn probe confirming that two requests run in two different tasks (each requ
   )
   ```
 
-  The SDK's default is deliberately narrow — `stdio_client` builds
+  The SDK's default is deliberately narrow. `stdio_client` builds
   `{**get_default_environment(), **server.env} if server.env is not None else
-  get_default_environment()` (`mcp/client/stdio/__init__.py:127`), and
-  `get_default_environment()` returns only `HOME`, `LOGNAME`, `PATH`, `SHELL`, `TERM` and `USER`
-  (`:28-45`). Passing `None` selects that whitelist; passing `{**os.environ, **env}` bypasses it.
-  Measured with a stdio server whose tool returns its own `os.environ` names, in a process holding
-  a canary variable:
+  get_default_environment()` (`mcp/client/stdio/__init__.py:127`), and `get_default_environment()`
+  returns only six variables (`:28-45`), the first three being `HOME`, `LOGNAME` and `PATH` and the
+  rest `SHELL`, `TERM` and `USER`. Passing `None` selects that whitelist; passing
+  `{**os.environ, **env}` bypasses it. Measured with a stdio server whose tool returns its own
+  `os.environ` names, in a process holding a canary variable:
 
   ```
   no stored env:      connected=True count=4  names=['HOME', 'LC_CTYPE', 'PATH', 'SHELL']
@@ -8286,13 +8416,19 @@ uvicorn probe confirming that two requests run in two different tasks (each requ
   test pins what discovery stores per transport — `grep -rn annotations tests/*.py` finds no other
   MCP annotation test — so the drop is unguarded.
 - **Impact:** for a remote Streamable HTTP server, plan mode loses the server's own declaration and
-  falls back to the leading-verb heuristic, so a mutating tool whose name starts with `get`,
-  `list`, `read`, `search`, `fetch`, `query`, `find`, `describe`, `show`, `view`, `lookup`,
-  `count`, `status`, `info`, `inspect` or `summar` is offered to the model and allowed to run in
-  the mode that promises read-only investigation. The same server over stdio or SSE is classified
-  correctly, so the gate's behaviour depends on the transport the admin picked. Preconditions: plan
-  mode on, an HTTP-transport server, and a mutating tool named with a read verb — which is why
-  this is `low`, but the annotation is data the client already received and threw away.
+  falls back to the leading-verb heuristic. A mutating tool whose name starts with one of the read
+  verbs is offered to the model and allowed to run in the mode that promises read-only
+  investigation. The verbs are:
+
+  - `get`, `list`, `read`, `search`
+  - `fetch`, `query`, `find`, `describe`
+  - `show`, `view`, `lookup`, `count`
+  - `status`, `info`, `inspect`, `summar`
+
+  The same server over stdio or SSE is classified correctly, so the gate's behaviour depends on
+  the transport the admin picked. Preconditions: plan mode on, an HTTP-transport server, and a
+  mutating tool named with a read verb. That is why this is `low`, but the annotation is data the
+  client already received and threw away.
 - **Fix:** add the `annotations` key to the HTTP tool dict, as the other two transports do.
 
 #### [ERROR-HANDLING] Disconnecting a server cannot close its transport, because the context was entered in another task
@@ -8353,16 +8489,20 @@ uvicorn probe confirming that two requests run in two different tasks (each requ
 
 ### Overview
 
-The shared runtime layer: `src/constants.py` owns every data path and the app-wide limits,
-`src/runtime_paths.py` resolves source vs. frozen app/data roots, `src/app_initializer.py`
-constructs the managers and hardens the agent workspace, `src/app_helpers.py` holds the HTML
-nonce injection and the path-confinement check, `src/config.py` is a pydantic settings tree,
-`src/event_bus.py` turns app events into scheduled-task triggers, `src/service_health.py` builds
-the admin health report, and `src/readiness.py`, `src/user_time.py`, `src/text_helpers.py`,
-`src/reminder_personas.py`, `src/optional_deps.py`, `src/database.py` and `src/exceptions.py`
-fill in readiness, user-local time, thinking-tag cleanup, reminder personas, optional-dependency
-shims, and the `core` re-exports. `src/search/*` are compatibility shims that alias the
-`services.search.*` implementations.
+The shared runtime layer:
+
+| File | Role |
+| --- | --- |
+| `src/constants.py` | Every data path and the app-wide limits |
+| `src/runtime_paths.py` | Resolves source versus frozen app and data roots |
+| `src/app_initializer.py` | Constructs the managers and hardens the agent workspace |
+| `src/app_helpers.py` | The HTML nonce injection and the path-confinement check |
+| `src/config.py` | A pydantic settings tree |
+| `src/event_bus.py` | Turns app events into scheduled-task triggers |
+| `src/service_health.py` | Builds the admin health report |
+| `src/readiness.py`, `src/user_time.py`, `src/text_helpers.py`, `src/reminder_personas.py`, `src/optional_deps.py`, `src/database.py`, `src/exceptions.py` | Readiness, user-local time, thinking-tag cleanup, reminder personas, optional-dependency shims, and the `core` re-exports |
+
+`src/search/*` are compatibility shims that alias the `services.search.*` implementations.
 
 The boundary: the manager classes `app_initializer` constructs are defined in `src-memory-rag`,
 `src-chat-session` and `src-email-integrations`; the health endpoint that calls
@@ -8768,8 +8908,8 @@ Forty-three suites were run over this surface — every file matching `ls tests 
 - **Disposition:** next
 - **Evidence:** each cited line opens a connection or issues a command inside a coroutine that
   has not awaited anything, so the whole round-trip runs on the loop thread. The same file
-  offloads identical work elsewhere — `:2391`, `:3216`, `:3966`, `:4767`, `:4829` and `:4919`
-  use `asyncio.to_thread` — and two routes spell out why:
+  offloads identical work with `asyncio.to_thread` at six other sites: `:2391`, `:3216`, `:3966`,
+  `:4767`, `:4829` and `:4919`. Two routes spell out why:
 
   ```python
   # routes/email_routes.py:2770-2772
@@ -8779,15 +8919,18 @@ Forty-three suites were run over this surface — every file matching `ls tests 
   ```
 
   The six attachment handlers fetch the whole message inline (`_imap_uid_fetch(conn, uid,
-  "(RFC822)")` at `:3288`, `:3306`, `:3333`, `:3395`, `:3716`, `:4207`), so their stall scales
-  with message size; the flag/move/delete handlers each pay a `SELECT` plus a `STORE`/`MOVE`
-  round-trip, and `resolve_contact` issues up to 200 serial header fetches per folder across
-  three folders (`uids = data[0].split()[-200:]`, `:4484`; `conn.fetch(...)`, `:4487`).
-  `test_account_config` connects and logs in to IMAP and SMTP inline (`_open_imap_connection`,
-  `:5893`; `smtplib.SMTP_SSL`, `:5938`), and `google_oauth_callback` makes two blocking `httpx`
-  calls (`:6059`, `:6081`). Measured with
-  `ODYSSEUS_IMAP_TIMEOUT_SECONDS=3` and a listener that accepts and never sends an IMAP
-  greeting, running the real `/accounts/test` coroutine next to a 50 ms heartbeat:
+  "(RFC822)")`), so their stall scales with message size. The calls are at `:3288`, `:3306`,
+  `:3333`, `:3395`, `:3716` and `:4207`. The other handlers cost as follows:
+
+  | Handler | Blocking work |
+  | --- | --- |
+  | Flag, move, delete | A `SELECT` plus a `STORE` or `MOVE` round-trip each |
+  | `resolve_contact` | Up to 200 serial header fetches per folder across three folders (`uids = data[0].split()[-200:]`, `:4484`; `conn.fetch(...)`, `:4487`) |
+  | `test_account_config` | IMAP and SMTP connect and login inline (`_open_imap_connection`, `:5893`; `smtplib.SMTP_SSL`, `:5938`) |
+  | `google_oauth_callback` | Two blocking `httpx` calls (`:6059`, `:6081`) |
+
+  Measured with `ODYSSEUS_IMAP_TIMEOUT_SECONDS=3` and a listener that accepts and never sends an
+  IMAP greeting, running the real `/accounts/test` coroutine next to a 50 ms heartbeat:
 
   ```
   endpoint returned in 5.03s: {'ok': False, 'imap': {'ok': False, 'error': 'timed out'}, 'smtp': None}
@@ -9111,22 +9254,36 @@ what the server then runs, not whether the stores or the tools underneath are co
 - `_validate_serve_cmd` called directly with the shipped GGUF prelude and a modified one (third
   finding)
 
-Twenty-six suites were run over this surface — `ls tests | grep -iE 'cookbook'`, plus
-`tests/test_task_cookbook_admin_gate.py`: `tests/test_cookbook_helpers.py`,
-`tests/test_cookbook_diagnosis.py`, `tests/test_cookbook_error_feedback.py`,
-`tests/test_cookbook_serve_lifecycle.py`, `tests/test_cookbook_endpoint_registration.py`,
-`tests/test_cookbook_hf_token.py`, `tests/test_cookbook_deps_recipes.py`,
-`tests/test_cookbook_dependency_completion_regression.py`, `tests/test_cookbook_cpu_only_serve.py`,
-`tests/test_cookbook_dead_download_status.py`, `tests/test_cookbook_docker_access.py`,
-`tests/test_cookbook_package_detection.py`, `tests/test_cookbook_gemma4_thinking_template.py`,
-`tests/test_cookbook_local_serve_pid_winpid.py`, `tests/test_cookbook_remote_windows_diffusers.py`,
-`tests/test_cookbook_agent_tool_ssh_validation.py`, `tests/test_codex_cookbook_admin_gate.py`,
-`tests/test_builtin_actions_cookbook_serve_state.py`, `tests/test_task_cookbook_admin_gate.py`, and
-the seven JS-string suites (`tests/test_cookbook_diagnosis_js.py`,
-`tests/test_cookbook_download_toast_duration.py`, `tests/test_cookbook_error_tail_lines.py`,
-`tests/test_cookbook_port_parsing_js.py`, `tests/test_cookbook_progress_signal_js.py`,
-`tests/test_cookbook_same_host_server_profiles_js.py`, `tests/test_cookbook_windows_stop_tree_js.py`)
-— **229 passed, 1 skipped**.
+Twenty-six suites were run over this surface: **229 passed, 1 skipped**. They are the files from
+`ls tests | grep -iE 'cookbook'`, plus `tests/test_task_cookbook_admin_gate.py`:
+
+- `tests/test_cookbook_helpers.py`
+- `tests/test_cookbook_diagnosis.py`
+- `tests/test_cookbook_error_feedback.py`
+- `tests/test_cookbook_serve_lifecycle.py`
+- `tests/test_cookbook_endpoint_registration.py`
+- `tests/test_cookbook_hf_token.py`
+- `tests/test_cookbook_deps_recipes.py`
+- `tests/test_cookbook_dependency_completion_regression.py`
+- `tests/test_cookbook_cpu_only_serve.py`
+- `tests/test_cookbook_dead_download_status.py`
+- `tests/test_cookbook_docker_access.py`
+- `tests/test_cookbook_package_detection.py`
+- `tests/test_cookbook_gemma4_thinking_template.py`
+- `tests/test_cookbook_local_serve_pid_winpid.py`
+- `tests/test_cookbook_remote_windows_diffusers.py`
+- `tests/test_cookbook_agent_tool_ssh_validation.py`
+- `tests/test_codex_cookbook_admin_gate.py`
+- `tests/test_builtin_actions_cookbook_serve_state.py`
+- `tests/test_task_cookbook_admin_gate.py`
+- the seven JS-string suites:
+  - `tests/test_cookbook_diagnosis_js.py`
+  - `tests/test_cookbook_download_toast_duration.py`
+  - `tests/test_cookbook_error_tail_lines.py`
+  - `tests/test_cookbook_port_parsing_js.py`
+  - `tests/test_cookbook_progress_signal_js.py`
+  - `tests/test_cookbook_same_host_server_profiles_js.py`
+  - `tests/test_cookbook_windows_stop_tree_js.py`
 
 #### [BUG] The remote setup endpoint interpolates its install script into a shell command, so no platform receives the script it built
 
@@ -9470,10 +9627,13 @@ Line numbers refer to `2992bf6d368a`.
 
 **Read partially:** the boundary code the findings rest on:
 
-- `core/session_manager.py` at `get_session`/`_load_session_from_db` (`:421-524`),
-  `sync_session_metadata` (`:454-498`), `replace_messages` (`:353-400`), `create_session`
-  (`:541-578`), `delete_session` (`:587-627`) and `get_sessions_for_user`/`save_sessions`
-  (`:700-710`)
+- `core/session_manager.py`, at:
+  - `get_session` and `_load_session_from_db` (`:421-524`)
+  - `sync_session_metadata` (`:454-498`)
+  - `replace_messages` (`:353-400`)
+  - `create_session` (`:541-578`)
+  - `delete_session` (`:587-627`)
+  - `get_sessions_for_user` and `save_sessions` (`:700-710`)
 - `src/auth_helpers.py` at `get_current_user`/`effective_user` (`:10-36`), the delegated-credential
   predicate (`:44-55`) and `require_api_token_scope` / `require_chat_api_token_scope` (`:60-80`)
 - `src/agent_runs.py` end to end (the detach/subscribe/evict machinery behind the stream)
@@ -9623,14 +9783,14 @@ of the third finding and is reproducible as a pair.
   asyncio.to_thread    elapsed=1.01s  ticker iterations=995
   ```
 
-  A second site in the same route does it again: `_recover_empty_session_model` calls
+  A second site in the same route does it again. `_recover_empty_session_model` calls
   `fetch_available_models(api_key)` at `routes/chat_routes.py:607`, which is
-  `httpx.get("https://chatgpt.com/...", timeout=10.0)` (`src/chatgpt_subscription.py:90-98`),
-  and it is called inline from both async handlers (`:799`, `:1258`). Sibling modules in
-  this repository offload the same shape — `routes/auth_routes.py:140`, `:160`, `:171`,
-  `:181`, `routes/email_routes.py:2391`, `:2466` — and none of the three files in this
-  section does: `grep -n 'to_thread\|run_in_executor' routes/chat_routes.py
-  routes/session_routes.py routes/chat_helpers.py` returns nothing.
+  `httpx.get("https://chatgpt.com/...", timeout=10.0)` (`src/chatgpt_subscription.py:90-98`), and
+  both async handlers call it inline (`:799`, `:1258`). Sibling modules offload the same shape
+  (`routes/auth_routes.py:140`, `:160`, `:171`, `:181`; `routes/email_routes.py:2391`, `:2466`), and
+  none of the three files in this section does:
+  `grep -n 'to_thread\|run_in_executor' routes/chat_routes.py routes/session_routes.py routes/chat_helpers.py`
+  returns nothing.
 - **Impact:** during a link-prefetch or web-search turn the loop cannot schedule anything
   else: other users' SSE heartbeats stall, `/api/health` and `/api/ready` stop answering,
   and a second chat turn waits behind the first. The stall lasts as long as the blocking
@@ -9764,24 +9924,31 @@ of the third finding and is reproducible as a pair.
 
 ### Overview
 
-The model-endpoint registry and every surface built on it: `routes/model_routes.py` holds the
-per-user model picker (`GET /api/models`), the endpoint CRUD (`POST`/`GET`/`PATCH`/`DELETE
-/api/model-endpoints`, plus the `/models` and `/dependents` sub-resources), the probe and refresh
-endpoints (`GET /api/ping`, `/api/probe`, `/api/model-endpoints/{id}/probe`,
-`/api/model-endpoints/{id}/models`, `POST /api/probe-selected`, `POST /api/model-endpoints/test`),
-local discovery (`GET /api/providers`, `/api/discover`, `/api/model-endpoints/probe-local`), the
-default-chat resolution (`GET /api/default-chat`), the background model-cache refresh and the
-stale-cookbook-endpoint sweep, and the tool on/off list (`GET`/`POST /api/tools`).
+The model-endpoint registry and every surface built on it, all in `routes/model_routes.py`:
 
-The boundary: the request-authenticating middleware and the `require_admin` gate these routes call
-are `core-auth-session`; the `ModelEndpoint` row and its encrypted key column are
-`core-data-platform`; the URL and header builders the probes use (`resolve_url`, `normalize_base`,
-`build_chat_url`, `build_models_url`, `build_headers`, `resolve_endpoint_runtime`) are
-`src-llm-core`; `src/auth_helpers.py` (`effective_user`, `owner_filter`) is `src-security`; the
-settings store the CRUD reads and writes is `src-memory-rag`; the health report that probes the same
-endpoints is `src-platform`, reached through `routes-rest-integrations-misc`. This section covers
-what these routes do with a caller-supplied endpoint URL, who may call them, and what they reveal —
-not whether the store, the URL builders, or the middleware are themselves correct.
+| Surface | Endpoints |
+| --- | --- |
+| Model picker | `GET /api/models`, per user |
+| Endpoint CRUD | `POST`, `GET`, `PATCH`, `DELETE` on `/api/model-endpoints`, plus the `/models` and `/dependents` sub-resources |
+| Probe and refresh | `GET /api/ping`, `GET /api/probe`, `/api/model-endpoints/{id}/probe`, `/api/model-endpoints/{id}/models`, `POST /api/probe-selected`, `POST /api/model-endpoints/test` |
+| Local discovery | `GET /api/providers`, `/api/discover`, `/api/model-endpoints/probe-local` |
+| Default chat | `GET /api/default-chat` |
+| Tool on/off list | `GET` and `POST /api/tools` |
+
+The file also holds the background model-cache refresh and the stale-cookbook-endpoint sweep.
+
+This section covers what these routes do with a caller-supplied endpoint URL, who may call them, and
+what they reveal. It does not cover whether the store, the URL builders or the middleware are
+themselves correct. Each neighbour owns one piece:
+
+| Owner | What it owns |
+| --- | --- |
+| `core-auth-session` | The request-authenticating middleware and the `require_admin` gate |
+| `core-data-platform` | The `ModelEndpoint` row and its encrypted key column |
+| `src-llm-core` | The URL and header builders the probes use: `resolve_url`, `normalize_base`, `build_chat_url`, `build_models_url`, `build_headers`, `resolve_endpoint_runtime` |
+| `src-security` | `src/auth_helpers.py` (`effective_user`, `owner_filter`) |
+| `src-memory-rag` | The settings store the CRUD reads and writes |
+| `src-platform` | The health report that probes the same endpoints, reached through `routes-rest-integrations-misc` |
 
 ### Coverage
 
@@ -9793,10 +9960,15 @@ not whether the store, the URL builders, or the middleware are themselves correc
 - `src/auth_helpers.py` in full (199 lines: `get_current_user`, `effective_user`, `owner_filter`,
   `_auth_disabled`)
 - `core/database.py` at the `ModelEndpoint` model (`:520-554`)
-- `src/endpoint_resolver.py` at `resolve_endpoint_runtime` (`:146-162`), `resolve_url` (`:209-222`),
-  `normalize_base` (`:225-234`), `_validated_endpoint_base` (`:237-242`), `_prepare_endpoint_base`
-  (`:245-247`), `build_chat_url` (`:271-283`), `build_models_url` (`:286-315`) and `build_headers`
-  (`:318-340`)
+- `src/endpoint_resolver.py` at these functions:
+  - `resolve_endpoint_runtime` (`:146-162`)
+  - `resolve_url` (`:209-222`)
+  - `normalize_base` (`:225-234`)
+  - `_validated_endpoint_base` (`:237-242`)
+  - `_prepare_endpoint_base` (`:245-247`)
+  - `build_chat_url` (`:271-283`)
+  - `build_models_url` (`:286-315`)
+  - `build_headers` (`:318-340`)
 - `core/log_safety.py` (`:1-27`)
 - `src/readiness.py` in full (61 lines — it checks the database and the data directory and does not
   touch the model-endpoint store)
@@ -10116,19 +10288,26 @@ passed**.
 
 ### Overview
 
-`routes/shell_routes.py` (1,971 lines) owns the two endpoints that run arbitrary commands
-(`POST /api/shell/exec`, `POST /api/shell/stream`), the three streaming backends behind them (pipe,
-PTY, tmux, plus the Windows detached-process path), and the Cookbook dependency routes that probe and
-mutate package state (`GET /api/cookbook/packages`, `POST /api/cookbook/packages/install`,
-`POST /api/cookbook/install-system-deps`, `POST /api/cookbook/rebuild-engine`). The frontend calls
-the shell endpoints from the code runner, the Cookbook download and install panels, and the
-hardware-fit checks; the dependency routes are the Cookbook Dependencies tab's read path and its two
-install actions. The agent's loopback bridge into these routes (`src/tools/system.py`,
-`src/tools/cookbook.py`) is covered by `src-agent-tools`; the Cookbook route helpers and the tmux
-task model the frontend drives belong to `routes-cookbook` and
-`static-js-cookbook-settings-models`. A finding here is about what this router does with a command
-once it has one, not about who may call it: admin-only is enforced at `_require_admin` and that
-decision is not re-reviewed here.
+`routes/shell_routes.py` (1,971 lines) owns three groups of routes:
+
+| Group | Routes |
+| --- | --- |
+| Command endpoints | `POST /api/shell/exec`, `POST /api/shell/stream` |
+| Streaming backends behind them | Pipe, PTY, tmux, and the Windows detached-process path |
+| Cookbook dependency routes | `GET /api/cookbook/packages`, `POST /api/cookbook/packages/install`, `POST /api/cookbook/install-system-deps`, `POST /api/cookbook/rebuild-engine` |
+
+The frontend calls the shell endpoints from the code runner, the Cookbook download and install
+panels, and the hardware-fit checks. The dependency routes are the Cookbook Dependencies tab's read
+path and its two install actions.
+
+A finding here is about what this router does with a command once it has one, not about who may call
+it: admin-only is enforced at `_require_admin` and that decision is not re-reviewed here. Two
+neighbours own the code on the other side:
+
+- `src-agent-tools` covers the agent's loopback bridge into these routes (`src/tools/system.py`,
+  `src/tools/cookbook.py`).
+- `routes-cookbook` and `static-js-cookbook-settings-models` cover the Cookbook route helpers and
+  the tmux task model the frontend drives.
 
 ### Coverage
 
@@ -10290,12 +10469,20 @@ No test suite was run.
 - **Severity:** low
 - **Disposition:** next
 - **Evidence:** `_reject_cross_site` rejects requests whose `Sec-Fetch-Site` is `cross-site`
-  (`:72-75`). Its only call in the file is on `list_packages`, a GET (`:1201`). The mutating
-  endpoints — `shell_exec` (`:963`), `shell_stream` (`:981`), `install_package` (`:1765`),
-  `install_system_deps` (`:1820`), `rebuild_engine` (`:1941`) — call only `_require_admin`. The
-  current cookie policy and body parsing block the obvious cross-site forms: the session cookie is
-  `SameSite=Lax` (`routes/auth_routes.py:188`), and a Pydantic body needs `application/json`, which
-  an HTML form cannot send. So this is not an exploitable CSRF today.
+  (`:72-75`). Its only call in the file is on `list_packages`, a GET (`:1201`). The five mutating
+  endpoints call only `_require_admin`:
+
+  | Endpoint | Line |
+  | --- | ---: |
+  | `shell_exec` | `:963` |
+  | `shell_stream` | `:981` |
+  | `install_package` | `:1765` |
+  | `install_system_deps` | `:1820` |
+  | `rebuild_engine` | `:1941` |
+
+  The current cookie policy and body parsing block the obvious cross-site forms: the session cookie
+  is `SameSite=Lax` (`routes/auth_routes.py:188`), and a Pydantic body needs `application/json`,
+  which an HTML form cannot send. So this is not an exploitable CSRF today.
 - **Impact:** the one endpoint that carries the guard is the one that changes nothing, and the
   endpoints that execute code depend on the cookie policy staying strict. If `SameSite` is relaxed
   for an embedded or tunneled deployment, or an origin is added to the CORS allowlist, the mutating
@@ -10371,13 +10558,16 @@ PDF import and text re-extraction, page rendering, form export and the signed-re
 tidy paths; `routes/document/document_helpers.py` holds the request models, the serializers,
 `_verify_doc_owner`, the upload locator and the PDF-marker ownership check.
 
-The boundary: the middleware that authenticates these requests and the `/api/generated-image/{filename}`
-file server are in `app.py` (`build-install-deploy`); the `Document`, `DocumentVersion`,
-`GalleryAlbum`, `GalleryImage` and `Signature` models are `core/database.py` (`core-data-platform`);
-the upload store, the PDF form document builders and the PDF/VL processor are `src-documents`; the
-upload byte caps are `src-security`; the gallery file cleanup that runs when sessions are deleted is
-`routes/session_routes.py` (`routes-chat-session`). This section covers whether each handler
-authenticates, scopes and confines correctly, not whether the stores underneath are safe.
+This section covers whether each handler authenticates, scopes and confines correctly, not whether
+the stores underneath are safe. Each neighbour owns one piece:
+
+| Owner | What it owns |
+| --- | --- |
+| `build-install-deploy` | The request-authenticating middleware and the `/api/generated-image/{filename}` file server, both in `app.py` |
+| `core-data-platform` | The `Document`, `DocumentVersion`, `GalleryAlbum`, `GalleryImage` and `Signature` models in `core/database.py` |
+| `src-documents` | The upload store, the PDF form document builders and the PDF/VL processor |
+| `src-security` | The upload byte caps |
+| `routes-chat-session` | The gallery file cleanup that runs when sessions are deleted, in `routes/session_routes.py` |
 
 ### Coverage
 
@@ -10394,8 +10584,13 @@ authenticates, scopes and confines correctly, not whether the stores underneath 
 
 **Read partially:** the boundary code the findings rest on:
 
-- `src/auth_helpers.py` in full (`get_current_user`, `effective_user`, `require_user`,
-  `require_privilege`, `owner_filter`, `_auth_disabled`)
+- `src/auth_helpers.py` in full, covering:
+  - `get_current_user`
+  - `effective_user`
+  - `require_user`
+  - `require_privilege`
+  - `owner_filter`
+  - `_auth_disabled`
 - `app.py` at the `/api/generated-image/{filename}` handler (`:513-553`) and the auth-exempt lists
   (`:263-296`)
 - `core/database.py` at the `Document`/`DocumentVersion`/`GalleryAlbum`/ `GalleryImage` definitions
@@ -10782,10 +10977,13 @@ the middleware underneath is correct.
 - `src/task_scheduler.py` at `compute_next_run` (`:113-231`), `HOUSEKEEPING_DEFAULTS` (`:251-263`),
   the loop (`:673-700`), `_check_due_tasks` (`:701-735`), `_execute_task` / `_execute_task_locked`
   (`:737-1159`), `run_task_now` / `stop_task` (`:2264-2290`)
-- `services/memory/skills.py` at the path helpers (`:76-83`), `_iter_skill_files` / `_read_skill` /
-  `_write_skill` (`:159-181`), `load` (`:278-287`), `add_skill` (`:293-383`),
-  `import_bundle_from_files` (`:384-431`), `update_skill` / `delete_skill` / `read_skill_md`
-  (`:432-575`)
+- `services/memory/skills.py`, at:
+  - the path helpers (`:76-83`)
+  - `_iter_skill_files`, `_read_skill` and `_write_skill` (`:159-181`)
+  - `load` (`:278-287`)
+  - `add_skill` (`:293-383`)
+  - `import_bundle_from_files` (`:384-431`)
+  - `update_skill`, `delete_skill` and `read_skill_md` (`:432-575`)
 - `services/memory/skill_format.py` at `slugify` (`:65-72`)
 - `src/caldav_sync.py` at `validate_caldav_url` (`:106-131`) and the sync entry points (`:617-722`)
 - `core/middleware.py` at `require_admin` (`:57-82`)
@@ -10803,8 +11001,12 @@ the middleware underneath is correct.
 
 - what stamps `request.state.current_user` lives in `app.py` and `core/middleware.py` (assigned to
   `core-auth-session`), and only `require_admin`, `require_user` and `get_current_user` were read
-- the task executors the scheduler dispatches into (`_execute_llm_task`, `_execute_action`,
-  `_execute_research_task`, `_deliver_task_result`, `_deliver_via_mcp`) beyond their call sites
+- the task executors the scheduler dispatches into, beyond their call sites:
+  - `_execute_llm_task`
+  - `_execute_action`
+  - `_execute_research_task`
+  - `_deliver_task_result`
+  - `_deliver_via_mcp`
 - `src/agent_loop.stream_agent_loop` and the tool surface a skill test or an audit run reaches
 - the CalDAV sync implementation (`_sync_blocking`, `src/caldav_writeback.py`) and
   `src/url_safety.check_outbound_url`
@@ -11610,11 +11812,16 @@ Twenty-one suites were run over this surface — the 21 test files listed below 
   ```
 
   `wait_for_delivery` defaults to false (`routes/email_helpers.py:2004`), and neither shipped skill
-  bundle documents it — both list the body fields as `to`, `cc`, `bcc`, `subject`, `body`,
-  `body_html`, `attachments`, `account_id`, `in_reply_to`, `references`
-  (`integrations/codex/skills/odysseus/SKILL.md:106-107` and the `integrations/claude/` twin), so
-  every documented call takes the branch that schedules delivery on the discarded object. Measured
-  with a two-route FastAPI app reproducing both call shapes:
+  bundle documents it (`integrations/codex/skills/odysseus/SKILL.md:106-107` and the
+  `integrations/claude/` twin). Both list the same ten body fields:
+
+  - `to`, `cc`, `bcc`
+  - `subject`, `body`, `body_html`
+  - `attachments`, `account_id`
+  - `in_reply_to`, `references`
+
+  So every documented call takes the branch that schedules delivery on the discarded object.
+  Measured with a two-route FastAPI app reproducing both call shapes:
 
   ```
   framework-injected BackgroundTasks -> ['delivered']
@@ -11792,11 +11999,19 @@ The earlier-registered session router and its live compaction endpoint belong to
 | `routes/contacts/contacts_routes.py` | 916 |
 | `routes/history/history_routes.py` | 849 |
 
-The three flat shims (18, 13 and 17 respectively), and each package's `__init__.py` (5 each).
-Boundary files read fully: `src/auth_helpers.py`, `src/topic_analyzer.py`, `src/url_safety.py`,
-`core/middleware.py` and `core/atomic_io.py`. Read the audit prompt, header, coverage boundaries,
-review scaffold and both requested model sections. Citations refer to working-tree source at
-`2992bf6d368a`; `git status --short` showed only the untracked `audit/` directory.
+The three flat shims (18, 13 and 17 lines) and each package's `__init__.py` (5 lines each) were also read.
+
+Boundary files read fully:
+
+- `src/auth_helpers.py`
+- `src/topic_analyzer.py`
+- `src/url_safety.py`
+- `core/middleware.py`
+- `core/atomic_io.py`
+
+The audit prompt, header, coverage boundaries, review scaffold and both requested model sections were
+read. Citations refer to working-tree source at `2992bf6d368a`; `git status --short` showed only the
+untracked `audit/` directory.
 
 **Read partially:**
 
@@ -11810,9 +12025,12 @@ review scaffold and both requested model sections. Citations refer to working-tr
   owner filtering/no-op save (700–714)
 
 The contacts JSON store and its writes were read fully as part of the canonical route module. Test
-source read: `tests/conftest.py`, `tests/test_contacts_carddav_security.py`,
-`tests/test_contacts_import_nonstring.py`, `tests/test_contacts_vcard_parse.py` (end to end), and
-`tests/test_history_compact_tool_calls.py` (1–250).
+source read:
+
+- `tests/conftest.py`
+- `tests/test_contacts_carddav_security.py`, `tests/test_contacts_import_nonstring.py` and
+  `tests/test_contacts_vcard_parse.py` (end to end)
+- `tests/test_history_compact_tool_calls.py` (lines 1–250)
 
 **Not read:** no assigned file remains unread. Boundary code beyond those regions,
 including the full session manager, full database initialization/migrations, upload
@@ -11823,18 +12041,20 @@ CardDAV/SMTP/LLM service, DNS-rebinding exploit, browser flow, deployment or loa
 was exercised; URL guards and HTTP call placement were inspected, and the CardDAV
 probe used a stub transport. No run-level audit gate was run, as instructed.
 
-**Checks run:** `git rev-parse --short=12 HEAD`, `git status --short`, file line
-counts, the requested `ls tests | grep -iE 'note|contact|history'`, and targeted
-searches for router registrations, body readers, stores and compaction handlers.
-An inline `venv/bin/python` probe (in-memory SQLite, temporary data directory,
-bytecode disabled) confirmed all three shim identities, vCard address loss,
-CardDAV GET executing on the event-loop thread, and the nine JSON-body failures
-below. A second inline probe registered session then history routers as `app.py`
-does and replaced the session router's owner check with an HTTP 418 sentinel:
-POST `/api/session/example/compact` returned that sentinel, confirming the history
-module's compaction implementation is not selected in the shipped registration
-order. An initial attempt to inspect `app.routes` directly returned no matches;
-the request-level probe, not that inconclusive inspection, established precedence.
+**Checks run:**
+
+- `git rev-parse --short=12 HEAD`, `git status --short`, and file line counts
+- the requested `ls tests | grep -iE 'note|contact|history'`
+- targeted searches for router registrations, body readers, stores and compaction handlers
+- an inline `venv/bin/python` probe (in-memory SQLite, temporary data directory, bytecode
+  disabled) that confirmed all three shim identities, vCard address loss, CardDAV GET executing on
+  the event-loop thread, and the nine JSON-body failures below
+- a second inline probe that registered the session then history routers as `app.py` does and
+  replaced the session router's owner check with an HTTP 418 sentinel. POST
+  `/api/session/example/compact` returned that sentinel, which confirms the history module's
+  compaction implementation is not selected in the shipped registration order. An initial attempt to
+  inspect `app.routes` directly returned no matches; the request-level probe, not that
+  inconclusive inspection, established precedence.
 
 The focused command was:
 
@@ -11843,20 +12063,33 @@ PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest -q -p no:cacheprovider \
   $(ls tests | grep -iE 'note|contact|history' | grep '\.py$' | awk '{print "tests/"$0}')
 ```
 
-**75 passed, 7 warnings in 2.08s**, over 22 files:
-`test_contacts_add_null_name.py`, `test_contacts_carddav_security.py`,
-`test_contacts_import_nonstring.py`, `test_contacts_routes_shim.py`,
-`test_contacts_vcard_parse.py`, `test_history_compact_tool_calls.py`,
-`test_history_db_fallback_hidden.py`, `test_history_display_model_hydration.py`,
-`test_history_order_by_timestamp_regression.py`, `test_history_routes_shim.py`,
-`test_history_topics_owner_scope.py`, `test_manage_notes_owner_gate.py`,
-`test_note_reminder_email_oauth.py`, `test_note_reminder_fire_scope.py`,
-`test_note_routes_shim.py`, `test_notes_dom_xss_helpers.py`,
-`test_notes_fail_closed_auth.py`, `test_notes_search_reset_on_reopen_js.py`,
-`test_notes_select_esc_listener_js.py`, `test_notes_update_due_date.py`,
-`test_notes_z_order_js.py`, and `test_tool_rag_contacts_domain.py` (all under `tests/`).
-Warnings were SQLAlchemy's deprecated `declarative_base` location and naive
-`datetime.utcnow()` usage; there were no failed or skipped tests.
+**75 passed, 7 warnings in 2.08s**, over 22 files, all under `tests/`:
+
+- `test_contacts_add_null_name.py`
+- `test_contacts_carddav_security.py`
+- `test_contacts_import_nonstring.py`
+- `test_contacts_routes_shim.py`
+- `test_contacts_vcard_parse.py`
+- `test_history_compact_tool_calls.py`
+- `test_history_db_fallback_hidden.py`
+- `test_history_display_model_hydration.py`
+- `test_history_order_by_timestamp_regression.py`
+- `test_history_routes_shim.py`
+- `test_history_topics_owner_scope.py`
+- `test_manage_notes_owner_gate.py`
+- `test_note_reminder_email_oauth.py`
+- `test_note_reminder_fire_scope.py`
+- `test_note_routes_shim.py`
+- `test_notes_dom_xss_helpers.py`
+- `test_notes_fail_closed_auth.py`
+- `test_notes_search_reset_on_reopen_js.py`
+- `test_notes_select_esc_listener_js.py`
+- `test_notes_update_due_date.py`
+- `test_notes_z_order_js.py`
+- `test_tool_rag_contacts_domain.py`
+
+The warnings were SQLAlchemy's deprecated `declarative_base` location and naive `datetime.utcnow()`
+usage. No test failed or was skipped.
 
 #### [PERF] CardDAV requests run synchronously inside async contact handlers
 
@@ -12270,10 +12503,14 @@ audit directory.
 - `src/document_processor.py` at vision analysis (333–392)
 - `routes/calendar_routes.py` at preference-writing CalDAV configuration handlers (805–984)
 - `src/builtin_actions.py` at the scheduled model-serve preference update (3270–3354)
-- caller searches in `routes/`, `src/caldav_sync.py`, `src/task_scheduler.py`, and
-  `routes/cookbook_routes.py`. Test-source reads covered `tests/conftest.py`,
-  `tests/test_prefs_routes.py`, `tests/test_editor_draft_payload.py`,
-  `tests/test_preset_expand_owner_scope.py` and `tests/test_cookbook_dead_download_status.py`
+- caller searches in `routes/`, `src/caldav_sync.py`, `src/task_scheduler.py` and
+  `routes/cookbook_routes.py`
+- test source:
+  - `tests/conftest.py`
+  - `tests/test_prefs_routes.py`
+  - `tests/test_editor_draft_payload.py`
+  - `tests/test_preset_expand_owner_scope.py`
+  - `tests/test_cookbook_dead_download_status.py`
 - the other selected tests were executed, not read end to end
 
 **Not read:** no assigned route file remains unread. Boundary modules beyond the regions
@@ -12561,26 +12798,36 @@ PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest -q -p no:cacheprovider $TEST
 ```
 
 **57 files, 253 passed in 6.28s**, with one SQLAlchemy `declarative_base()` deprecation warning.
-Two stdin Python probes used temporary data directories outside the checkout, an in-memory DB,
-and synthetic request state. They checked SSH reachability with a mocked runner, event-loop
-execution with mocked search functions, non-object JSON responses, vault file modes, all ten
-shim identities, and comparison ownership. Results appear below where they support findings.
-All ten aliases were identical to their canonical module objects. The five typed JSON endpoints
-(vault config/login/unlock, compare record and sync chat) returned 422 for both `[]` and a string;
-the two search endpoints returned 200 with their missing-query error. Thus the non-object-body
-500 class from `routes-rest-auth-admin` does not recur in this section's canonical handlers.
-The adjacent task parser is outside this section's implementation scope.
 
-Outgoing webhook management and all vault/diagnostics handlers require admin. The outgoing
+Two stdin Python probes used temporary data directories outside the checkout, an in-memory DB and
+synthetic request state. Results appear below where they support findings. The probes checked:
+
+- SSH reachability with a mocked runner
+- event-loop execution with mocked search functions
+- non-object JSON responses
+- vault file modes
+- all ten shim identities
+- comparison ownership
+
+All ten aliases were identical to their canonical module objects. The five typed JSON endpoints
+(vault config, login and unlock; compare record; sync chat) returned 422 for both `[]` and a string.
+The two search endpoints returned 200 with their missing-query error. So the non-object-body 500
+class from `routes-rest-auth-admin` does not recur in this section's canonical handlers. The
+adjacent task parser is outside this section's implementation scope.
+
+Outgoing webhook management and all vault and diagnostics handlers require admin. The outgoing
 webhook module has no unauthenticated receiver: `/api/v1/chat` additionally requires a chat-scoped
-API token. None of these seven routers is auth-exempt. The dynamic exemption is the task
-receiver's secret-bearing path, whose handler checks the stored token and active status before
-asking the scheduler to run. It uses a reusable URL credential, not a timestamped signature;
-repeated authorized triggers are intentional. External receivers' replay checks were not tested.
+API token. None of these seven routers is auth-exempt.
+
+The dynamic exemption is the task receiver's secret-bearing path. Its handler checks the stored
+token and active status before asking the scheduler to run. It uses a reusable URL credential, not
+a timestamped signature; repeated authorized triggers are intentional. External receivers' replay
+checks were not tested.
+
 Cleanup derives its owner from request state, not client input, and its service applies strict
 owner filters to archival, deletion candidates and the protected recent-session set. It deletes
-eligible session rows (messages have a cascading foreign key) and removes their cached sessions;
-this pass did not establish cleanup of every ancillary file/table.
+eligible session rows (messages have a cascading foreign key) and removes their cached sessions.
+This pass did not establish cleanup of every ancillary file or table.
 
 `audit.py` and run-level validation were not run, as instructed; integration and the secret gate
 remain the parent's responsibility. No source, test, or other run file was edited.
@@ -12785,13 +13032,30 @@ sites are their own sections and are cited here only where a finding lands in th
 
 ### Coverage
 
-**Read fully:** all nine assigned files (2,222 lines): `providers.py` (641), `core.py` (478),
-`content.py` (442), `ranking.py` (164), `query.py` (149), `analytics.py` (148), `service.py`
-(102), `cache.py` (63), `__init__.py` (35). Also read fully for the boundaries the findings
-rest on: `routes/search/search_routes.py` (111), `src/outbound_fetch.py` (354),
-`src/settings_scrub.py` (70), `src/agent_tools/web_tools.py` (171), `src/search/*` (eight files:
-six `sys.modules` aliases, a re-exporting `ranking.py`, and the package `__init__.py`), and
-`specs/search.md`.
+**Read fully:** all nine assigned files, 2,222 lines.
+
+| File | Lines |
+| --- | ---: |
+| `providers.py` | 641 |
+| `core.py` | 478 |
+| `content.py` | 442 |
+| `ranking.py` | 164 |
+| `query.py` | 149 |
+| `analytics.py` | 148 |
+| `service.py` | 102 |
+| `cache.py` | 63 |
+| `__init__.py` | 35 |
+
+Also read fully, for the boundaries the findings rest on:
+
+| File | Lines |
+| --- | ---: |
+| `routes/search/search_routes.py` | 111 |
+| `src/outbound_fetch.py` | 354 |
+| `src/settings_scrub.py` | 70 |
+| `src/agent_tools/web_tools.py` | 171 |
+| `src/search/*` | Eight files: six `sys.modules` aliases, a re-exporting `ranking.py`, and the package `__init__.py` |
+| `specs/search.md` | |
 
 **Read partially:**
 
@@ -12820,26 +13084,34 @@ six `sys.modules` aliases, a re-exporting `ranking.py`, and the package `__init_
 - the tests beyond the suites run
 - every other `services-*` section
 
-**Checks run:** five throwaway probes under `/tmp` (not part of the target tree), each quoted in
-the finding it settles — the Google PSE 403 probe (`probe_search_cred.py`), the
-malformed-provider-row probe (`probe_search_rows.py`, which also holds the large-page timing
-case), a dedicated `SearchService` probe (`probe_search_service.py`), an AST call-site probe for
-the exported entry points (`probe_search_callsites.py`), and the settings-scrub probe — plus two
-one-line checks: `issubclass(httpx.HTTPStatusError, httpx.RequestError)` → `False`, and `wc -l`
-for the line counts above. Also the greps recorded in the findings
-(`searxng_search_results` / `invalidate_search_cache` / `get_search_stats` / `_record_query`
-across the repository) and `git log -S`. The large-page probe (1.37 MB of HTML through the real
-extractor) took 1.9 s with the four summarizer helpers at 0.02 s, so the extraction cost is
-bounded by the 2 MB soft cap and is not reported. The suites that import
-this module were discovered with
-`grep -rl "services\.search\|src\.search\|services/search\|src/search" tests/*.py` (32 files)
-plus `tests/test_search_query_nonstring.py`, which loads `query.py` by path — **230 passed**. The
-broader set the assignment names, `ls tests | grep -iE 'search|searxng|ddg|og_image|analytics|query|ranking|content'`
+**Checks run:**
+
+- five throwaway probes under `/tmp` (not part of the target tree), each quoted in the finding it
+  settles:
+  - the Google PSE 403 probe (`probe_search_cred.py`)
+  - the malformed-provider-row probe (`probe_search_rows.py`, which also holds the large-page timing
+    case)
+  - a dedicated `SearchService` probe (`probe_search_service.py`)
+  - an AST call-site probe for the exported entry points (`probe_search_callsites.py`)
+  - the settings-scrub probe
+- two one-line checks: `issubclass(httpx.HTTPStatusError, httpx.RequestError)` → `False`, and `wc -l`
+  for the line counts above
+- the greps recorded in the findings (`searxng_search_results`, `invalidate_search_cache`,
+  `get_search_stats` and `_record_query` across the repository) and `git log -S`
+
+The large-page probe (1.37 MB of HTML through the real extractor) took 1.9 s with the four
+summarizer helpers at 0.02 s, so the extraction cost is bounded by the 2 MB soft cap and is not
+reported.
+
+The suites that import this module were discovered with
+`grep -rl "services\.search\|src\.search\|services/search\|src/search" tests/*.py` (32 files), plus
+`tests/test_search_query_nonstring.py`, which loads `query.py` by path: **230 passed**. The broader
+set the assignment names, `ls tests | grep -iE 'search|searxng|ddg|og_image|analytics|query|ranking|content'`
 (74 files), was also run: 73 files, **391 passed, 1 skipped**. The 74th,
 `tests/test_owned_document_query.py`, fails collection inside that batch
-(`ModuleNotFoundError: No module named 'src.agent_tools.document_tools'; 'src.agent_tools' is
-not a package`) and passes alone (2 passed); its subject is the document tools, not this
-section, so it is recorded here and not reported as a finding.
+(`ModuleNotFoundError: No module named 'src.agent_tools.document_tools'; 'src.agent_tools' is not a
+package`) and passes alone (2 passed). Its subject is the document tools, not this section, so it is
+recorded here and not reported as a finding.
 
 #### [SECURITY] An upstream HTTP error status puts the Google PSE API key into the log, the returned context and the research report
 
@@ -12967,11 +13239,14 @@ section, so it is recorded here and not reported as a finding.
   would evict any entry older than an hour on the next write, cutting the 24-hour TTL short.
   An operator tuning `search_result_count` or reading `specs/search.md` for how caching works is
   reading about code that does not run.
-- **Fix:** either delete `searxng_search_results`, `invalidate_search_cache`, `get_search_stats`,
-  `analytics.py`, `cache.py` and their exports (the tests pin behaviour no caller can reach), or
-  route the standalone search path through `searxng_search_results` so the documented cache and
-  analytics are live. Reconnecting it also means fixing the TTL mismatch and adding a caller for
-  `invalidate_search_cache`, which nothing calls today.
+- **Fix:** either delete the dead code or reconnect it.
+
+  - Delete the three functions `searxng_search_results`, `invalidate_search_cache` and
+    `get_search_stats`, the files `analytics.py` and `cache.py`, and their exports. The tests pin
+    behaviour no caller can reach.
+  - Or route the standalone search path through `searxng_search_results` so the documented cache and
+    analytics are live. Reconnecting it also means fixing the TTL mismatch and adding a caller for
+    `invalidate_search_cache`, which nothing calls today.
 
 #### [TYPE-SAFETY] A provider row with a non-string field aborts the whole search instead of dropping one result
 
@@ -13214,8 +13489,8 @@ extraction, audit or import was run end to end against a real model or a real Gi
 **Checks run:**
 
 - `git rev-parse --short=12 HEAD` and `git status --short`
-- caller greps (`MemoryService(`, `audit_memories`, `extract_and_store`, `MEMORY_VECTORS_DIR`, and
-  `to_thread` / `run_in_threadpool` across `routes/`, `src/` and `services/`)
+- caller greps for `MemoryService(`, `audit_memories`, `extract_and_store` and `MEMORY_VECTORS_DIR`
+- caller greps for `to_thread` and `run_in_threadpool` across `routes/`, `src/` and `services/`
 - four throwaway probes under `/tmp` (not part of the target tree), each quoted in the finding it
   settles: the SKILL.md round trip, a non-list `steps`/`tags` add and a nested-path import
   (`/tmp/probe_mem/skill_probes.py`)
@@ -13575,27 +13850,43 @@ routes read.
 
 ### Coverage
 
-**Read fully:** all five assigned files (805 lines): `services/research/research_handler.py` (487),
-`services/research/service.py` (167), `services/docs/service.py` (121), `services/docs/__init__.py`
-(18), `services/research/__init__.py` (12). Working-tree line numbers refer to `2992bf6d368a`
-(`git rev-parse --short=12 HEAD`); `git status --short` showed only the untracked `audit/`
-directory, and the five files are unmodified against `HEAD`.
+**Read fully:** all five assigned files, 805 lines.
 
-**Read partially:** the boundary code the findings rest on — the live handler
-`src/research_handler.py` at `_research_json_path` (`:53-62`), `start_research` (`:240-364`), the
-status/result/sources/raw-findings readers (`:407-521`) and `_handle_research_failure` (`:943-949`);
-`src/rag_manager.py` in full (70 lines); `src/rag_vector.py` at `__init__`/`healthy` (`:76-142`),
-`search` and its keyword fallback (`:348-443`), `index_personal_documents` (`:495-556`) and the
-owner-scoped document-id helper (`:48-55`); `src/rag_singleton.py` in full (63 lines);
-`src/constants.py` at the data-path constants (`:41-56`); `services/__init__.py` in full (27 lines);
-`services/search/service.py` at the offloaded `comprehensive_web_search` call (`:64-77`);
-`src/chat_processor.py:366`; `routes/personal_routes.py` at `_rag()`, the index-job lock and the
-add-directory route (`:150-260`); `routes/research/research_routes.py` at the library owner gate
-(`:367-386`); `src/app_initializer.py:117-124`; `app.py:713`; `src/task_scheduler.py:2014-2024` and
-`:2122-2132`; `src/deep_research.py` at the round loop and the time budget (`:296`, `:536`,
-`:796-797`); `specs/research.md:105-157` and `specs/documents-rag-uploads.md:150-170`. Tests read in
-full: `tests/test_docs_query_nondict_rows.py`, `tests/test_research_handler_path_confinement.py`,
-`tests/test_services_research_low_quality_sources.py`; the suites named under *Checks run* were
+| File | Lines |
+| --- | ---: |
+| `services/research/research_handler.py` | 487 |
+| `services/research/service.py` | 167 |
+| `services/docs/service.py` | 121 |
+| `services/docs/__init__.py` | 18 |
+| `services/research/__init__.py` | 12 |
+
+Working-tree line numbers refer to `2992bf6d368a` (`git rev-parse --short=12 HEAD`); `git status
+--short` showed only the untracked `audit/`, and the five files are unmodified against `HEAD`.
+
+**Read partially:** the boundary code the findings rest on.
+
+| File | Regions read |
+| --- | --- |
+| `src/research_handler.py` (the live handler) | `_research_json_path` (`:53-62`), `start_research` (`:240-364`), the status, result, sources and raw-findings readers (`:407-521`), `_handle_research_failure` (`:943-949`) |
+| `src/rag_manager.py` | In full (70 lines) |
+| `src/rag_vector.py` | `__init__` and `healthy` (`:76-142`), `search` and its keyword fallback (`:348-443`), `index_personal_documents` (`:495-556`), the owner-scoped document-id helper (`:48-55`) |
+| `src/rag_singleton.py` | In full (63 lines) |
+| `src/constants.py` | The data-path constants (`:41-56`) |
+| `services/__init__.py` | In full (27 lines) |
+| `services/search/service.py` | The offloaded `comprehensive_web_search` call (`:64-77`) |
+| `src/chat_processor.py` | `:366` |
+| `routes/personal_routes.py` | `_rag()`, the index-job lock and the add-directory route (`:150-260`) |
+| `routes/research/research_routes.py` | The library owner gate (`:367-386`) |
+| `src/app_initializer.py` | `:117-124` |
+| `app.py` | `:713` |
+| `src/task_scheduler.py` | `:2014-2024` and `:2122-2132` |
+| `src/deep_research.py` | The round loop and the time budget (`:296`, `:536`, `:796-797`) |
+| `specs/research.md` | `:105-157` |
+| `specs/documents-rag-uploads.md` | `:150-170` |
+
+Three test files were read in full: `tests/test_docs_query_nondict_rows.py`,
+`tests/test_research_handler_path_confinement.py` and
+`tests/test_services_research_low_quality_sources.py`. The suites named under *Checks run* were
 otherwise read only by result.
 
 **Not read:** the live handler's other ~630 lines (`rename_owner`, the report HTML and image-hide
@@ -13630,14 +13921,20 @@ it settles:
 - **Import probe.** `import services.search` was timed and inspected in `sys.modules` to see what the
   package `__init__` pulls in.
 
-`venv/bin/python -m pytest -q` was run with the 41 files matching `ls tests | grep -iE
-'research|docs|report'` (the docs/RAG, research, deep-research, personal-docs and visual-report
-suites, `tests/run_order_report.py` and `tests/test_run_order_report.py` included) — **245 passed**,
-3 warnings in 3.86s. The suites that pin this section's own modules
-(`tests/test_docs_query_nondict_rows.py`, `tests/test_research_service.py`,
-`tests/test_services_research_low_quality_sources.py`, `tests/test_svc_research_sources_nondict.py`,
-`tests/test_research_handler_analyzed_urls.py`) are among them. The full suite and `audit.py` were not
-run; run-level generation, counts and secret-gate validation belong to the coordinating reviewer.
+`venv/bin/python -m pytest -q` was run with the 41 files matching
+`ls tests | grep -iE 'research|docs|report'`: the docs and RAG, research, deep-research,
+personal-docs and visual-report suites, including `tests/run_order_report.py` and
+`tests/test_run_order_report.py`. Result: **245 passed**, 3 warnings in 3.86s. The suites that pin
+this section's own modules are among them:
+
+- `tests/test_docs_query_nondict_rows.py`
+- `tests/test_research_service.py`
+- `tests/test_services_research_low_quality_sources.py`
+- `tests/test_svc_research_sources_nondict.py`
+- `tests/test_research_handler_analyzed_urls.py`
+
+The full suite and `audit.py` were not run; run-level generation, counts and secret-gate validation
+belong to the coordinating reviewer.
 
 #### [SECURITY] The compatibility research handler joins an unvalidated session id into its report path
 
@@ -13645,8 +13942,15 @@ run; run-level generation, counts and secret-gate validation belong to the coord
 - **Severity:** low
 - **Disposition:** next
 - **Evidence:** five methods build the on-disk report path by joining the caller's id with no
-  validation — `get_status` (`:117`), `get_result` (`:154`), `get_sources` (`:174`), `clear_result`
-  (`:202`, which unlinks it) and `_save_result` (`:219`, which overwrites it):
+  validation:
+
+  | Method | Line | Effect on the file |
+  | --- | ---: | --- |
+  | `get_status` | `:117` | Reads it |
+  | `get_result` | `:154` | Reads it |
+  | `get_sources` | `:174` | Reads it |
+  | `clear_result` | `:202` | Unlinks it |
+  | `_save_result` | `:219` | Overwrites it |
 
   ```python
   path = RESEARCH_DATA_DIR / f"{session_id}.json"
@@ -13903,15 +14207,26 @@ the 9 test files listed below.
 
 **Read structurally, not line by line:**
 
-- `services/hwfit/data/hf_models.json` (19,477 lines, 924 rows) and
-  `services/hwfit/data/mlx_community_models.json` (15,727 lines, 629 rows). Both were parsed and
-  every field of every row was type-censused with a script, and the head of each file plus
-  representative rows were read; the full text was not. The same census was run over the two runtime
-  caches a live instance feeds
-  into `get_models()` — `data/hwfit/hf_collection_models.json` (501 rows) and
-  `data/hwfit/mlx_community_models.json` (659 rows), untracked runtime state present in this
-  checkout. Result: `name`, `parameter_count`, `quantization`, `use_case`, `provider` are strings in
-  every row of all four files
+- two catalogue files, which were parsed and type-censused field by field with a script. The head of
+  each file plus representative rows were read; the full text was not.
+
+  | File | Lines | Rows |
+  | --- | ---: | ---: |
+  | `services/hwfit/data/hf_models.json` | 19,477 | 924 |
+  | `services/hwfit/data/mlx_community_models.json` | 15,727 | 629 |
+
+  The same census was run over the two runtime caches a live instance feeds into `get_models()`.
+  They are untracked runtime state present in this checkout:
+
+  | File | Rows |
+  | --- | ---: |
+  | `data/hwfit/hf_collection_models.json` | 501 |
+  | `data/hwfit/mlx_community_models.json` | 659 |
+
+  The census result, in every row of all four files:
+
+- `name`, `use_case` and `provider` are strings
+- `parameter_count` and `quantization` are strings
 - `parameters_raw` and `context_length` are ints in every row
 - `active_parameters` is an int or `null` (52 static rows)
 - 29 static rows carry `release_date: null` (handled by the `newest` sort and by the front end, so
@@ -14286,11 +14601,14 @@ slug, so it is recorded here rather than as a finding.
   monkeypatch `_discover_quant_repos` (`tests/test_image_models_nonstring_search.py`), which reads as
   if the path were live. A literal `return False` with no comment also hides whether this is a
   deliberate kill switch or a debugging leftover.
-- **Fix:** pick one. If variant discovery is retired, delete `_should_discover_variants`,
-  `_discover_quant_repos`, `_best_variant_repo`, `_variant_score`, `_hf_model_search`, the two
-  caches, the two empty seed lists and the `quant_repos` plumbing, and drop the now-pointless
-  monkeypatches in the tests. If it is meant to be on, give the predicate a documented condition and
-  a test that exercises the discovery path end to end.
+- **Fix:** pick one.
+
+  - If variant discovery is retired, delete `_should_discover_variants`, `_discover_quant_repos`
+    and `_best_variant_repo`, then `_variant_score` and `_hf_model_search`, plus the two caches,
+    the two empty seed lists and the `quant_repos` plumbing, and drop the now-pointless
+    monkeypatches in the tests.
+  - If it is meant to be on, give the predicate a documented condition and a test that exercises
+    the discovery path end to end.
 
 ## 39. services: shell, STT, TTS, faces, youtube
 
@@ -14304,17 +14622,21 @@ does YouTube URL detection, transcript fetch, yt-dlp comment fetch and LLM conte
 `services/faces/__init__.py` is a one-line placeholder package; the four package `__init__` files
 re-export the public names and `services/__init__.py` is the package facade.
 
-The boundary: `routes-shell.md` owns `routes/shell_routes.py`, the live shell and code-execution
-router. That router does **not** import this section's `ShellService` — the only importers are
-`services/__init__.py` and `tests/test_shell_service.py` — so the child-process behaviour routes-shell
-reports there belongs to a second, separate implementation; this section owns `services/shell/service.py`
-itself and does not restate routes-shell's findings. `routes-rest-media-files.md` owns
-`routes/tts_routes.py`, `routes/stt_routes.py` and `routes/upload_routes.py` and already reports that the
-speech handlers run their blocking service calls on the request event loop (citing
-`services/tts/tts_service.py:189` and `services/stt/stt_service.py:144`); that finding is not repeated
-here. The chat-side callers (`src/chat_handler.py`, `src/chat_processor.py`, `src/youtube_handler.py`),
-the settings store (`src/settings.py`), the `ModelEndpoint` rows the API providers read, and the router
-registration in `app.py` belong to other sections and are read here only where a finding rests on them.
+The boundary with the neighbouring sections:
+
+- `routes-shell` owns `routes/shell_routes.py`, the live shell and code-execution router. That
+  router does **not** import this section's `ShellService`: the only importers are
+  `services/__init__.py` and `tests/test_shell_service.py`. So the child-process behaviour
+  `routes-shell` reports belongs to a second, separate implementation. This section owns
+  `services/shell/service.py` itself and does not restate `routes-shell`'s findings.
+- `routes-rest-media-files` owns `routes/tts_routes.py`, `routes/stt_routes.py` and
+  `routes/upload_routes.py`. It already reports that the speech handlers run their blocking service
+  calls on the request event loop (citing `services/tts/tts_service.py:189` and
+  `services/stt/stt_service.py:144`); that finding is not repeated here.
+- Other sections own the chat-side callers (`src/chat_handler.py`, `src/chat_processor.py`,
+  `src/youtube_handler.py`), the settings store (`src/settings.py`), the `ModelEndpoint` rows the
+  API providers read, and the router registration in `app.py`. They are read here only where a
+  finding rests on them.
 
 ### Coverage
 
@@ -14508,14 +14830,14 @@ run — **150 passed**.
       logger.warning("yt-dlp not installed — cannot fetch comments")
       return {"success": False, "error": "yt-dlp not installed", "comments": []}
   ```
-- **Impact:** on the container image and on any host that installed `requirements.txt`, the "Audience
-  Reception" half of the YouTube breakdown never runs: `format_comments_for_context` returns `""` for a
-  failed fetch (`:283-285`), so the context carries the transcript only, and the operator sees a warning
-  in the log rather than a broken request. `requirements-optional.txt` is the project's declared home for
-  feature extras — it lists `faster-whisper`, `kokoro`, `ddgs`, `PyMuPDF` and `markitdown` under the note
-  "The app handles their absence gracefully" — and yt-dlp is not there, so nothing in the repository
-  tells an operator the binary is needed. Nothing pins its version either, so the flags the command uses
-  are the only record of what it expects.
+- **Impact:** on the container image and on any host that installed `requirements.txt`, the
+  "Audience Reception" half of the YouTube breakdown never runs. `format_comments_for_context`
+  returns `""` for a failed fetch (`:283-285`), so the context carries the transcript only, and the
+  operator sees a warning in the log rather than a broken request. `requirements-optional.txt` is
+  the project's declared home for feature extras, under the note "The app handles their absence
+  gracefully". It lists five extras (faster-whisper, kokoro, ddgs, PyMuPDF and markitdown), and
+  yt-dlp is not there, so nothing in the repository tells an operator the binary is needed. Nothing pins
+  its version either, so the flags the command uses are the only record of what it expects.
 - **Fix:** add `yt-dlp` to `requirements-optional.txt` with a one-line feature note (or install it in the
   image), name the binary in the module docstring, and state the version floor the flags assume.
 
@@ -18037,69 +18359,89 @@ authenticated `GET /backgrounds` reaches `serve_html_with_nonce` on a missing pa
 
 ### Overview
 
-The four stdio servers the application registers for itself: `mcp_servers/email_server.py`
-(IMAP/SMTP tools over the user's mailboxes), `mcp_servers/image_gen_server.py` (image generation
-plus the gallery row), `mcp_servers/memory_server.py` (the JSON memory store) and
-`mcp_servers/rag_server.py` (the personal-document index). `mcp_servers/__init__.py` is empty. These
-are the only part of the MCP surface whose code the project owns: the manager that spawns them, the
-three transports, the tool inventory and the call path are `src-mcp`; the registration that hands
-each one a command, an argument list and an environment at startup is `src/builtin_mcp.py`, read here
-as context. The same data is reachable through the route layer, and that is where the comparisons
-below come from: `routes-email` and `routes-rest-memory-personal-research` own the handlers whose
-guards these servers either copy or drop, `src-memory-rag` owns the stores, and `core-data-platform`
-owns the `EmailAccount` and `GalleryImage` rows. Findings in those files are cross-referenced, not
-restated.
+The four stdio servers the application registers for itself. They are the only part of the MCP
+surface whose code the project owns.
 
-The question this section answers is who a server thinks is asking. The transport carries no
-identity — the parent process is the only client and the stdio protocol says nothing about which
-application user made the call — so each server has to be told, and the four do not agree.
-`email_server` takes an owner from a hidden `_odysseus_owner` argument that the caller injects
-(`src/tool_execution.py:1316-1319`, overwriting anything the model sent), `memory_server` takes one
-from an environment variable nothing in the tree sets, and `image_gen_server` and `rag_server` take
-none at all: they read and write ownerless rows in stores whose readers are owner-filtered.
+| Server | Role |
+| --- | --- |
+| `mcp_servers/email_server.py` | IMAP and SMTP tools over the user's mailboxes |
+| `mcp_servers/image_gen_server.py` | Image generation, plus the gallery row |
+| `mcp_servers/memory_server.py` | The JSON memory store |
+| `mcp_servers/rag_server.py` | The personal-document index |
+
+`mcp_servers/__init__.py` is empty. The manager that spawns the servers, the three transports, the
+tool inventory and the call path belong to `src-mcp`. `src/builtin_mcp.py` hands each server its
+command, arguments and environment; it was read here as context. The same data is reachable through
+the route layer, and the comparisons below come from there. `routes-email` and
+`routes-rest-memory-personal-research` own the handlers whose guards these servers copy or drop,
+`src-memory-rag` owns the stores, and `core-data-platform` owns the `EmailAccount` and
+`GalleryImage` rows. Findings in those files are cross-referenced, not restated.
+
+The question this section answers is who a server thinks is asking. The stdio transport carries no
+identity, so each server has to be told, and the four do not agree.
+
+| Server | Where it gets the owner |
+| --- | --- |
+| `email_server` | A hidden `_odysseus_owner` argument the caller injects, overwriting anything the model sent (`src/tool_execution.py:1316-1319`) |
+| `memory_server` | An environment variable nothing in the tree sets |
+| `image_gen_server`, `rag_server` | None. They read and write ownerless rows in stores whose readers are owner-filtered |
 
 ### Coverage
 
-**Read fully:** all five assigned files (3,541 lines): `mcp_servers/email_server.py` (2,912),
-`mcp_servers/memory_server.py` (285), `mcp_servers/image_gen_server.py` (184),
-`mcp_servers/rag_server.py` (160) and `mcp_servers/__init__.py` (empty, 0 bytes).
+**Read fully:** all five assigned files, 3,541 lines.
 
-**Read partially:** the boundary code the findings rest on — `src/builtin_mcp.py` in full (the
-`_BUILTIN_SERVERS` table, `builtin_python_env` and both `connect_server` call sites);
-`src/tool_execution.py` at the dispatch (`:1112-1122`), the legacy MCP map (`:562-572`), the owner
-injection (`:1301-1304`, `:1316-1319`), the `generate_image` promotion (`:699-728`), the dead-map
-comment (`:644-651`) and the agent's readable data roots (`:175-215`); `src/mcp_manager.py` at
-`is_builtin` (`:641-648`), `get_all_openai_schemas` (`:570-600`) and
-`get_tool_descriptions_for_prompt` (`:661-706`); `src/tool_index.py` at `ALWAYS_AVAILABLE` (`:35-45`),
-`BUILTIN_TOOL_DESCRIPTIONS` (`:69-143`) and `index_mcp_tools` (`:224-252`); `src/agent_loop.py` at
-`_DOMAIN_TOOL_MAP` (`:528-540`), `_load_mcp_disabled_map` (`:287-301`), the email prompt text
-(`:1917-1918`) and the tool-selection block (`:3880-3950`); `src/tool_parsing.py` at the fence regex
-(`:33-38`) and the `mcp__` branch (`:639-642`); `routes/personal_routes.py` at
-`_resolve_allowed_personal_dir` (`:165-182`) and both directory handlers (`:200-297`);
-`routes/email_helpers.py` at `attachment_extract_dir` (`:685-696`) and the owner dependencies
-(`:440-486`); `routes/gallery/gallery_helpers.py` at `_owner_filter` (`:125-136`) and
-`_image_to_dict` (`:96-121`); `app.py` at the generated-image handler (`:513-553`); the native
-counterparts `src/ai_interaction.py` (`do_manage_memory`, `do_manage_rag`, `do_generate_image` and
-its gallery writers), `src/memory.py` (`load_all`, `load_all_for_update`, `add_entry`, `save`) and
-`src/personal_docs.py` (`add_directory`, `remove_directory`); `src/session_image_cleanup.py` at
-`session_image_refs` (`:46-52`); the MCP SDK's `Server.call_tool` decorator
+| File | Lines |
+| --- | ---: |
+| `mcp_servers/email_server.py` | 2,912 |
+| `mcp_servers/memory_server.py` | 285 |
+| `mcp_servers/image_gen_server.py` | 184 |
+| `mcp_servers/rag_server.py` | 160 |
+| `mcp_servers/__init__.py` | 0 |
+
+**Read partially:** the boundary code the findings rest on.
+
+| File | Regions read |
+| --- | --- |
+| `src/builtin_mcp.py` | In full: the `_BUILTIN_SERVERS` table, `builtin_python_env` and both `connect_server` call sites |
+| `src/tool_execution.py` | Dispatch (`:1112-1122`), legacy MCP map (`:562-572`), owner injection (`:1301-1304`, `:1316-1319`), `generate_image` promotion (`:699-728`), dead-map comment (`:644-651`), agent data roots (`:175-215`) |
+| `src/mcp_manager.py` | `is_builtin` (`:641-648`), `get_all_openai_schemas` (`:570-600`), `get_tool_descriptions_for_prompt` (`:661-706`) |
+| `src/tool_index.py` | `ALWAYS_AVAILABLE` (`:35-45`), `BUILTIN_TOOL_DESCRIPTIONS` (`:69-143`), `index_mcp_tools` (`:224-252`) |
+| `src/agent_loop.py` | `_DOMAIN_TOOL_MAP` (`:528-540`), `_load_mcp_disabled_map` (`:287-301`), email prompt text (`:1917-1918`), tool-selection block (`:3880-3950`) |
+| `src/tool_parsing.py` | Fence regex (`:33-38`), `mcp__` branch (`:639-642`) |
+| `routes/personal_routes.py` | `_resolve_allowed_personal_dir` (`:165-182`), both directory handlers (`:200-297`) |
+| `routes/email_helpers.py` | `attachment_extract_dir` (`:685-696`), owner dependencies (`:440-486`) |
+| `routes/gallery/gallery_helpers.py` | `_owner_filter` (`:125-136`), `_image_to_dict` (`:96-121`) |
+| `app.py` | Generated-image handler (`:513-553`) |
+| `src/ai_interaction.py` | `do_manage_memory`, `do_manage_rag`, `do_generate_image` and its gallery writers |
+| `src/memory.py` | `load_all`, `load_all_for_update`, `add_entry`, `save` |
+| `src/personal_docs.py` | `add_directory`, `remove_directory` |
+| `src/session_image_cleanup.py` | `session_image_refs` (`:46-52`) |
+
+Two files outside the target tree were also read: the MCP SDK's `Server.call_tool` decorator
 (`venv/lib/python3.12/site-packages/mcp/server/lowlevel/server.py:498-600`) and the stdlib's
-`imaplib.IMAP4._command`, neither of which is part of the target tree.
+`imaplib.IMAP4._command`.
 
-**Not read:** the rest of `routes/email_routes.py` (4,600+ lines), `routes/gallery/gallery_routes.py`
-and the other `routes-*` paths; `src/ai_interaction.py`, `src/agent_loop.py` and
-`src/tool_execution.py` outside the regions named above; the other sections' paths.
+**Not read:**
 
-**Checks run:** throwaway probe programs under `/tmp/mcpsrv/` (eight distinct programs —
-`probe_gallery.py` was rewritten as `probe_gallery2.py`, and the attachment probe is three files, one
-per input shape): a stubbed RAG manager recording what `manage_rag` passes down; a fake IMAP
-connection serving one attachment, run three times with different `folder`/`uid`; the real
-`routes.gallery_helpers._owner_filter` over a real `GalleryImage` table in an in-memory SQLite
-database; the email server's `_load_config` twice around a database update; `builtin_python_env` plus
-the memory server's `_scope_entries`; and `parse_tool_blocks` on three shapes of an MCP call. Each
-probe's output is quoted in the finding it settles. The 26 suites
-matching this surface — the 17 files from `ls tests | grep -iE 'mcp'` plus the 9 further files that
-reference `mcp_servers/` — were run: **233 passed** in 5.47s.
+- the rest of `routes/email_routes.py` (4,600+ lines), `routes/gallery/gallery_routes.py` and the
+  other `routes-*` paths
+- `src/ai_interaction.py`, `src/agent_loop.py` and `src/tool_execution.py` outside the regions above
+- the other sections' paths
+
+**Checks run:** eight throwaway probe programs under `/tmp/mcpsrv/`. Each probe's output is quoted
+in the finding it settles. `probe_gallery.py` was rewritten as `probe_gallery2.py`, and the
+attachment probe is three files, one per input shape.
+
+- a stubbed RAG manager recording what `manage_rag` passes down
+- a fake IMAP connection serving one attachment, run three times with different `folder` and `uid`
+- the real `routes.gallery_helpers._owner_filter` over a real `GalleryImage` table in an in-memory
+  SQLite database
+- the email server's `_load_config` twice around a database update
+- `builtin_python_env` plus the memory server's `_scope_entries`
+- `parse_tool_blocks` on three shapes of an MCP call
+
+The 26 suites matching this surface (the 17 files from `ls tests | grep -iE 'mcp'` plus 9 further
+files that reference `mcp_servers/`) were run: **233 passed** in 5.47s.
 
 Malformed arguments are worth one line because the brief asks: a bad shape does **not** kill the
 server. The SDK validates the arguments against the tool's declared `inputSchema` before the function
@@ -18601,8 +18943,10 @@ Both companion test suites were read in full.
 
 **Not read:**
 
-- the rest of `app.py`, `core/middleware.py`, `core/database.py`, `routes/codex_routes.py`,
-  `routes/email_routes.py` and `scripts/mlx_image_server.py`
+- the rest of these files:
+  - `app.py`, `core/middleware.py` and `core/database.py`
+  - `routes/codex_routes.py` and `routes/email_routes.py`
+  - `scripts/mlx_image_server.py`
 - the mobile client itself (not in this repository)
 - `integrations/*` beyond the 11 assigned files
 - the vendored Swift dependencies `mlx-lama-swift` and `mlx-ddcolor-swift`
@@ -18648,12 +18992,12 @@ by reading and by the Python caller.
                   token_prefix=raw_token[:8], scopes=COMPANION_SCOPE, is_active=True))
   ```
 
-  `ApiToken` has no expiry column and no consumption flag — `id`, `owner`, `name`, `token_hash`,
-  `token_prefix`, `scopes`, `is_active`, `last_used_at` (`core/database.py:638-645`). The auth
-  cache loads every active row (`app.py:321`), and the middleware's only write on a successful
-  bearer request is `last_used_at` (`app.py:441-456`). The spec is accurate and the code matches
-  it: `specs/integrations.md:136` says the POST "mints a normal chat-scoped API token". Nothing
-  binds the credential to the requesting device either: `pairing_payload` carries only
+  `ApiToken` has no expiry column and no consumption flag. Its columns are id, owner, name,
+  token_hash, token_prefix, scopes, is_active and last_used_at (`core/database.py:638-645`).
+  The auth cache loads every active row (`app.py:321`), and the middleware's only write on a
+  successful bearer request is `last_used_at` (`app.py:441-456`). The spec is accurate and the code
+  matches it: `specs/integrations.md:136` says the POST "mints a normal chat-scoped API token".
+  Nothing binds the credential to the requesting device either: `pairing_payload` carries only
   `{"v", "host", "port", "token"}` (`companion/pairing.py:208-210`), so any client holding the
   payload can use it concurrently.
 - **Impact:** an admin who pairs a phone reads "one-time" and may assume the code is spent after
@@ -18979,9 +19323,10 @@ Nothing inside the recordings was reviewed.
 - `requirements.txt` (`:1-30`), `requirements-optional.txt` in full, `Dockerfile` (`:6-79`)
 - `docker-compose.yml` in full, `docker/host-docker.yml`, `docker/gpu.nvidia.yml`,
   `docker/gpu.amd.yml`, `docker/entrypoint.sh`
-- the nine workflows this section cites, at their names, triggers and job/step identifiers: `ci`,
-  `secret-scan`, `workflow-security`, `dependency-review`, `container-scan`, `container-trivy`,
-  `codeql`, `deploy-pages`, `docker-publish`
+- the nine workflows this section cites, at their names, triggers and job and step identifiers:
+  - `ci`, `secret-scan`, `workflow-security`
+  - `dependency-review`, `container-scan`, `container-trivy`
+  - `codeql`, `deploy-pages`, `docker-publish`
 - `.github/CODEOWNERS`, `.github/dependabot.yml`, `.gitignore`, `.dockerignore`
 - `scripts/encode_previews.sh`, `scripts/check-docker-gpu.sh` at its flag parsing and `.env` writer
 - `src/settings.py`, `src/auth_helpers.py` and `app.py` only at the call sites cited
@@ -19322,15 +19667,25 @@ were checked against `_secure_cookie` (`routes/auth_routes.py:88-112`), the HSTS
   ```
 
   and the code-block button routes through it (`static/js/chat.js:5316`
-  `uiModule.copyToClipboard(code)`), as does the session transcript export
-  (`static/app.js:495`). `static/js/codeRunner.js:103-106` states the intent in a comment — "the
-  single most reliable path across browsers / non-secure contexts / mobile Firefox" — and
-  `static/js/cookbook-diagnosis.js:959-960` names "non-HTTPS origins (Tailscale IPs, LAN IPs, etc.)"
-  explicitly. Other copy handlers still call `navigator.clipboard.writeText` with no fallback
-  (`static/js/settings.js:4374`, `static/js/notes.js:2494`, `static/js/sessions.js:742`,
-  `static/js/document.js:9146`, `static/js/documentLibrary.js:151`, `static/js/emailLibrary.js:656`,
-  `static/js/tasks.js:1500`, `static/js/admin.js:2675`, `static/js/cookbook.js:1577`, `:1705`), so
-  the page's blanket "copy buttons do nothing" is true for some surfaces and false for the ones
+  `uiModule.copyToClipboard(code)`), as does the session transcript export (`static/app.js:495`).
+  `static/js/codeRunner.js:103-106` states the intent in a comment: "the single most reliable path
+  across browsers / non-secure contexts / mobile Firefox". `static/js/cookbook-diagnosis.js:959-960`
+  names "non-HTTPS origins (Tailscale IPs, LAN IPs, etc.)" explicitly. Other copy handlers still
+  call `navigator.clipboard.writeText` with no fallback:
+
+  | File | Line |
+  | --- | ---: |
+  | `static/js/settings.js` | `:4374` |
+  | `static/js/notes.js` | `:2494` |
+  | `static/js/sessions.js` | `:742` |
+  | `static/js/document.js` | `:9146` |
+  | `static/js/documentLibrary.js` | `:151` |
+  | `static/js/emailLibrary.js` | `:656` |
+  | `static/js/tasks.js` | `:1500` |
+  | `static/js/admin.js` | `:2675` |
+  | `static/js/cookbook.js` | `:1577`, `:1705` |
+
+  So the page's blanket "copy buttons do nothing" is true for some surfaces and false for the ones
   users hit most.
 - **Impact:** an operator on a plain-HTTP LAN URL who reads the trap may stand up TLS for a problem
   they do not have, or report a working copy button as broken; conversely the buttons that really do

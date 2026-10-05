@@ -2,16 +2,20 @@
 
 ## Overview
 
-The shared runtime layer: `src/constants.py` owns every data path and the app-wide limits,
-`src/runtime_paths.py` resolves source vs. frozen app/data roots, `src/app_initializer.py`
-constructs the managers and hardens the agent workspace, `src/app_helpers.py` holds the HTML
-nonce injection and the path-confinement check, `src/config.py` is a pydantic settings tree,
-`src/event_bus.py` turns app events into scheduled-task triggers, `src/service_health.py` builds
-the admin health report, and `src/readiness.py`, `src/user_time.py`, `src/text_helpers.py`,
-`src/reminder_personas.py`, `src/optional_deps.py`, `src/database.py` and `src/exceptions.py`
-fill in readiness, user-local time, thinking-tag cleanup, reminder personas, optional-dependency
-shims, and the `core` re-exports. `src/search/*` are compatibility shims that alias the
-`services.search.*` implementations.
+The shared runtime layer:
+
+| File | Role |
+| --- | --- |
+| `src/constants.py` | Every data path and the app-wide limits |
+| `src/runtime_paths.py` | Resolves source versus frozen app and data roots |
+| `src/app_initializer.py` | Constructs the managers and hardens the agent workspace |
+| `src/app_helpers.py` | The HTML nonce injection and the path-confinement check |
+| `src/config.py` | A pydantic settings tree |
+| `src/event_bus.py` | Turns app events into scheduled-task triggers |
+| `src/service_health.py` | Builds the admin health report |
+| `src/readiness.py`, `src/user_time.py`, `src/text_helpers.py`, `src/reminder_personas.py`, `src/optional_deps.py`, `src/database.py`, `src/exceptions.py` | Readiness, user-local time, thinking-tag cleanup, reminder personas, optional-dependency shims, and the `core` re-exports |
+
+`src/search/*` are compatibility shims that alias the `services.search.*` implementations.
 
 The boundary: the manager classes `app_initializer` constructs are defined in `src-memory-rag`,
 `src-chat-session` and `src-email-integrations`; the health endpoint that calls

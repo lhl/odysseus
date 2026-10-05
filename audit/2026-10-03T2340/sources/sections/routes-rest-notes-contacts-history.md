@@ -33,11 +33,19 @@ The earlier-registered session router and its live compaction endpoint belong to
 | `routes/contacts/contacts_routes.py` | 916 |
 | `routes/history/history_routes.py` | 849 |
 
-The three flat shims (18, 13 and 17 respectively), and each package's `__init__.py` (5 each).
-Boundary files read fully: `src/auth_helpers.py`, `src/topic_analyzer.py`, `src/url_safety.py`,
-`core/middleware.py` and `core/atomic_io.py`. Read the audit prompt, header, coverage boundaries,
-review scaffold and both requested model sections. Citations refer to working-tree source at
-`2992bf6d368a`; `git status --short` showed only the untracked `audit/` directory.
+The three flat shims (18, 13 and 17 lines) and each package's `__init__.py` (5 lines each) were also read.
+
+Boundary files read fully:
+
+- `src/auth_helpers.py`
+- `src/topic_analyzer.py`
+- `src/url_safety.py`
+- `core/middleware.py`
+- `core/atomic_io.py`
+
+The audit prompt, header, coverage boundaries, review scaffold and both requested model sections were
+read. Citations refer to working-tree source at `2992bf6d368a`; `git status --short` showed only the
+untracked `audit/` directory.
 
 **Read partially:**
 
@@ -51,9 +59,12 @@ review scaffold and both requested model sections. Citations refer to working-tr
   owner filtering/no-op save (700–714)
 
 The contacts JSON store and its writes were read fully as part of the canonical route module. Test
-source read: `tests/conftest.py`, `tests/test_contacts_carddav_security.py`,
-`tests/test_contacts_import_nonstring.py`, `tests/test_contacts_vcard_parse.py` (end to end), and
-`tests/test_history_compact_tool_calls.py` (1–250).
+source read:
+
+- `tests/conftest.py`
+- `tests/test_contacts_carddav_security.py`, `tests/test_contacts_import_nonstring.py` and
+  `tests/test_contacts_vcard_parse.py` (end to end)
+- `tests/test_history_compact_tool_calls.py` (lines 1–250)
 
 **Not read:** no assigned file remains unread. Boundary code beyond those regions,
 including the full session manager, full database initialization/migrations, upload
@@ -64,18 +75,20 @@ CardDAV/SMTP/LLM service, DNS-rebinding exploit, browser flow, deployment or loa
 was exercised; URL guards and HTTP call placement were inspected, and the CardDAV
 probe used a stub transport. No run-level audit gate was run, as instructed.
 
-**Checks run:** `git rev-parse --short=12 HEAD`, `git status --short`, file line
-counts, the requested `ls tests | grep -iE 'note|contact|history'`, and targeted
-searches for router registrations, body readers, stores and compaction handlers.
-An inline `venv/bin/python` probe (in-memory SQLite, temporary data directory,
-bytecode disabled) confirmed all three shim identities, vCard address loss,
-CardDAV GET executing on the event-loop thread, and the nine JSON-body failures
-below. A second inline probe registered session then history routers as `app.py`
-does and replaced the session router's owner check with an HTTP 418 sentinel:
-POST `/api/session/example/compact` returned that sentinel, confirming the history
-module's compaction implementation is not selected in the shipped registration
-order. An initial attempt to inspect `app.routes` directly returned no matches;
-the request-level probe, not that inconclusive inspection, established precedence.
+**Checks run:**
+
+- `git rev-parse --short=12 HEAD`, `git status --short`, and file line counts
+- the requested `ls tests | grep -iE 'note|contact|history'`
+- targeted searches for router registrations, body readers, stores and compaction handlers
+- an inline `venv/bin/python` probe (in-memory SQLite, temporary data directory, bytecode
+  disabled) that confirmed all three shim identities, vCard address loss, CardDAV GET executing on
+  the event-loop thread, and the nine JSON-body failures below
+- a second inline probe that registered the session then history routers as `app.py` does and
+  replaced the session router's owner check with an HTTP 418 sentinel. POST
+  `/api/session/example/compact` returned that sentinel, which confirms the history module's
+  compaction implementation is not selected in the shipped registration order. An initial attempt to
+  inspect `app.routes` directly returned no matches; the request-level probe, not that
+  inconclusive inspection, established precedence.
 
 The focused command was:
 
@@ -84,20 +97,33 @@ PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest -q -p no:cacheprovider \
   $(ls tests | grep -iE 'note|contact|history' | grep '\.py$' | awk '{print "tests/"$0}')
 ```
 
-**75 passed, 7 warnings in 2.08s**, over 22 files:
-`test_contacts_add_null_name.py`, `test_contacts_carddav_security.py`,
-`test_contacts_import_nonstring.py`, `test_contacts_routes_shim.py`,
-`test_contacts_vcard_parse.py`, `test_history_compact_tool_calls.py`,
-`test_history_db_fallback_hidden.py`, `test_history_display_model_hydration.py`,
-`test_history_order_by_timestamp_regression.py`, `test_history_routes_shim.py`,
-`test_history_topics_owner_scope.py`, `test_manage_notes_owner_gate.py`,
-`test_note_reminder_email_oauth.py`, `test_note_reminder_fire_scope.py`,
-`test_note_routes_shim.py`, `test_notes_dom_xss_helpers.py`,
-`test_notes_fail_closed_auth.py`, `test_notes_search_reset_on_reopen_js.py`,
-`test_notes_select_esc_listener_js.py`, `test_notes_update_due_date.py`,
-`test_notes_z_order_js.py`, and `test_tool_rag_contacts_domain.py` (all under `tests/`).
-Warnings were SQLAlchemy's deprecated `declarative_base` location and naive
-`datetime.utcnow()` usage; there were no failed or skipped tests.
+**75 passed, 7 warnings in 2.08s**, over 22 files, all under `tests/`:
+
+- `test_contacts_add_null_name.py`
+- `test_contacts_carddav_security.py`
+- `test_contacts_import_nonstring.py`
+- `test_contacts_routes_shim.py`
+- `test_contacts_vcard_parse.py`
+- `test_history_compact_tool_calls.py`
+- `test_history_db_fallback_hidden.py`
+- `test_history_display_model_hydration.py`
+- `test_history_order_by_timestamp_regression.py`
+- `test_history_routes_shim.py`
+- `test_history_topics_owner_scope.py`
+- `test_manage_notes_owner_gate.py`
+- `test_note_reminder_email_oauth.py`
+- `test_note_reminder_fire_scope.py`
+- `test_note_routes_shim.py`
+- `test_notes_dom_xss_helpers.py`
+- `test_notes_fail_closed_auth.py`
+- `test_notes_search_reset_on_reopen_js.py`
+- `test_notes_select_esc_listener_js.py`
+- `test_notes_update_due_date.py`
+- `test_notes_z_order_js.py`
+- `test_tool_rag_contacts_domain.py`
+
+The warnings were SQLAlchemy's deprecated `declarative_base` location and naive `datetime.utcnow()`
+usage. No test failed or was skipped.
 
 ### [PERF] CardDAV requests run synchronously inside async contact handlers
 

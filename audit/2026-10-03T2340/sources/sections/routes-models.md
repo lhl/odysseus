@@ -2,24 +2,31 @@
 
 ## Overview
 
-The model-endpoint registry and every surface built on it: `routes/model_routes.py` holds the
-per-user model picker (`GET /api/models`), the endpoint CRUD (`POST`/`GET`/`PATCH`/`DELETE
-/api/model-endpoints`, plus the `/models` and `/dependents` sub-resources), the probe and refresh
-endpoints (`GET /api/ping`, `/api/probe`, `/api/model-endpoints/{id}/probe`,
-`/api/model-endpoints/{id}/models`, `POST /api/probe-selected`, `POST /api/model-endpoints/test`),
-local discovery (`GET /api/providers`, `/api/discover`, `/api/model-endpoints/probe-local`), the
-default-chat resolution (`GET /api/default-chat`), the background model-cache refresh and the
-stale-cookbook-endpoint sweep, and the tool on/off list (`GET`/`POST /api/tools`).
+The model-endpoint registry and every surface built on it, all in `routes/model_routes.py`:
 
-The boundary: the request-authenticating middleware and the `require_admin` gate these routes call
-are `core-auth-session`; the `ModelEndpoint` row and its encrypted key column are
-`core-data-platform`; the URL and header builders the probes use (`resolve_url`, `normalize_base`,
-`build_chat_url`, `build_models_url`, `build_headers`, `resolve_endpoint_runtime`) are
-`src-llm-core`; `src/auth_helpers.py` (`effective_user`, `owner_filter`) is `src-security`; the
-settings store the CRUD reads and writes is `src-memory-rag`; the health report that probes the same
-endpoints is `src-platform`, reached through `routes-rest-integrations-misc`. This section covers
-what these routes do with a caller-supplied endpoint URL, who may call them, and what they reveal —
-not whether the store, the URL builders, or the middleware are themselves correct.
+| Surface | Endpoints |
+| --- | --- |
+| Model picker | `GET /api/models`, per user |
+| Endpoint CRUD | `POST`, `GET`, `PATCH`, `DELETE` on `/api/model-endpoints`, plus the `/models` and `/dependents` sub-resources |
+| Probe and refresh | `GET /api/ping`, `GET /api/probe`, `/api/model-endpoints/{id}/probe`, `/api/model-endpoints/{id}/models`, `POST /api/probe-selected`, `POST /api/model-endpoints/test` |
+| Local discovery | `GET /api/providers`, `/api/discover`, `/api/model-endpoints/probe-local` |
+| Default chat | `GET /api/default-chat` |
+| Tool on/off list | `GET` and `POST /api/tools` |
+
+The file also holds the background model-cache refresh and the stale-cookbook-endpoint sweep.
+
+This section covers what these routes do with a caller-supplied endpoint URL, who may call them, and
+what they reveal. It does not cover whether the store, the URL builders or the middleware are
+themselves correct. Each neighbour owns one piece:
+
+| Owner | What it owns |
+| --- | --- |
+| `core-auth-session` | The request-authenticating middleware and the `require_admin` gate |
+| `core-data-platform` | The `ModelEndpoint` row and its encrypted key column |
+| `src-llm-core` | The URL and header builders the probes use: `resolve_url`, `normalize_base`, `build_chat_url`, `build_models_url`, `build_headers`, `resolve_endpoint_runtime` |
+| `src-security` | `src/auth_helpers.py` (`effective_user`, `owner_filter`) |
+| `src-memory-rag` | The settings store the CRUD reads and writes |
+| `src-platform` | The health report that probes the same endpoints, reached through `routes-rest-integrations-misc` |
 
 ## Coverage
 
@@ -31,10 +38,15 @@ not whether the store, the URL builders, or the middleware are themselves correc
 - `src/auth_helpers.py` in full (199 lines: `get_current_user`, `effective_user`, `owner_filter`,
   `_auth_disabled`)
 - `core/database.py` at the `ModelEndpoint` model (`:520-554`)
-- `src/endpoint_resolver.py` at `resolve_endpoint_runtime` (`:146-162`), `resolve_url` (`:209-222`),
-  `normalize_base` (`:225-234`), `_validated_endpoint_base` (`:237-242`), `_prepare_endpoint_base`
-  (`:245-247`), `build_chat_url` (`:271-283`), `build_models_url` (`:286-315`) and `build_headers`
-  (`:318-340`)
+- `src/endpoint_resolver.py` at these functions:
+  - `resolve_endpoint_runtime` (`:146-162`)
+  - `resolve_url` (`:209-222`)
+  - `normalize_base` (`:225-234`)
+  - `_validated_endpoint_base` (`:237-242`)
+  - `_prepare_endpoint_base` (`:245-247`)
+  - `build_chat_url` (`:271-283`)
+  - `build_models_url` (`:286-315`)
+  - `build_headers` (`:318-340`)
 - `core/log_safety.py` (`:1-27`)
 - `src/readiness.py` in full (61 lines — it checks the database and the data directory and does not
   touch the model-endpoint store)

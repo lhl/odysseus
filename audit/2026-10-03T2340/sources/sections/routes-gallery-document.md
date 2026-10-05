@@ -12,13 +12,16 @@ PDF import and text re-extraction, page rendering, form export and the signed-re
 tidy paths; `routes/document/document_helpers.py` holds the request models, the serializers,
 `_verify_doc_owner`, the upload locator and the PDF-marker ownership check.
 
-The boundary: the middleware that authenticates these requests and the `/api/generated-image/{filename}`
-file server are in `app.py` (`build-install-deploy`); the `Document`, `DocumentVersion`,
-`GalleryAlbum`, `GalleryImage` and `Signature` models are `core/database.py` (`core-data-platform`);
-the upload store, the PDF form document builders and the PDF/VL processor are `src-documents`; the
-upload byte caps are `src-security`; the gallery file cleanup that runs when sessions are deleted is
-`routes/session_routes.py` (`routes-chat-session`). This section covers whether each handler
-authenticates, scopes and confines correctly, not whether the stores underneath are safe.
+This section covers whether each handler authenticates, scopes and confines correctly, not whether
+the stores underneath are safe. Each neighbour owns one piece:
+
+| Owner | What it owns |
+| --- | --- |
+| `build-install-deploy` | The request-authenticating middleware and the `/api/generated-image/{filename}` file server, both in `app.py` |
+| `core-data-platform` | The `Document`, `DocumentVersion`, `GalleryAlbum`, `GalleryImage` and `Signature` models in `core/database.py` |
+| `src-documents` | The upload store, the PDF form document builders and the PDF/VL processor |
+| `src-security` | The upload byte caps |
+| `routes-chat-session` | The gallery file cleanup that runs when sessions are deleted, in `routes/session_routes.py` |
 
 ## Coverage
 
@@ -35,8 +38,13 @@ authenticates, scopes and confines correctly, not whether the stores underneath 
 
 **Read partially:** the boundary code the findings rest on:
 
-- `src/auth_helpers.py` in full (`get_current_user`, `effective_user`, `require_user`,
-  `require_privilege`, `owner_filter`, `_auth_disabled`)
+- `src/auth_helpers.py` in full, covering:
+  - `get_current_user`
+  - `effective_user`
+  - `require_user`
+  - `require_privilege`
+  - `owner_filter`
+  - `_auth_disabled`
 - `app.py` at the `/api/generated-image/{filename}` handler (`:513-553`) and the auth-exempt lists
   (`:263-296`)
 - `core/database.py` at the `Document`/`DocumentVersion`/`GalleryAlbum`/ `GalleryImage` definitions

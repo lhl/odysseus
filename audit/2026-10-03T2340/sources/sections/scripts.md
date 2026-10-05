@@ -96,19 +96,16 @@ tests/test_searxng_settings_migration.py tests/test_memory_cli_add_nondict.py
 tests/test_amd_gpu_check_args.py tests/test_pr_blocker_audit.py tests/test_docs_no_orphan_images.py
 tests/test_email_account_default_serialization.py` → **202 passed, 3 warnings in 2.72s**.
 
-The suite reaches these scripts unevenly, which is worth stating before the findings: the twenty
-`odysseus-*` CLIs, `scripts/odysseus`, `_lib/cli.py`, `claim_ownerless.py`,
-`migrate_faiss_to_chroma.py`, `agent_migration_manifest.py`, `migrate_searxng_settings.py` and both
-image servers have dedicated tests. `update_database.py` is covered only by an assertion that it
-has one `__main__` guard (`tests/test_update_database_script.py`, eight lines whose only test
-reads the script and counts the guard), `check-docker-gpu.sh`
-has no test at all (`tests/test_amd_gpu_check_args.py:5` covers `check-docker-amd-gpu.sh`), and
-`encode_previews.sh` is covered by two string assertions
-(`tests/test_docs_no_orphan_images.py:142-146`). `demo_account.py` is exercised once, through its
-`teardown()` (`tests/test_email_account_default_serialization.py:489-522`). No test executes
-`hf_download.py` (the only mention is `tests/test_cookbook_helpers.py:264`, which tests the
-Cookbook's repo-id validator), `fix_paths.py`, `index_documents.py`, `add_hwfit_models.py`,
-`import_from_vllm_recipes.py`, `seed_demo_emails.py` or `manage.sh`.
+The suite reaches these scripts unevenly, which is worth stating before the findings:
+
+| Coverage | Scripts |
+| --- | --- |
+| Dedicated tests | The twenty `odysseus-*` CLIs, `scripts/odysseus`, `_lib/cli.py`, `claim_ownerless.py`, `migrate_faiss_to_chroma.py`, `agent_migration_manifest.py`, `migrate_searxng_settings.py` and both image servers |
+| One assertion on the script text | `update_database.py`: `tests/test_update_database_script.py` is eight lines whose only test reads the script and counts the `__main__` guard |
+| A sibling's test only | `check-docker-gpu.sh` has no test; `tests/test_amd_gpu_check_args.py:5` covers `check-docker-amd-gpu.sh` |
+| Two string assertions | `encode_previews.sh` (`tests/test_docs_no_orphan_images.py:142-146`) |
+| Exercised once | `demo_account.py`, through its `teardown()` (`tests/test_email_account_default_serialization.py:489-522`) |
+| Not executed by any test | `hf_download.py` (its only mention is `tests/test_cookbook_helpers.py:264`, which tests the Cookbook's repo-id validator), `fix_paths.py`, `index_documents.py`, `add_hwfit_models.py`, `import_from_vllm_recipes.py`, `seed_demo_emails.py` and `manage.sh` |
 
 Probes for the findings below ran from `/tmp/audit_probe/` against throwaway data directories;
 nothing in the repository was written.
@@ -172,13 +169,21 @@ nothing in the repository was written.
 - **Severity:** medium
 - **Disposition:** next
 - **Evidence:** each of these builds its own path from `_REPO_ROOT` instead of importing the
-  application's constants: `odysseus-theme:30`
-  (`_USER_PREFS_PATH = _REPO_ROOT / "data" / "user_prefs.json"`), `odysseus-preset:24` (`_PATH`),
-  `odysseus-memory:39` (`_DATA_DIR`), `odysseus-personal:34` (`_DATA_DIR`), `odysseus-research:26`
-  (`_DATA_DIR = _REPO_ROOT / "data" / "deep_research"`), `odysseus-skills:33`,
-  `odysseus-cookbook:42`, `odysseus-backup:31`, and `scripts/demo_email/seed_demo_emails.py:53`
-  (`CACHE_DB = _REPO_ROOT / "data" / "scheduled_emails.db"`). Loading each module with
-  `ODYSSEUS_DATA_DIR=/tmp/env_data` set (`/tmp/audit_probe/datadir_probe.py`):
+  application's constants:
+
+  | Script | Line | Path variable |
+  | --- | ---: | --- |
+  | `odysseus-theme` | `:30` | `_USER_PREFS_PATH = _REPO_ROOT / "data" / "user_prefs.json"` |
+  | `odysseus-preset` | `:24` | `_PATH` |
+  | `odysseus-memory` | `:39` | `_DATA_DIR` |
+  | `odysseus-personal` | `:34` | `_DATA_DIR` |
+  | `odysseus-research` | `:26` | `_DATA_DIR = _REPO_ROOT / "data" / "deep_research"` |
+  | `odysseus-skills` | `:33` | |
+  | `odysseus-cookbook` | `:42` | |
+  | `odysseus-backup` | `:31` | |
+  | `scripts/demo_email/seed_demo_emails.py` | `:53` | `CACHE_DB = _REPO_ROOT / "data" / "scheduled_emails.db"` |
+
+  Loading each module with `ODYSSEUS_DATA_DIR=/tmp/env_data` set (`/tmp/audit_probe/datadir_probe.py`):
 
   ```
   ODYSSEUS_DATA_DIR: /tmp/env_data
@@ -741,13 +746,20 @@ nothing in the repository was written.
 - **Disposition:** backlog
 - **Evidence:** `odysseus-mail` imports the helpers at `:35`
   (`from cli import quiet_logs, emit, fail, common_parser, run, REPO_ROOT as _REPO_ROOT`) and then
-  defines all three again later in the same module (`quiet_logs` at `:55`, `emit` at `:91`,
-  `fail` at `:100`), so the import is dead — the later `def` rebinds the name for the whole
-  module. The same pattern is in `odysseus-calendar` (`:25` import, `:38`/`:59` locals),
-  `odysseus-contacts` (`:24`, `:35`/`:58`), `odysseus-cookbook` (`:26`, `:54`), `odysseus-tasks`
-  (`:15`) and `odysseus-notes` (`:17`). Comparing the AST-extracted bodies against
-  `scripts/_lib/cli.py`, the copies are behaviorally identical today — the only differences are
-  docstrings and code formatting.
+  defines all three again later in the same module (`quiet_logs` at `:55`, `emit` at `:91`, `fail`
+  at `:100`), so the import is dead: the later `def` rebinds the name for the whole module. The same
+  pattern is in five more scripts:
+
+  | Script | Import | Local definitions |
+  | --- | ---: | ---: |
+  | `odysseus-calendar` | `:25` | `:38`, `:59` |
+  | `odysseus-contacts` | `:24` | `:35`, `:58` |
+  | `odysseus-cookbook` | `:26` | `:54` |
+  | `odysseus-tasks` | `:15` | |
+  | `odysseus-notes` | `:17` | |
+
+  Comparing the AST-extracted bodies against `scripts/_lib/cli.py`, the copies are behaviorally
+  identical today. The only differences are docstrings and code formatting.
 - **Impact:** none at runtime. The copies are the ones that run, so a fix to `cli.emit` (for
   example the `default=str` handling of datetimes) does not reach these six commands, and no test
   compares the copies against `cli.py` — the AST comparison above was written for this review.

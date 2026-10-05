@@ -82,24 +82,32 @@ The other sections' findings were read only where a cross-reference is named.
 
 **Checks run:**
 
-- the 32 suites matching `ls tests | grep -iE
-  'caldav|integrations|webhook|youtube|email_thread|carddav'` — `venv/bin/python -m pytest -q -p
-  no:cacheprovider <32 files>` from the repository root → **163 passed** in 4.59s, 7 warnings (the
-  `datetime.utcnow()` deprecations at `src/caldav_sync.py:309-310` and one at
-  `tests/test_caldav_google_principal_url.py:45`). Thirteen throwaway probe scripts under `/tmp`,
-  outside the target tree. The ones the findings quote: the CalDAV DNS-flip probe (three runs; two
-  quoted below), the VEVENT-UID collision probe (three runs, including one with a non-colliding
-  second event), the parser probes (four runs: a nesting-depth sweep, a sibling-count sweep, a
-  deep-chain run, and a smoke set of six real-world bodies), and the webhook guard probe (two runs,
-  comparing the accepted address list with `src/url_safety._classify`). The last is the `api_call`
-  path-join probe recorded under the dropped hypotheses. Also the greps each finding records: the
-  `parse_thread` caller set, the `turns_json` writer set, the `validate_webhook_url` /
-  `_is_private_url` callers, the `_join_integration_url` / `mask_integration_secret` /
-  `load_integrations` callers, the `set_loop` / `fire_and_forget` callers, the `untrusted_content`
-  consumers, `uvicorn.run`'s worker count, and `_find_integration` / `_stable_cal_id` call sites.
-  Four hypotheses were checked and dropped rather than reported: a `//host` path cannot move the
-  `api_call` request to another host (`_join_integration_url` strips every leading slash before
-  `urljoin`, measured)
+- the 32 suites matching `ls tests | grep -iE 'caldav|integrations|webhook|youtube|email_thread|carddav'`,
+  run with `venv/bin/python -m pytest -q -p no:cacheprovider <32 files>` from the repository root:
+  **163 passed** in 4.59s, 7 warnings. Six are the `datetime.utcnow()` deprecations at
+  `src/caldav_sync.py:309-310`, and one is at `tests/test_caldav_google_principal_url.py:45`.
+- thirteen throwaway probe scripts under `/tmp`, outside the target tree. The ones the findings
+  quote:
+  - the CalDAV DNS-flip probe (three runs; two quoted below)
+  - the VEVENT-UID collision probe (three runs, including one with a non-colliding second event)
+  - the parser probes (four runs: a nesting-depth sweep, a sibling-count sweep, a deep-chain run,
+    and a smoke set of six real-world bodies)
+  - the webhook guard probe (two runs, comparing the accepted address list with
+    `src/url_safety._classify`)
+  - the `api_call` path-join probe, recorded under the dropped hypotheses
+- the greps each finding records, over these callers and consumers:
+  - the `parse_thread` callers and the `turns_json` writers
+  - the `validate_webhook_url` and `_is_private_url` callers
+  - the `_join_integration_url`, `mask_integration_secret` and `load_integrations` callers
+  - the `set_loop` and `fire_and_forget` callers
+  - the `untrusted_content` consumers
+  - `uvicorn.run`'s worker count
+  - the `_find_integration` and `_stable_cal_id` call sites
+
+Four hypotheses were checked and dropped rather than reported:
+
+- a `//host` path cannot move the `api_call` request to another host (`_join_integration_url`
+  strips every leading slash before `urljoin`, measured)
 - the parser's turn HTML is not a new XSS surface (the client runs `body_html` through
   `_sanitizeHtml`)
 - the integration store's read-modify-write has no interleaving caller (every writer is an `async`
@@ -322,9 +330,9 @@ The other sections' findings were read only where a cross-reference is named.
   ```
 
   `_validated_public_ips` re-uses the same predicate, so the delivery transport pins the connection
-  to that address too. `tests/test_webhook_ssrf_resilience.py` lists the address classes it pins
-  (`[::]`, `::ffff:127.0.0.1`, `::ffff:169.254.169.254`, `127.0.0.1`, `0.0.0.0`) and does not
-  include this one.
+  to that address too. `tests/test_webhook_ssrf_resilience.py` lists the address classes it pins,
+  and this one is not among them. The pinned classes are `[::]`, `::ffff:127.0.0.1` and
+  `::ffff:169.254.169.254`, plus the plain `127.0.0.1` and `0.0.0.0`.
 - **Impact:** a stored webhook URL can target a tailnet or cluster address that this guard exists
   to refuse, and each delivery then sends the event payload and its HMAC signature there. The
   mitigation that keeps this low is that only an admin can register a webhook

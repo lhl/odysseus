@@ -2,69 +2,89 @@
 
 ## Overview
 
-The four stdio servers the application registers for itself: `mcp_servers/email_server.py`
-(IMAP/SMTP tools over the user's mailboxes), `mcp_servers/image_gen_server.py` (image generation
-plus the gallery row), `mcp_servers/memory_server.py` (the JSON memory store) and
-`mcp_servers/rag_server.py` (the personal-document index). `mcp_servers/__init__.py` is empty. These
-are the only part of the MCP surface whose code the project owns: the manager that spawns them, the
-three transports, the tool inventory and the call path are `src-mcp`; the registration that hands
-each one a command, an argument list and an environment at startup is `src/builtin_mcp.py`, read here
-as context. The same data is reachable through the route layer, and that is where the comparisons
-below come from: `routes-email` and `routes-rest-memory-personal-research` own the handlers whose
-guards these servers either copy or drop, `src-memory-rag` owns the stores, and `core-data-platform`
-owns the `EmailAccount` and `GalleryImage` rows. Findings in those files are cross-referenced, not
-restated.
+The four stdio servers the application registers for itself. They are the only part of the MCP
+surface whose code the project owns.
 
-The question this section answers is who a server thinks is asking. The transport carries no
-identity — the parent process is the only client and the stdio protocol says nothing about which
-application user made the call — so each server has to be told, and the four do not agree.
-`email_server` takes an owner from a hidden `_odysseus_owner` argument that the caller injects
-(`src/tool_execution.py:1316-1319`, overwriting anything the model sent), `memory_server` takes one
-from an environment variable nothing in the tree sets, and `image_gen_server` and `rag_server` take
-none at all: they read and write ownerless rows in stores whose readers are owner-filtered.
+| Server | Role |
+| --- | --- |
+| `mcp_servers/email_server.py` | IMAP and SMTP tools over the user's mailboxes |
+| `mcp_servers/image_gen_server.py` | Image generation, plus the gallery row |
+| `mcp_servers/memory_server.py` | The JSON memory store |
+| `mcp_servers/rag_server.py` | The personal-document index |
+
+`mcp_servers/__init__.py` is empty. The manager that spawns the servers, the three transports, the
+tool inventory and the call path belong to `src-mcp`. `src/builtin_mcp.py` hands each server its
+command, arguments and environment; it was read here as context. The same data is reachable through
+the route layer, and the comparisons below come from there. `routes-email` and
+`routes-rest-memory-personal-research` own the handlers whose guards these servers copy or drop,
+`src-memory-rag` owns the stores, and `core-data-platform` owns the `EmailAccount` and
+`GalleryImage` rows. Findings in those files are cross-referenced, not restated.
+
+The question this section answers is who a server thinks is asking. The stdio transport carries no
+identity, so each server has to be told, and the four do not agree.
+
+| Server | Where it gets the owner |
+| --- | --- |
+| `email_server` | A hidden `_odysseus_owner` argument the caller injects, overwriting anything the model sent (`src/tool_execution.py:1316-1319`) |
+| `memory_server` | An environment variable nothing in the tree sets |
+| `image_gen_server`, `rag_server` | None. They read and write ownerless rows in stores whose readers are owner-filtered |
 
 ## Coverage
 
-**Read fully:** all five assigned files (3,541 lines): `mcp_servers/email_server.py` (2,912),
-`mcp_servers/memory_server.py` (285), `mcp_servers/image_gen_server.py` (184),
-`mcp_servers/rag_server.py` (160) and `mcp_servers/__init__.py` (empty, 0 bytes).
+**Read fully:** all five assigned files, 3,541 lines.
 
-**Read partially:** the boundary code the findings rest on — `src/builtin_mcp.py` in full (the
-`_BUILTIN_SERVERS` table, `builtin_python_env` and both `connect_server` call sites);
-`src/tool_execution.py` at the dispatch (`:1112-1122`), the legacy MCP map (`:562-572`), the owner
-injection (`:1301-1304`, `:1316-1319`), the `generate_image` promotion (`:699-728`), the dead-map
-comment (`:644-651`) and the agent's readable data roots (`:175-215`); `src/mcp_manager.py` at
-`is_builtin` (`:641-648`), `get_all_openai_schemas` (`:570-600`) and
-`get_tool_descriptions_for_prompt` (`:661-706`); `src/tool_index.py` at `ALWAYS_AVAILABLE` (`:35-45`),
-`BUILTIN_TOOL_DESCRIPTIONS` (`:69-143`) and `index_mcp_tools` (`:224-252`); `src/agent_loop.py` at
-`_DOMAIN_TOOL_MAP` (`:528-540`), `_load_mcp_disabled_map` (`:287-301`), the email prompt text
-(`:1917-1918`) and the tool-selection block (`:3880-3950`); `src/tool_parsing.py` at the fence regex
-(`:33-38`) and the `mcp__` branch (`:639-642`); `routes/personal_routes.py` at
-`_resolve_allowed_personal_dir` (`:165-182`) and both directory handlers (`:200-297`);
-`routes/email_helpers.py` at `attachment_extract_dir` (`:685-696`) and the owner dependencies
-(`:440-486`); `routes/gallery/gallery_helpers.py` at `_owner_filter` (`:125-136`) and
-`_image_to_dict` (`:96-121`); `app.py` at the generated-image handler (`:513-553`); the native
-counterparts `src/ai_interaction.py` (`do_manage_memory`, `do_manage_rag`, `do_generate_image` and
-its gallery writers), `src/memory.py` (`load_all`, `load_all_for_update`, `add_entry`, `save`) and
-`src/personal_docs.py` (`add_directory`, `remove_directory`); `src/session_image_cleanup.py` at
-`session_image_refs` (`:46-52`); the MCP SDK's `Server.call_tool` decorator
+| File | Lines |
+| --- | ---: |
+| `mcp_servers/email_server.py` | 2,912 |
+| `mcp_servers/memory_server.py` | 285 |
+| `mcp_servers/image_gen_server.py` | 184 |
+| `mcp_servers/rag_server.py` | 160 |
+| `mcp_servers/__init__.py` | 0 |
+
+**Read partially:** the boundary code the findings rest on.
+
+| File | Regions read |
+| --- | --- |
+| `src/builtin_mcp.py` | In full: the `_BUILTIN_SERVERS` table, `builtin_python_env` and both `connect_server` call sites |
+| `src/tool_execution.py` | Dispatch (`:1112-1122`), legacy MCP map (`:562-572`), owner injection (`:1301-1304`, `:1316-1319`), `generate_image` promotion (`:699-728`), dead-map comment (`:644-651`), agent data roots (`:175-215`) |
+| `src/mcp_manager.py` | `is_builtin` (`:641-648`), `get_all_openai_schemas` (`:570-600`), `get_tool_descriptions_for_prompt` (`:661-706`) |
+| `src/tool_index.py` | `ALWAYS_AVAILABLE` (`:35-45`), `BUILTIN_TOOL_DESCRIPTIONS` (`:69-143`), `index_mcp_tools` (`:224-252`) |
+| `src/agent_loop.py` | `_DOMAIN_TOOL_MAP` (`:528-540`), `_load_mcp_disabled_map` (`:287-301`), email prompt text (`:1917-1918`), tool-selection block (`:3880-3950`) |
+| `src/tool_parsing.py` | Fence regex (`:33-38`), `mcp__` branch (`:639-642`) |
+| `routes/personal_routes.py` | `_resolve_allowed_personal_dir` (`:165-182`), both directory handlers (`:200-297`) |
+| `routes/email_helpers.py` | `attachment_extract_dir` (`:685-696`), owner dependencies (`:440-486`) |
+| `routes/gallery/gallery_helpers.py` | `_owner_filter` (`:125-136`), `_image_to_dict` (`:96-121`) |
+| `app.py` | Generated-image handler (`:513-553`) |
+| `src/ai_interaction.py` | `do_manage_memory`, `do_manage_rag`, `do_generate_image` and its gallery writers |
+| `src/memory.py` | `load_all`, `load_all_for_update`, `add_entry`, `save` |
+| `src/personal_docs.py` | `add_directory`, `remove_directory` |
+| `src/session_image_cleanup.py` | `session_image_refs` (`:46-52`) |
+
+Two files outside the target tree were also read: the MCP SDK's `Server.call_tool` decorator
 (`venv/lib/python3.12/site-packages/mcp/server/lowlevel/server.py:498-600`) and the stdlib's
-`imaplib.IMAP4._command`, neither of which is part of the target tree.
+`imaplib.IMAP4._command`.
 
-**Not read:** the rest of `routes/email_routes.py` (4,600+ lines), `routes/gallery/gallery_routes.py`
-and the other `routes-*` paths; `src/ai_interaction.py`, `src/agent_loop.py` and
-`src/tool_execution.py` outside the regions named above; the other sections' paths.
+**Not read:**
 
-**Checks run:** throwaway probe programs under `/tmp/mcpsrv/` (eight distinct programs —
-`probe_gallery.py` was rewritten as `probe_gallery2.py`, and the attachment probe is three files, one
-per input shape): a stubbed RAG manager recording what `manage_rag` passes down; a fake IMAP
-connection serving one attachment, run three times with different `folder`/`uid`; the real
-`routes.gallery_helpers._owner_filter` over a real `GalleryImage` table in an in-memory SQLite
-database; the email server's `_load_config` twice around a database update; `builtin_python_env` plus
-the memory server's `_scope_entries`; and `parse_tool_blocks` on three shapes of an MCP call. Each
-probe's output is quoted in the finding it settles. The 26 suites
-matching this surface — the 17 files from `ls tests | grep -iE 'mcp'` plus the 9 further files that
-reference `mcp_servers/` — were run: **233 passed** in 5.47s.
+- the rest of `routes/email_routes.py` (4,600+ lines), `routes/gallery/gallery_routes.py` and the
+  other `routes-*` paths
+- `src/ai_interaction.py`, `src/agent_loop.py` and `src/tool_execution.py` outside the regions above
+- the other sections' paths
+
+**Checks run:** eight throwaway probe programs under `/tmp/mcpsrv/`. Each probe's output is quoted
+in the finding it settles. `probe_gallery.py` was rewritten as `probe_gallery2.py`, and the
+attachment probe is three files, one per input shape.
+
+- a stubbed RAG manager recording what `manage_rag` passes down
+- a fake IMAP connection serving one attachment, run three times with different `folder` and `uid`
+- the real `routes.gallery_helpers._owner_filter` over a real `GalleryImage` table in an in-memory
+  SQLite database
+- the email server's `_load_config` twice around a database update
+- `builtin_python_env` plus the memory server's `_scope_entries`
+- `parse_tool_blocks` on three shapes of an MCP call
+
+The 26 suites matching this surface (the 17 files from `ls tests | grep -iE 'mcp'` plus 9 further
+files that reference `mcp_servers/`) were run: **233 passed** in 5.47s.
 
 Malformed arguments are worth one line because the brief asks: a bad shape does **not** kill the
 server. The SDK validates the arguments against the tool's declared `inputSchema` before the function

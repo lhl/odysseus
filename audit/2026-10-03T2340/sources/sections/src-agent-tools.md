@@ -171,8 +171,13 @@ established here only where a finding cites it. No test file was read.
   (`routes/research/research_routes.py:381-385`.) `manage_research` is not in
   `NON_ADMIN_BLOCKED_TOOLS` (`src/tool_security.py:42-70`), and no privilege disables it. The
   per-user privilege block at `routes/chat_routes.py:1546-1566` adds tools to `disabled_tools` for
-  `can_use_bash`, `can_use_browser`, `can_use_documents`, `can_generate_images` and
-  `can_manage_memory`; for `can_use_research` it only clears a flag:
+  these five privileges; for `can_use_research` it only clears a flag:
+
+  - `can_use_bash`
+  - `can_use_browser`
+  - `can_use_documents`
+  - `can_generate_images`
+  - `can_manage_memory`
 
   ```python
   if not _privs.get("can_use_research", True):

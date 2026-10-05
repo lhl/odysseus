@@ -265,11 +265,11 @@ external store, not the code under test.
   ```
 
   With a custom endpoint configured, `_embed()` returns vectors from the custom model while
-  `collection` is the fastembed lane's collection. Nothing calls either today — a grep for
-  `_embed`/`.collection` across `routes/`, `src/`, `mcp_servers/`, `core/` and `app.py` finds no
-  external user, and `_embed` has no caller at all — but `collection` is documented as the public
-  access point for route code ("Expose the ChromaDB collection for direct access by personal_routes
-  etc.", `:93-95`). The same bootstrap is repeated in `src/memory_vector.py:34-52` and
+  `collection` is the fastembed lane's collection. Nothing calls either today: a grep for `_embed`
+  and `.collection` across `routes/`, `src/`, `mcp_servers/` and `core/`, and in `app.py`, finds no external
+  user, and `_embed` has no caller at all. But `collection` is documented as the public access
+  point for route code ("Expose the ChromaDB collection for direct access by personal_routes etc.",
+  `:93-95`). The same bootstrap is repeated in `src/memory_vector.py:34-52` and
   `src/tool_index.py:150-162`, which is why the three copies can disagree.
 - **Impact:** the next caller to pair the documented property with the private encoder writes or
   searches vectors from the wrong model. A dimension mismatch fails loudly; equal dimensions (two

@@ -36,10 +36,13 @@ Line numbers refer to `2992bf6d368a`.
 
 **Read partially:** the boundary code the findings rest on:
 
-- `core/session_manager.py` at `get_session`/`_load_session_from_db` (`:421-524`),
-  `sync_session_metadata` (`:454-498`), `replace_messages` (`:353-400`), `create_session`
-  (`:541-578`), `delete_session` (`:587-627`) and `get_sessions_for_user`/`save_sessions`
-  (`:700-710`)
+- `core/session_manager.py`, at:
+  - `get_session` and `_load_session_from_db` (`:421-524`)
+  - `sync_session_metadata` (`:454-498`)
+  - `replace_messages` (`:353-400`)
+  - `create_session` (`:541-578`)
+  - `delete_session` (`:587-627`)
+  - `get_sessions_for_user` and `save_sessions` (`:700-710`)
 - `src/auth_helpers.py` at `get_current_user`/`effective_user` (`:10-36`), the delegated-credential
   predicate (`:44-55`) and `require_api_token_scope` / `require_chat_api_token_scope` (`:60-80`)
 - `src/agent_runs.py` end to end (the detach/subscribe/evict machinery behind the stream)
@@ -189,14 +192,14 @@ of the third finding and is reproducible as a pair.
   asyncio.to_thread    elapsed=1.01s  ticker iterations=995
   ```
 
-  A second site in the same route does it again: `_recover_empty_session_model` calls
+  A second site in the same route does it again. `_recover_empty_session_model` calls
   `fetch_available_models(api_key)` at `routes/chat_routes.py:607`, which is
-  `httpx.get("https://chatgpt.com/...", timeout=10.0)` (`src/chatgpt_subscription.py:90-98`),
-  and it is called inline from both async handlers (`:799`, `:1258`). Sibling modules in
-  this repository offload the same shape — `routes/auth_routes.py:140`, `:160`, `:171`,
-  `:181`, `routes/email_routes.py:2391`, `:2466` — and none of the three files in this
-  section does: `grep -n 'to_thread\|run_in_executor' routes/chat_routes.py
-  routes/session_routes.py routes/chat_helpers.py` returns nothing.
+  `httpx.get("https://chatgpt.com/...", timeout=10.0)` (`src/chatgpt_subscription.py:90-98`), and
+  both async handlers call it inline (`:799`, `:1258`). Sibling modules offload the same shape
+  (`routes/auth_routes.py:140`, `:160`, `:171`, `:181`; `routes/email_routes.py:2391`, `:2466`), and
+  none of the three files in this section does:
+  `grep -n 'to_thread\|run_in_executor' routes/chat_routes.py routes/session_routes.py routes/chat_helpers.py`
+  returns nothing.
 - **Impact:** during a link-prefetch or web-search turn the loop cannot schedule anything
   else: other users' SSE heartbeats stall, `/api/health` and `/api/ready` stop answering,
   and a second chat turn waits behind the first. The stall lasts as long as the blocking

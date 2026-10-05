@@ -90,8 +90,8 @@ extraction, audit or import was run end to end against a real model or a real Gi
 **Checks run:**
 
 - `git rev-parse --short=12 HEAD` and `git status --short`
-- caller greps (`MemoryService(`, `audit_memories`, `extract_and_store`, `MEMORY_VECTORS_DIR`, and
-  `to_thread` / `run_in_threadpool` across `routes/`, `src/` and `services/`)
+- caller greps for `MemoryService(`, `audit_memories`, `extract_and_store` and `MEMORY_VECTORS_DIR`
+- caller greps for `to_thread` and `run_in_threadpool` across `routes/`, `src/` and `services/`
 - four throwaway probes under `/tmp` (not part of the target tree), each quoted in the finding it
   settles: the SKILL.md round trip, a non-list `steps`/`tags` add and a nested-path import
   (`/tmp/probe_mem/skill_probes.py`)

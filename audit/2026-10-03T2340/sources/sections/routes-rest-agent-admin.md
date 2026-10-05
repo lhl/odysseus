@@ -122,11 +122,16 @@ Twenty-one suites were run over this surface — the 21 test files listed below 
   ```
 
   `wait_for_delivery` defaults to false (`routes/email_helpers.py:2004`), and neither shipped skill
-  bundle documents it — both list the body fields as `to`, `cc`, `bcc`, `subject`, `body`,
-  `body_html`, `attachments`, `account_id`, `in_reply_to`, `references`
-  (`integrations/codex/skills/odysseus/SKILL.md:106-107` and the `integrations/claude/` twin), so
-  every documented call takes the branch that schedules delivery on the discarded object. Measured
-  with a two-route FastAPI app reproducing both call shapes:
+  bundle documents it (`integrations/codex/skills/odysseus/SKILL.md:106-107` and the
+  `integrations/claude/` twin). Both list the same ten body fields:
+
+  - `to`, `cc`, `bcc`
+  - `subject`, `body`, `body_html`
+  - `attachments`, `account_id`
+  - `in_reply_to`, `references`
+
+  So every documented call takes the branch that schedules delivery on the discarded object.
+  Measured with a two-route FastAPI app reproducing both call shapes:
 
   ```
   framework-injected BackgroundTasks -> ['delivered']

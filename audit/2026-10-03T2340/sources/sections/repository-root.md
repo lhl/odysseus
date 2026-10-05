@@ -73,8 +73,10 @@ whether the root documents describe them correctly.
 - the other sections' paths outside the regions above
 - `static/` beyond the lines named
 - the minified bundles beyond their first bytes and version strings
-- `specs/`, `swift/`, `companion/`, `integrations/`, `mcp_servers/`, `data/` and the rest of
-  `website/`
+- these trees, outside the section's scope:
+  - `specs/`, `swift/` and `companion/`
+  - `integrations/`, `mcp_servers/` and `data/`
+  - the rest of `website/`
 
 **Checks run** (all from the repository root; `venv/bin/python` is Python 3.12.13):
 
@@ -256,18 +258,23 @@ tree, not assumed):
   ```
 
   `validate_public_http_url` (`src/url_security.py:81-93`) rejects anything `is_public_http_url`
-  (`:74`) does not accept, and its own docstring states the residual limit — "DNS checks reduce
+  (`:74`) does not accept, and its own docstring states the residual limit: "DNS checks reduce
   obvious private-network targets but do not eliminate every DNS rebinding race by themselves"
-  (`:86-87`). Gap 3 says `analytics`, `cache`, `content`, `query` and `ranking` under `src/search/`
-  "are still independent copies that can drift"; all five are compatibility modules of 11-14 lines
-  that alias the `services.search` implementation (`wc -l` → 12, 11, 11, 11, 14), e.g.
-  `src/search/cache.py`: "the implementation now lives in `services.search.cache` so the two cannot
-  drift". Gap 1's headline still holds — `bash` is unconfined — but its detail does not: it says the
-  `read_file`/`write_file` tools have "no … filesystem confinement", while those handlers resolve
-  every model-supplied path through `_resolve_tool_path`, which denies sensitive and app-state paths
-  and requires containment in an allowlist (data subdirectories and temp roots) or in the active
-  workspace (`src/tool_execution.py:357-405`; callers at `src/agent_tools/filesystem_tools.py:197`,
-  `:257`, `:369`, `:467`). Gap 4, the coarse token scopes, is not challenged here.
+  (`:86-87`).
+
+  Gap 3 says five modules under `src/search/` (analytics, cache, content, query and ranking)
+  "are still independent copies that can drift". All five are compatibility modules of 11-14 lines
+  that alias the `services.search` implementation (`wc -l` → 12, 11, 11, 11, 14), for example
+  `src/search/cache.py`: "the implementation now lives in `services.search.cache` so the two
+  cannot drift".
+
+  Gap 1's headline still holds, because `bash` is unconfined, but its detail does not. It says the
+  `read_file` and `write_file` tools have "no … filesystem confinement", while those handlers
+  resolve every model-supplied path through `_resolve_tool_path`. That function denies sensitive and
+  app-state paths and requires containment in an allowlist (data subdirectories and temp roots) or
+  in the active workspace (`src/tool_execution.py:357-405`; callers at
+  `src/agent_tools/filesystem_tools.py` lines 197, 257, 369 and 467). Gap 4, the coarse token
+  scopes, is not challenged here.
 - **Impact:** the register is what a security reviewer, packager or contributor reads to judge where
   the project is exposed and where help is wanted. A stale entry overstates exposure and misdirects
   work — someone could re-implement the `base_url` guard or redo the search consolidation — and an
@@ -314,11 +321,15 @@ tree, not assumed):
 - **Disposition:** next
 - **Evidence:** the section is headed "Python dependencies — Core (`requirements.txt`) and optional
   (`requirements-optional.txt`)", so the table reads as the inventory of those two files. It has 27
-  rows; the two files install 31 and 6 package lines. Missing from the core list are `nh3`, `httpcore`,
-  `httpx2`, `python-dateutil` and `psycopg2-binary` (`requirements.txt:28,6,53,34,58`), and from the
-  optional list `faster-whisper`, `soundfile` and `kokoro` (`requirements-optional.txt:13,22,23`).
+  rows; the two files install 31 and 6 package lines. The omissions are:
+
+  | List | Missing packages | Where declared |
+  | --- | --- | --- |
+  | Core | `nh3`, `httpcore`, `httpx2`, `python-dateutil`, `psycopg2-binary` | `requirements.txt:28,6,53,34,58` |
+  | Optional | `faster-whisper`, `soundfile`, `kokoro` | `requirements-optional.txt:13,22,23` |
+
   One omission matters beyond completeness: `psycopg2-binary` is LGPL, which the document's own
-  compatibility note treats as the category it has cleared — "chardet (LGPL-2.1) has been removed
+  compatibility note treats as the category it has cleared: "chardet (LGPL-2.1) has been removed
   entirely" (`:153-155`). The installed distribution's metadata says so:
 
   ```

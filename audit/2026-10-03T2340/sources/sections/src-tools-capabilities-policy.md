@@ -3,19 +3,23 @@
 ## Overview
 
 The tables and helpers every tool call is gated by, plus the built-in MCP registration:
-`src/tool_capabilities.py` (708 lines) classifies each tool's effects and result integrity and
-holds the run-local `ToolRunSecurityContext` that blocks high-impact tools once untrusted
-context has entered the run; `src/tool_security.py` (284) holds the non-admin blocklist, the
-plan-mode allowlist and its mutator backstop, and the owner-admin check; `src/tool_policy.py`
-(242) composes the per-turn policy (the caller's disabled set, the guide-only detector, the web
-toggles); `src/tool_utils.py` (92) is the leaf module for the MCP-manager and upload-handler
-globals, output truncation, and the shared tool-arg parser; `src/builtin_mcp.py` (386)
-registers the built-in stdio MCP servers (Python and the npx browser server) at startup. The
-boundary with a neighbouring section: `src-tools-parse-exec` owns the dispatcher that calls
-these tables (`execute_tool_block`) and the path-confinement helpers; `src-agent-tools` owns
-the handlers the tables admit; `src-mcp` owns `mcp_manager.py` (read here only at
-`_connect_stdio`); `src-tools-schema-index` owns the schema/index sources that
-`plan_mode_disabled_tools` and `known_tool_names` read.
+
+| File | Lines | Role |
+| --- | ---: | --- |
+| `src/tool_capabilities.py` | 708 | Classifies each tool's effects and result integrity; holds the run-local `ToolRunSecurityContext` that blocks high-impact tools once untrusted context has entered the run |
+| `src/tool_security.py` | 284 | The non-admin blocklist, the plan-mode allowlist and its mutator backstop, and the owner-admin check |
+| `src/tool_policy.py` | 242 | Composes the per-turn policy: the caller's disabled set, the guide-only detector, the web toggles |
+| `src/tool_utils.py` | 92 | The leaf module for the MCP-manager and upload-handler globals, output truncation and the shared tool-arg parser |
+| `src/builtin_mcp.py` | 386 | Registers the built-in stdio MCP servers (Python and the npx browser server) at startup |
+
+Four neighbouring sections own the code on the other side:
+
+- `src-tools-parse-exec` owns the dispatcher that calls these tables (`execute_tool_block`) and the
+  path-confinement helpers.
+- `src-agent-tools` owns the handlers the tables admit.
+- `src-mcp` owns `mcp_manager.py`, read here only at `_connect_stdio`.
+- `src-tools-schema-index` owns the schema and index sources that `plan_mode_disabled_tools` and
+  `known_tool_names` read.
 
 ## Coverage
 
@@ -54,23 +58,24 @@ The two suites that pin this section's policy partitions.
 
 **Not read:**
 
-- `src/tool_schemas.py`, `src/tool_index.py`, `src/tool_approval_scopes.py`,
-  `src/tool_implementations.py` (assigned to `src-tools-schema-index`), `src/tool_execution.py`
-  (assigned to `src-tools-parse-exec`)
+- assigned to `src-tools-schema-index`: `src/tool_schemas.py`, `src/tool_index.py`,
+  `src/tool_approval_scopes.py` and `src/tool_implementations.py`
+- assigned to `src-tools-parse-exec`: `src/tool_execution.py`
 - `src/agent_tools/*` beyond the handlers named above
 - `mcp_servers/*`
 - `src/mcp_manager.py` beyond `_connect_stdio`
 - `src/teacher_escalation.py` beyond its `capabilities_for_action` call
 - the JS/UI side of the tool toggles
 
-**Checks run:** the seven gate/policy suites above under `venv/bin/python -m pytest -q` —
-`240 passed` in 2.0s. A script that diffs each multiplexed tool's read/write action sets in
-`_PRIVATE_ACTION_READS`/`_PRIVATE_ACTION_WRITES` against its handler's `action ==` branches
-(`manage_calendar`, `manage_contact`, `manage_documents`, `manage_memory`, `manage_notes`,
-`manage_research`, `manage_session`, `manage_skills`, `manage_tasks`): no read action mutates
-and no write action is classified read. A script computing
-`TOOL_TAGS - plan_mode_disabled_tools() - PLAN_MODE_READONLY_TOOLS`: empty, so every
-fence-callable tool is either allowlisted or denied in plan mode.
+**Checks run:**
+
+- the seven gate and policy suites above under `venv/bin/python -m pytest -q`: `240 passed` in 2.0s
+- a script that diffs each multiplexed tool's read and write action sets in
+  `_PRIVATE_ACTION_READS` and `_PRIVATE_ACTION_WRITES` against its handler's `action ==` branches,
+  for the nine multiplexed `manage_*` tools (calendar, contact, documents, memory, notes, research,
+  session, skills and tasks). No read action mutates and no write action is classified read.
+- a script computing `TOOL_TAGS - plan_mode_disabled_tools() - PLAN_MODE_READONLY_TOOLS`. The result
+  is empty, so every fence-callable tool is either allowlisted or denied in plan mode.
 
 ## Findings
 

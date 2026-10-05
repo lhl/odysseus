@@ -72,11 +72,11 @@ One hypothesis was tested and rejected; it is recorded in `sources/coverage-boun
 
   `_classify_agent_request` (`:1390`) routes "add a meeting on Friday" to `notes_calendar_tasks`,
   which seeds `manage_calendar` into `_relevant_tools` at `:3957-3958`; the replacement at `:3990`
-  discards it. `_WORKSPACE_TERMINUS_TOOLS` (`:542`) is the `files` domain plus `manage_skills`,
-  `ask_teacher`, `web_search`, `web_fetch`, `ask_user`, and `update_plan` — no email, calendar,
-  notes, memory, contacts, documents, or UI tools. `_assemble_prompt` (`:847`) builds the system
-  prompt from that set and `_tool_schemas_for_route` (`:4486`) filters the schema list the same
-  way, so the dropped tools are absent from both channels.
+  discards it. `_WORKSPACE_TERMINUS_TOOLS` (`:542`) is the `files` domain plus six named tools
+  (`manage_skills`, `ask_teacher`, the two web tools, `ask_user` and `update_plan`). It has no
+  email, calendar, notes, memory, contacts, documents or UI tools. `_assemble_prompt` (`:847`) builds the
+  system prompt from that set and `_tool_schemas_for_route` (`:4486`) filters the schema list the
+  same way, so the dropped tools are absent from both channels.
 
 - **Impact:** A turn whose text contains "on X" or "from X" — a common English construction, not
   only a machine name — loses the domain tools it needs and is given the coding toolset instead.

@@ -45,9 +45,12 @@ at the secret write (`:116-131`).
 - `routes/hwfit_routes.py` at `_validate_detection_target` and its call sites (`:21-25`, `:190`,
   `:204`, `:331`, `:417`)
 - `src/database.py` as the re-export shim
-- `tests/test_atomic_io.py`, `tests/test_app_db_permissions.py`,
-  `tests/test_memory_store_unreadable_no_wipe.py`, `tests/test_prefs_atomic_write.py`,
-  `tests/test_security_regressions.py` at their permission and durability assertions
+- these tests, at their permission and durability assertions:
+  - `tests/test_atomic_io.py`
+  - `tests/test_app_db_permissions.py`
+  - `tests/test_memory_store_unreadable_no_wipe.py`
+  - `tests/test_prefs_atomic_write.py`
+  - `tests/test_security_regressions.py`
 
 **Not read:**
 

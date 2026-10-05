@@ -36,8 +36,10 @@ Every cited line was re-read at `2992bf6d368a`.
 
 **Not read:**
 
-- `src/tool_capabilities.py`, `src/tool_policy.py`, `src/tool_security.py`, `src/tool_approvals.py`,
-  `src/tool_schemas.py`, `src/tool_utils.py` (other sections)
+- the tool-gate files, which belong to other sections: `src/tool_capabilities.py`,
+  `src/tool_policy.py`, `src/tool_security.py` and `src/tool_approvals.py`
+- the schema and utility files, which also belong to other sections: `src/tool_schemas.py` and
+  `src/tool_utils.py`
 - the `src/agent_tools/*` handlers beyond the `ctx` reads cited here
 - the MCP servers under `mcp_servers/`
 - `src/ai_interaction.py`

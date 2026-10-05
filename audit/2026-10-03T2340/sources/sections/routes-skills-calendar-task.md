@@ -44,10 +44,13 @@ the middleware underneath is correct.
 - `src/task_scheduler.py` at `compute_next_run` (`:113-231`), `HOUSEKEEPING_DEFAULTS` (`:251-263`),
   the loop (`:673-700`), `_check_due_tasks` (`:701-735`), `_execute_task` / `_execute_task_locked`
   (`:737-1159`), `run_task_now` / `stop_task` (`:2264-2290`)
-- `services/memory/skills.py` at the path helpers (`:76-83`), `_iter_skill_files` / `_read_skill` /
-  `_write_skill` (`:159-181`), `load` (`:278-287`), `add_skill` (`:293-383`),
-  `import_bundle_from_files` (`:384-431`), `update_skill` / `delete_skill` / `read_skill_md`
-  (`:432-575`)
+- `services/memory/skills.py`, at:
+  - the path helpers (`:76-83`)
+  - `_iter_skill_files`, `_read_skill` and `_write_skill` (`:159-181`)
+  - `load` (`:278-287`)
+  - `add_skill` (`:293-383`)
+  - `import_bundle_from_files` (`:384-431`)
+  - `update_skill`, `delete_skill` and `read_skill_md` (`:432-575`)
 - `services/memory/skill_format.py` at `slugify` (`:65-72`)
 - `src/caldav_sync.py` at `validate_caldav_url` (`:106-131`) and the sync entry points (`:617-722`)
 - `core/middleware.py` at `require_admin` (`:57-82`)
@@ -65,8 +68,12 @@ the middleware underneath is correct.
 
 - what stamps `request.state.current_user` lives in `app.py` and `core/middleware.py` (assigned to
   `core-auth-session`), and only `require_admin`, `require_user` and `get_current_user` were read
-- the task executors the scheduler dispatches into (`_execute_llm_task`, `_execute_action`,
-  `_execute_research_task`, `_deliver_task_result`, `_deliver_via_mcp`) beyond their call sites
+- the task executors the scheduler dispatches into, beyond their call sites:
+  - `_execute_llm_task`
+  - `_execute_action`
+  - `_execute_research_task`
+  - `_deliver_task_result`
+  - `_deliver_via_mcp`
 - `src/agent_loop.stream_agent_loop` and the tool surface a skill test or an audit run reaches
 - the CalDAV sync implementation (`_sync_blocking`, `src/caldav_writeback.py`) and
   `src/url_safety.check_outbound_url`

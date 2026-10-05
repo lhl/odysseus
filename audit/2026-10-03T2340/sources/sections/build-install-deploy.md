@@ -163,18 +163,24 @@ The one skip in each run is `tests/test_docker_devops_hardening.py:149`, which n
 odysseus-odysseus:latest`. The Docker CLI is present (`docker version` → server 29.8.0) but the image
 is not, so the real-entrypoint ownership probe did not run here.
 
-Beyond the suites: `git check-ignore -q` over the runtime-state and secret paths; a `.env` parser
-probe that replays `start-macos.sh:23-29` against a synthetic fixture and compares the result with
-`python-dotenv`; a mode probe that replays `setup.py`'s two writes under `umask 022`; an AST walk
-over `core/`, `routes/`, `src/`, `services/`, `mcp_servers/`, `integrations/`, `companion/`,
-`scripts/` and `app.py` collecting module-level third-party imports (22 distinct modules; guarded
-imports inside `try` blocks are not in that set, so `pdfminer` was checked with a repository-wide
-`grep` instead) for comparison against both requirement files; `pip`-level checks that the imports
-resolve in the project venv; a PyPI metadata query for the binary dependencies the Dockerfile
-installs on Python 3.14; and `docker pull python:3.14-slim` followed by
-`apt-get install -s --no-install-recommends` for the Dockerfile's exact apt list, to check that every
-package name resolves on the base image's Debian release. Those last two came back clean and are
-recorded as rejected hypotheses in the report, not as
+Beyond the suites:
+
+- `git check-ignore -q` over the runtime-state and secret paths
+- a `.env` parser probe that replays `start-macos.sh:23-29` against a synthetic fixture and compares
+  the result with `python-dotenv`
+- a mode probe that replays `setup.py`'s two writes under `umask 022`
+- an AST walk collecting module-level third-party imports (22 distinct modules) from nine
+  locations, for comparison against both requirement files. The locations are `app.py` and the
+  directories core, routes, src, services, mcp_servers, integrations, companion and scripts.
+  Guarded imports inside `try` blocks are not in that set, so `pdfminer` was checked with a
+  repository-wide `grep` instead.
+- `pip`-level checks that the imports resolve in the project venv
+- a PyPI metadata query for the binary dependencies the Dockerfile installs on Python 3.14
+- `docker pull python:3.14-slim` followed by `apt-get install -s --no-install-recommends` for the
+  Dockerfile's exact apt list, to check that every package name resolves on the base image's Debian
+  release
+
+The last two came back clean and are recorded as rejected hypotheses in the report, not as
 findings.
 
 ### [DEPENDENCY] `pdfminer.six` is imported at module level but declared in no requirement file, so every fetched PDF yields no text
@@ -509,12 +515,13 @@ findings.
 - **Location:** `.env.example:23` (the API-key block; missing `HF_TOKEN`/`HUGGING_FACE_HUB_TOKEN` and `ODYSSEUS_ADMIN_USER`)
 - **Severity:** low
 - **Disposition:** next
-- **Evidence:** the file is 268 lines and documents 52 variables; an extraction of every
-  `os.environ.get`/`os.getenv` name in `core/`, `routes/`, `src/`, `services/`, `scripts/`,
-  `mcp_servers/`, `integrations/`, `app.py`, `launcher.py` and `setup.py` (129 names) minus the
-  documented set leaves 98 names, most of them internal (`PATH`, `APPDATA`, `TMPDIR`) or
-  feature-internal. Three of the remainder are operator-facing credentials or identities that all
-  three compose files already forward into the container:
+- **Evidence:** the file is 268 lines and documents 52 variables. An extraction of every
+  `os.environ.get` and `os.getenv` name across ten locations (129 names) minus the documented set
+  leaves 98 names, most of them internal (`PATH`, `APPDATA`, `TMPDIR`) or feature-internal. The
+  locations are `app.py`, `launcher.py` and `setup.py`, and the directories core,
+  routes, src, services, scripts, mcp_servers and integrations. Three of the remainder are
+  operator-facing credentials or identities that all three compose files already forward into the
+  container:
 
   ```
   $ grep -n "HF_TOKEN\|HUGGING_FACE_HUB_TOKEN\|ODYSSEUS_ADMIN_USER" docker-compose.yml
@@ -563,13 +570,13 @@ findings.
   ```
 
   (`./.env` is this checkout's local file, copied from the template by `setup.py:166` and untracked;
-  `./.env.example:28` is the tracked line. The other three are the compose files.) A search of
-  `core/`, `routes/`, `src/`, `services/`, `app.py` and `setup.py` for `research_llm`,
-  `research_endpoint` or `RESEARCH_` returns only `DEEP_RESEARCH_DIR` and unrelated identifiers. This
-  is the same class as the `CLEANUP_INTERVAL_HOURS`/`CLEANUP_ENABLED` pair already reported in
-  `src-platform.md` — a knob that survives the whole trip from `.env` into the container and dies at
-  the far end — but it is a different variable, in this section's files, and that section's finding
-  does not cover it.
+  `./.env.example:28` is the tracked line. The other three are the compose files.) A search of the
+  core, routes, source and services trees, `app.py` and `setup.py` for `research_llm`,
+  `research_endpoint` or `RESEARCH_` returns only `DEEP_RESEARCH_DIR` and unrelated identifiers.
+  This is the same class as the `CLEANUP_INTERVAL_HOURS` and `CLEANUP_ENABLED` pair already
+  reported in `src-platform.md`, a knob that survives the whole trip from `.env` into the container
+  and dies at the far end. But it is a different variable, in this section's files, and that
+  section's finding does not cover it.
 - **Impact:** an operator who points `RESEARCH_LLM_ENDPOINT` at a dedicated research model gets the
   default routing with no warning and no error; the deep-research feature keeps using whatever the
   normal model path resolves to. The cost is an afternoon of debugging a setting that is documented,

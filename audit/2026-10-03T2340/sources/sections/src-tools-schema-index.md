@@ -101,10 +101,10 @@ capability tables) belong to `src-tools-capabilities-policy`.
   if required_args and not any(str(args.get(key) or "").strip() for key in required_args):
   ```
 
-  `_REQUIRED_NATIVE_TOOL_ARGS` (`:22-29`) lists `web_search`, `web_fetch`, `read_file`,
-  `write_file`, `edit_file`, `apply_patch` — not `bash`, `python` or `create_document`. The
-  converters that wrap the value in `json.dumps` (`grep`, `edit_file`, `todowrite`, `ls`,
-  `glob`) are safe; the concatenating ones are not. Measured with the project's
+  `_REQUIRED_NATIVE_TOOL_ARGS` (`:22-29`) lists the web tools (`web_search`, `web_fetch`) and the file tools
+  (`read_file`, `write_file`, `edit_file`, `apply_patch`). It does not list `bash`, `python` or
+  `create_document`. The converters that wrap the value in `json.dumps` (`grep`, `ls`, `glob`,
+  and the `edit_file` and `todowrite` converters) are safe; the concatenating ones are not. Measured with the project's
   `venv/bin/python`, converter output and then the first consumer of that output:
 
   ```

@@ -11,19 +11,20 @@ input budget, `src/request_models.py` holds the pydantic bodies, `src/session_se
 `src/session_image_cleanup.py` tidy and delete session data, `src/chat_helpers.py` is the
 URL/validation helper set, and `src/assistant_log.py` is the activity-log shim.
 
-The boundary: the routes that call these modules (`routes/chat_routes.py`,
-`routes/session_routes.py`, `routes/chat_helpers.py`) are `routes-chat-session`; the session
-store, its cache and the message writes are `core/session_manager.py` / `core/models.py`, in
-`core-auth-session`, whose findings (the global 100-row sidebar cache, the no-op
-`save_sessions`) this section relies on rather than restates; the middleware that stamps the
-caller is `core-auth-session` and `build-install-deploy`; the LLM transport and model-window
-lookup (`src/llm_core.py`, `src/model_context.py`, `src/endpoint_resolver.py`) are
-`src-llm-core`; the upload resolver is `src-documents`; the tool dispatcher that calls
-`search_chats` is `src-tools-parse-exec`; and the scheduler that fires the tidy action is
-`src-research-scheduling` / `src-tools-builtin-actions`. This section covers what these modules
-do to a conversation once a route hands it over — what compaction keeps, what they read or
-delete and on whose behalf, and what runs on the event loop — not whether the routes, the
-store, or the transport are themselves correct.
+This section covers what these modules do to a conversation once a route hands it over: what
+compaction keeps, what they read or delete and on whose behalf, and what runs on the event loop. It
+does not cover whether the routes, the store or the transport are themselves correct. Each
+neighbour owns one piece:
+
+| Owner | What it owns |
+| --- | --- |
+| `routes-chat-session` | The routes that call these modules: `routes/chat_routes.py`, `routes/session_routes.py`, `routes/chat_helpers.py` |
+| `core-auth-session` | The session store, its cache and the message writes (`core/session_manager.py`, `core/models.py`). Its findings (the global 100-row sidebar cache, the no-op `save_sessions`) are relied on here, not restated. |
+| `core-auth-session`, `build-install-deploy` | The middleware that stamps the caller |
+| `src-llm-core` | The LLM transport and model-window lookup: `src/llm_core.py`, `src/model_context.py`, `src/endpoint_resolver.py` |
+| `src-documents` | The upload resolver |
+| `src-tools-parse-exec` | The tool dispatcher that calls `search_chats` |
+| `src-research-scheduling`, `src-tools-builtin-actions` | The scheduler that fires the tidy action |
 
 ## Coverage
 
@@ -93,11 +94,12 @@ Line numbers refer to `2992bf6d368a`.
 - a 1.0 s blocking VL call against a ticker task on the same loop
 - `search_session_messages` against a 2,000-message in-memory DB with a statement-counting event
   listener, plus `EXPLAIN QUERY PLAN` for its LIKE leg
-- `run_auto_sort("")` against a temp app DB holding one empty session for each of two owners. Also
-  greps for the unused symbols cited in the dead-code finding and for the callers of
-  `run_auto_sort`, `search_session_messages`, `maybe_compact`, `model_supports_vision` and
-  `_sanitize_tool_messages`. Suites: `ls tests | grep -iE
-  'chat|session|context|topic|compactor|request_models|assistant_log'` yields 64 files
+- `run_auto_sort("")` against a temp app DB holding one empty session for each of two owners
+- greps for the unused symbols cited in the dead-code finding
+- greps for the callers of `run_auto_sort`, `search_session_messages`, `maybe_compact` and
+  `model_supports_vision`, and of `_sanitize_tool_messages`
+- the suites matching `ls tests | grep -iE 'chat|session|context|topic|compactor|request_models|assistant_log'`,
+  which yields 64 files
 - running them gives **1 failed, 523 passed**
 
 The failure is the order-dependent pair already documented in `routes-chat-session`
@@ -428,15 +430,20 @@ files listed below) are **25 passed**.
   $ grep -rn "\bvalidate_file_upload\b" ...  → src/chat_helpers.py:188:def validate_file_upload(file: UploadFile) -> UploadFile:
   ```
 
-  and the same for `enhance_message_if_needed` (`src/chat_handler.py:115`),
-  `MemoryUpdateRequest`, `ErrorResponse`, `UploadResponse` and `MemoryResponse`. `MAX_CONTEXT_MESSAGES`
-  (`src/constants.py:87`) is read only by the dead `trim_history_if_needed`. In
-  `src/assistant_log.py` the module global is assigned by `set_session_manager` (`:19-24`, called
-  from `app.py:589-590`) and never read, the `_LEGACY_TAG_RE` regex has no reader, and
-  `log_to_assistant` logs at DEBUG and returns (`:47-48`) while four production call sites still
-  call it (`src/task_scheduler.py:1236`, `src/tools/vault.py:126`,
-  `routes/cookbook_routes.py:1395`, `:2820`) — the no-op is deliberate per its docstring, but the
-  callers read as if the assistant's activity feed receives the text.
+  and the same for `enhance_message_if_needed` (`src/chat_handler.py:115`) and for four model classes:
+  `MemoryUpdateRequest`, `ErrorResponse`, `UploadResponse` and `MemoryResponse`.
+  `MAX_CONTEXT_MESSAGES` (`src/constants.py:87`) is read only by the dead
+  `trim_history_if_needed`. In `src/assistant_log.py`:
+
+  - the module global is assigned by `set_session_manager` (`:19-24`, called from
+    `app.py:589-590`) and never read
+  - the `_LEGACY_TAG_RE` regex has no reader
+  - `log_to_assistant` logs at DEBUG and returns (`:47-48`), while four production call sites still
+    call it: `src/task_scheduler.py:1236`, `src/tools/vault.py:126` and
+    `routes/cookbook_routes.py` at `:1395` and `:2820`
+
+  The no-op is deliberate per its docstring, but the callers read as if the assistant's activity
+  feed receives the text.
 - **Impact:** a reader or a new caller can pick up `trim_history_if_needed` (which slices
   `session.history` without the tool-pairing repair `_sanitize_tool_messages` performs for
   `trim_for_context`), `validate_file_upload`, or a request model no route validates against, and

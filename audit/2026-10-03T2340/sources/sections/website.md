@@ -65,9 +65,10 @@ Nothing inside the recordings was reviewed.
 - `requirements.txt` (`:1-30`), `requirements-optional.txt` in full, `Dockerfile` (`:6-79`)
 - `docker-compose.yml` in full, `docker/host-docker.yml`, `docker/gpu.nvidia.yml`,
   `docker/gpu.amd.yml`, `docker/entrypoint.sh`
-- the nine workflows this section cites, at their names, triggers and job/step identifiers: `ci`,
-  `secret-scan`, `workflow-security`, `dependency-review`, `container-scan`, `container-trivy`,
-  `codeql`, `deploy-pages`, `docker-publish`
+- the nine workflows this section cites, at their names, triggers and job and step identifiers:
+  - `ci`, `secret-scan`, `workflow-security`
+  - `dependency-review`, `container-scan`, `container-trivy`
+  - `codeql`, `deploy-pages`, `docker-publish`
 - `.github/CODEOWNERS`, `.github/dependabot.yml`, `.gitignore`, `.dockerignore`
 - `scripts/encode_previews.sh`, `scripts/check-docker-gpu.sh` at its flag parsing and `.env` writer
 - `src/settings.py`, `src/auth_helpers.py` and `app.py` only at the call sites cited
@@ -408,15 +409,25 @@ were checked against `_secure_cookie` (`routes/auth_routes.py:88-112`), the HSTS
   ```
 
   and the code-block button routes through it (`static/js/chat.js:5316`
-  `uiModule.copyToClipboard(code)`), as does the session transcript export
-  (`static/app.js:495`). `static/js/codeRunner.js:103-106` states the intent in a comment — "the
-  single most reliable path across browsers / non-secure contexts / mobile Firefox" — and
-  `static/js/cookbook-diagnosis.js:959-960` names "non-HTTPS origins (Tailscale IPs, LAN IPs, etc.)"
-  explicitly. Other copy handlers still call `navigator.clipboard.writeText` with no fallback
-  (`static/js/settings.js:4374`, `static/js/notes.js:2494`, `static/js/sessions.js:742`,
-  `static/js/document.js:9146`, `static/js/documentLibrary.js:151`, `static/js/emailLibrary.js:656`,
-  `static/js/tasks.js:1500`, `static/js/admin.js:2675`, `static/js/cookbook.js:1577`, `:1705`), so
-  the page's blanket "copy buttons do nothing" is true for some surfaces and false for the ones
+  `uiModule.copyToClipboard(code)`), as does the session transcript export (`static/app.js:495`).
+  `static/js/codeRunner.js:103-106` states the intent in a comment: "the single most reliable path
+  across browsers / non-secure contexts / mobile Firefox". `static/js/cookbook-diagnosis.js:959-960`
+  names "non-HTTPS origins (Tailscale IPs, LAN IPs, etc.)" explicitly. Other copy handlers still
+  call `navigator.clipboard.writeText` with no fallback:
+
+  | File | Line |
+  | --- | ---: |
+  | `static/js/settings.js` | `:4374` |
+  | `static/js/notes.js` | `:2494` |
+  | `static/js/sessions.js` | `:742` |
+  | `static/js/document.js` | `:9146` |
+  | `static/js/documentLibrary.js` | `:151` |
+  | `static/js/emailLibrary.js` | `:656` |
+  | `static/js/tasks.js` | `:1500` |
+  | `static/js/admin.js` | `:2675` |
+  | `static/js/cookbook.js` | `:1577`, `:1705` |
+
+  So the page's blanket "copy buttons do nothing" is true for some surfaces and false for the ones
   users hit most.
 - **Impact:** an operator on a plain-HTTP LAN URL who reads the trap may stand up TLS for a problem
   they do not have, or report a working copy button as broken; conversely the buttons that really do

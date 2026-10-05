@@ -118,17 +118,23 @@ provider specs:
 They are not claimed as reviewed; the citation check in `Checks run` covers them mechanically, which
 is not the same as reading them.
 
-**Checks run.** (1) A throwaway script (`/tmp/check_refs.py`, `/tmp/check_refs2.py`) that extracts
-every `` `path:line` `` citation from `specs/*.md`, resolves the path, compares the line against the
-file length, and — where the prose names a backticked symbol — measures the distance from the cited
-line to the nearest occurrence of that symbol. Result: 0 missing files, 0 out-of-range lines, 2
-symbol anchors more than three lines off, both on `specs/auth-security.md:89`. (2) `git cat-file -t`
-and a scan of every commit object for the four distinct stamps in the set. (3) `ls`, `grep` and
-`git log --all` over the files the findings name (`docs/`, `website/`, `.github/workflows/`,
-`package.json`, `static/backgrounds.html`, `src/tool_index.py`, `src/model_capability_readers/`,
-`services/search/core.py`, `services/shell/service.py`). (4) A probe script
-(`/tmp/probe_backgrounds.py`) that calls `serve_html_with_nonce` with the path the `/backgrounds`
-route builds. Line numbers are the working tree at `2992bf6d368a`.
+**Checks run.**
+
+1. A throwaway script (`/tmp/check_refs.py`, `/tmp/check_refs2.py`) that extracts every
+   `` `path:line` `` citation from `specs/*.md`, resolves the path, compares the line against the
+   file length, and, where the prose names a backticked symbol, measures the distance from the
+   cited line to the nearest occurrence of that symbol. Result: 0 missing files, 0 out-of-range
+   lines, and 2 symbol anchors more than three lines off, both on `specs/auth-security.md:89`.
+2. `git cat-file -t` and a scan of every commit object for the four distinct stamps in the set.
+3. `ls`, `grep` and `git log --all` over the files the findings name:
+   - `docs/`, `website/`, `.github/workflows/` and `package.json`
+   - `static/backgrounds.html`
+   - `src/tool_index.py`, `src/model_capability_readers/`
+   - `services/search/core.py`, `services/shell/service.py`
+4. A probe script (`/tmp/probe_backgrounds.py`) that calls `serve_html_with_nonce` with the path the
+   `/backgrounds` route builds.
+
+Line numbers are the working tree at `2992bf6d368a`.
 
 ### [DOC-DRIFT] `testing-devops.md` tells maintainers not to add the CodeQL workflow the repo added a month before the spec's own baseline
 
@@ -192,17 +198,20 @@ route builds. Line numbers are the working tree at `2992bf6d368a`.
   ```
 
   The clone is not shallow and the July dates themselves are represented in history, so this is not
-  a missing-fetch artifact: no object with either prefix exists. The 26 affected files are the 17
-  `specs/model-providers/*.md` at `dev@28d27ee` (`atlas-cloud`, `azure-openai`, `bedrock`,
-  `cerebras`, `cloudflare-workers-ai`, `fireworks`, `github-models`, `groq`,
-  `local-compatible-engines`, `minimax`, `moonshot-kimi`, `nvidia-nim`, `perplexity`,
-  `siliconflow`, `venice`, `xai`, `zai`) and the 9 at `dev@e57f60b` (`chatgpt-subscription`,
-  `cohere`, `github-copilot`, `hugging-face`, `llama-cpp`, `lm-studio`, `sglang`, `together`,
-  `vllm`); the 35 files at `dev@e71f8ce` (27) and `dev@2e2bb52` (8) resolve. The repository carries
-  both a history-rewrite marker (`origin/backup/main-before-history-cleanup-20260910`) and a
-  mid-July repository transfer (`cc4c7f42 chore: update repository URLs after organization transfer
+  a missing-fetch artifact: no object with either prefix exists. The 26 affected files are:
+
+  - the 17 `specs/model-providers/*.md` files at `dev@28d27ee`: atlas-cloud, azure-openai,
+    bedrock, cerebras, cloudflare-workers-ai, fireworks, github-models, groq,
+    local-compatible-engines, minimax, moonshot-kimi, nvidia-nim, perplexity, siliconflow, venice,
+    xai and zai
+  - the 9 files at `dev@e57f60b`: chatgpt-subscription, cohere, github-copilot, hugging-face,
+    llama-cpp, lm-studio, sglang, together and vllm
+
+  The 35 files at `dev@e71f8ce` (27) and `dev@2e2bb52` (8) resolve. The repository carries both a
+  history-rewrite marker (`origin/backup/main-before-history-cleanup-20260910`) and a mid-July
+  repository transfer (`cc4c7f42 chore: update repository URLs after organization transfer
   (#5622)`, 2026-07-20), either of which could explain stamps taken from a tree this clone does not
-  contain — the backup branch does not contain them either, so the two stamps cannot be recovered
+  contain. The backup branch does not contain them either, so the two stamps cannot be recovered
   from this clone at all.
 - **Impact:** For 26 of 61 specs — the ones covering every provider except Anthropic, Mistral,
   Moonshot/Kimi, Ollama and OpenAI — the documented workflow of reading a spec against its baseline
@@ -278,20 +287,21 @@ route builds. Line numbers are the working tree at `2992bf6d368a`.
   })
   ```
 
-  The list the spec describes resembles a different constant with a different job — the Personal
+  The list the spec describes resembles a different constant with a different job: the Personal
   Assistant's scheduled-task set at `src/tool_index.py:49-62` (`list_emails`, `send_email`,
-  `manage_calendar`, `web_search`, `read_file`, `api_call`, `ui_control`, ...) — and neither
-  constant contains `shell`, `python`, `app_api`, or a Cookbook serve control. The comment above the
-  real set states the intent the spec contradicts: "Keep this deliberately tiny. Domain tools (web,
+  `manage_calendar` and `web_search`, then `read_file`, `api_call`, `ui_control` and more). Neither constant
+  contains `shell`, `python`, `app_api` or a Cookbook serve control. The comment above the real set
+  states the intent the spec contradicts: "Keep this deliberately tiny. Domain tools (web,
   documents, email, cookbook/model serving, files, settings, etc.) are injected by retrieval or
   keyword intent". `grep -rn ALWAYS_AVAILABLE audit/2026-10-03T2340/sources/sections/` finds no
   other section reporting this.
-- **Impact:** A maintainer reading the spec to decide what is unconditionally in the prompt gets
-  the wrong answer for `web_search`, `read_file`, `write_file`, `edit_file`, `bash`, `python`,
-  `app_api` and the Cookbook controls, and may add a tool to `ALWAYS_AVAILABLE` believing it is
-  already there (or assume a small-context model already carries those schemas). The next sentence
-  in the spec — "Current prompt/schema assembly preserves only selected base tools
-  unconditionally" — is the accurate one, which makes the pair self-contradictory.
+- **Impact:** a maintainer reading the spec to decide what is unconditionally in the prompt gets
+  the wrong answer for the web, file and shell tools and the Cookbook controls, and may add a tool
+  to `ALWAYS_AVAILABLE` believing it is already there (or assume a small-context model already
+  carries those schemas). The tools are `web_search`, the three file tools (`read_file`,
+  `write_file`, `edit_file`), `bash`, `python` and `app_api`. The next sentence in the spec, "Current prompt/schema assembly
+  preserves only selected base tools unconditionally", is the accurate one, which makes the pair
+  self-contradictory.
 - **Fix:** Rewrite the sentence to say what `ALWAYS_AVAILABLE` is (the three ambient tools:
   memory, `ask_user`, `update_plan`) and name `ASSISTANT_ALWAYS_AVAILABLE` separately for the
   scheduled-check-in set.

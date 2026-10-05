@@ -42,10 +42,11 @@ authenticate, whether the agent allowlist is sufficient, or whether the built-in
   disconnect (`:1291-1296`)
 - `src/builtin_mcp.py` at `builtin_python_env` (`:148-160`) and the two `connect_server` call sites
 - `static/js/settings.js` at the MCP server panel (`:4939-4980`)
-- the SDK the manager drives — `mcp/client/stdio/__init__.py` (`get_default_environment`,
-  `stdio_client`), `mcp/client/streamable_http.py` (`streamablehttp_client`,
-  `streamable_http_client`), `mcp/client/session.py` and `mcp/shared/session.py` (the read-timeout
-  handling), `mcp/client/auth/oauth2.py` (the refresh path)
+- the SDK the manager drives:
+  - `mcp/client/stdio/__init__.py` (`get_default_environment`, `stdio_client`)
+  - `mcp/client/streamable_http.py` (`streamablehttp_client`, `streamable_http_client`)
+  - `mcp/client/session.py` and `mcp/shared/session.py` (the read-timeout handling)
+  - `mcp/client/auth/oauth2.py` (the refresh path)
 - the module's own tests for what is already pinned
 
 SDK and anyio paths named in the findings are the installed packages
@@ -65,16 +66,20 @@ target tree.
 Line numbers are the working tree at `2992bf6d368a` (clean apart from this run's untracked `audit/`
 directory).
 
-**Checks run:** a throwaway MCP server (`/tmp/mcp_probe_server.py`, a FastMCP server declaring one
-mutating tool with `readOnlyHint=False`, one tool that reports its own environment variable names,
-and one that sleeps for 600s) driven by four probe scripts under `/tmp`, none of them part of the
-target tree; each probe's output is quoted in the finding it settles. Also a direct call of
-`_format_mcp_params` with malformed `required` values, a `grep` for timeouts in the callers, and a
-uvicorn probe confirming that two requests run in two different tasks (each request is a
-`RequestResponseCycle.run_asgi()` task; three requests produced three distinct task objects). The
-18 suites matching this surface — the 17 files from `ls tests | grep -iE 'mcp'` plus
-`tests/test_plan_mode.py`, which pins the classifier the annotation finding touches — were run:
-**127 passed**.
+**Checks run:**
+
+- a throwaway MCP server (`/tmp/mcp_probe_server.py`) driven by four probe scripts under `/tmp`,
+  none of them part of the target tree. It is a FastMCP server declaring one mutating tool with
+  `readOnlyHint=False`, one tool that reports its own environment variable names, and one that
+  sleeps for 600s. Each probe's output is quoted in the finding it settles.
+- a direct call of `_format_mcp_params` with malformed `required` values
+- a `grep` for timeouts in the callers
+- a uvicorn probe confirming that two requests run in two different tasks (each request is a
+  `RequestResponseCycle.run_asgi()` task; three requests produced three distinct task objects)
+
+The 18 suites matching this surface were run: **127 passed**. They are the 17 files from
+`ls tests | grep -iE 'mcp'` plus `tests/test_plan_mode.py`, which pins the classifier the annotation
+finding touches.
 
 ### [BUG] Nothing bounds an MCP session call, so a server that stops answering wedges whatever is waiting on it
 
@@ -157,13 +162,13 @@ uvicorn probe confirming that two requests run in two different tasks (each requ
   )
   ```
 
-  The SDK's default is deliberately narrow — `stdio_client` builds
+  The SDK's default is deliberately narrow. `stdio_client` builds
   `{**get_default_environment(), **server.env} if server.env is not None else
-  get_default_environment()` (`mcp/client/stdio/__init__.py:127`), and
-  `get_default_environment()` returns only `HOME`, `LOGNAME`, `PATH`, `SHELL`, `TERM` and `USER`
-  (`:28-45`). Passing `None` selects that whitelist; passing `{**os.environ, **env}` bypasses it.
-  Measured with a stdio server whose tool returns its own `os.environ` names, in a process holding
-  a canary variable:
+  get_default_environment()` (`mcp/client/stdio/__init__.py:127`), and `get_default_environment()`
+  returns only six variables (`:28-45`), the first three being `HOME`, `LOGNAME` and `PATH` and the
+  rest `SHELL`, `TERM` and `USER`. Passing `None` selects that whitelist; passing
+  `{**os.environ, **env}` bypasses it. Measured with a stdio server whose tool returns its own
+  `os.environ` names, in a process holding a canary variable:
 
   ```
   no stored env:      connected=True count=4  names=['HOME', 'LC_CTYPE', 'PATH', 'SHELL']
@@ -286,13 +291,19 @@ uvicorn probe confirming that two requests run in two different tasks (each requ
   test pins what discovery stores per transport — `grep -rn annotations tests/*.py` finds no other
   MCP annotation test — so the drop is unguarded.
 - **Impact:** for a remote Streamable HTTP server, plan mode loses the server's own declaration and
-  falls back to the leading-verb heuristic, so a mutating tool whose name starts with `get`,
-  `list`, `read`, `search`, `fetch`, `query`, `find`, `describe`, `show`, `view`, `lookup`,
-  `count`, `status`, `info`, `inspect` or `summar` is offered to the model and allowed to run in
-  the mode that promises read-only investigation. The same server over stdio or SSE is classified
-  correctly, so the gate's behaviour depends on the transport the admin picked. Preconditions: plan
-  mode on, an HTTP-transport server, and a mutating tool named with a read verb — which is why
-  this is `low`, but the annotation is data the client already received and threw away.
+  falls back to the leading-verb heuristic. A mutating tool whose name starts with one of the read
+  verbs is offered to the model and allowed to run in the mode that promises read-only
+  investigation. The verbs are:
+
+  - `get`, `list`, `read`, `search`
+  - `fetch`, `query`, `find`, `describe`
+  - `show`, `view`, `lookup`, `count`
+  - `status`, `info`, `inspect`, `summar`
+
+  The same server over stdio or SSE is classified correctly, so the gate's behaviour depends on
+  the transport the admin picked. Preconditions: plan mode on, an HTTP-transport server, and a
+  mutating tool named with a read verb. That is why this is `low`, but the annotation is data the
+  client already received and threw away.
 - **Fix:** add the `annotations` key to the HTTP tool dict, as the other two transports do.
 
 ### [ERROR-HANDLING] Disconnecting a server cannot close its transport, because the context was entered in another task

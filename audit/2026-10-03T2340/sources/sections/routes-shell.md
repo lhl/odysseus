@@ -2,19 +2,26 @@
 
 ## Overview
 
-`routes/shell_routes.py` (1,971 lines) owns the two endpoints that run arbitrary commands
-(`POST /api/shell/exec`, `POST /api/shell/stream`), the three streaming backends behind them (pipe,
-PTY, tmux, plus the Windows detached-process path), and the Cookbook dependency routes that probe and
-mutate package state (`GET /api/cookbook/packages`, `POST /api/cookbook/packages/install`,
-`POST /api/cookbook/install-system-deps`, `POST /api/cookbook/rebuild-engine`). The frontend calls
-the shell endpoints from the code runner, the Cookbook download and install panels, and the
-hardware-fit checks; the dependency routes are the Cookbook Dependencies tab's read path and its two
-install actions. The agent's loopback bridge into these routes (`src/tools/system.py`,
-`src/tools/cookbook.py`) is covered by `src-agent-tools`; the Cookbook route helpers and the tmux
-task model the frontend drives belong to `routes-cookbook` and
-`static-js-cookbook-settings-models`. A finding here is about what this router does with a command
-once it has one, not about who may call it: admin-only is enforced at `_require_admin` and that
-decision is not re-reviewed here.
+`routes/shell_routes.py` (1,971 lines) owns three groups of routes:
+
+| Group | Routes |
+| --- | --- |
+| Command endpoints | `POST /api/shell/exec`, `POST /api/shell/stream` |
+| Streaming backends behind them | Pipe, PTY, tmux, and the Windows detached-process path |
+| Cookbook dependency routes | `GET /api/cookbook/packages`, `POST /api/cookbook/packages/install`, `POST /api/cookbook/install-system-deps`, `POST /api/cookbook/rebuild-engine` |
+
+The frontend calls the shell endpoints from the code runner, the Cookbook download and install
+panels, and the hardware-fit checks. The dependency routes are the Cookbook Dependencies tab's read
+path and its two install actions.
+
+A finding here is about what this router does with a command once it has one, not about who may call
+it: admin-only is enforced at `_require_admin` and that decision is not re-reviewed here. Two
+neighbours own the code on the other side:
+
+- `src-agent-tools` covers the agent's loopback bridge into these routes (`src/tools/system.py`,
+  `src/tools/cookbook.py`).
+- `routes-cookbook` and `static-js-cookbook-settings-models` cover the Cookbook route helpers and
+  the tmux task model the frontend drives.
 
 ## Coverage
 
@@ -176,12 +183,20 @@ No test suite was run.
 - **Severity:** low
 - **Disposition:** next
 - **Evidence:** `_reject_cross_site` rejects requests whose `Sec-Fetch-Site` is `cross-site`
-  (`:72-75`). Its only call in the file is on `list_packages`, a GET (`:1201`). The mutating
-  endpoints — `shell_exec` (`:963`), `shell_stream` (`:981`), `install_package` (`:1765`),
-  `install_system_deps` (`:1820`), `rebuild_engine` (`:1941`) — call only `_require_admin`. The
-  current cookie policy and body parsing block the obvious cross-site forms: the session cookie is
-  `SameSite=Lax` (`routes/auth_routes.py:188`), and a Pydantic body needs `application/json`, which
-  an HTML form cannot send. So this is not an exploitable CSRF today.
+  (`:72-75`). Its only call in the file is on `list_packages`, a GET (`:1201`). The five mutating
+  endpoints call only `_require_admin`:
+
+  | Endpoint | Line |
+  | --- | ---: |
+  | `shell_exec` | `:963` |
+  | `shell_stream` | `:981` |
+  | `install_package` | `:1765` |
+  | `install_system_deps` | `:1820` |
+  | `rebuild_engine` | `:1941` |
+
+  The current cookie policy and body parsing block the obvious cross-site forms: the session cookie
+  is `SameSite=Lax` (`routes/auth_routes.py:188`), and a Pydantic body needs `application/json`,
+  which an HTML form cannot send. So this is not an exploitable CSRF today.
 - **Impact:** the one endpoint that carries the guard is the one that changes nothing, and the
   endpoints that execute code depend on the cookie policy staying strict. If `SameSite` is relaxed
   for an embedded or tunneled deployment, or an origin is added to the CORS allowlist, the mutating

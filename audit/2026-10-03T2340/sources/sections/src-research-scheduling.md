@@ -81,23 +81,30 @@ directories in `/tmp`, outside the checkout:
 - **Endpoint predicate probe.** The substring predicate from `src/task_scheduler.py:1889` evaluated
   with the real `normalize_base` over two endpoint base URLs.
 
-`venv/bin/python -m pytest -q` was run with these thirty-eight suites: `tests/test_bg_jobs_store.py`,
-`tests/test_bg_job_tools.py`, `tests/test_bg_monitor_stream.py`, `tests/test_cleanup_owner_scope.py`,
-`tests/test_cleanup_routes_shim.py`, `tests/test_cleanup_service_utcnow.py`,
-`tests/test_cookbook_serve_lifecycle.py`, `tests/test_builtin_actions_cookbook_serve_state.py`,
-the five `tests/test_deep_research_*.py`, `tests/test_research_handler_path_confinement.py`,
-`tests/test_research_handler_raw_nondict.py`, `tests/test_research_handler_sources_nondict.py`,
-`tests/test_research_handler_analyzed_urls.py`, `tests/test_research_status_avg_duration.py`,
-`tests/test_research_report_read.py`, `tests/test_research_session_id_validation.py`,
-`tests/test_research_utils.py`, `tests/test_research_utils_low_quality_nonstring.py`,
-`tests/test_research_source_link_xss.py`, `tests/test_research_probe_errors.py`,
-`tests/test_research_query_fallback.py`, `tests/test_task_endpoint_normalization.py`,
-`tests/test_task_scheduler_cache.py`, `tests/test_task_scheduler_cancel.py`,
-`tests/test_task_scheduler_session_delivery.py`, `tests/test_task_routes_shim.py`,
-`tests/test_teacher_eval_tier2.py`, `tests/test_teacher_eval_nonstring_reply.py`,
-`tests/test_teacher_audit_owner_scope.py`, and the five `tests/test_visual_report*.py` —
+`venv/bin/python -m pytest -q` was run with thirty-eight suites, all under `tests/`:
 **168 passed**, one SQLAlchemy deprecation warning. The full suite and `audit.py` were not run;
 run-level generation, counts and secret-gate validation belong to the coordinating reviewer.
+
+- background jobs: `test_bg_jobs_store.py`, `test_bg_job_tools.py`, `test_bg_monitor_stream.py`
+- cleanup: `test_cleanup_owner_scope.py`, `test_cleanup_routes_shim.py`,
+  `test_cleanup_service_utcnow.py`
+- Cookbook serving: `test_cookbook_serve_lifecycle.py`,
+  `test_builtin_actions_cookbook_serve_state.py`
+- deep research: the five `test_deep_research_*.py`
+- research handler: `test_research_handler_path_confinement.py`,
+  `test_research_handler_raw_nondict.py`, `test_research_handler_sources_nondict.py`,
+  `test_research_handler_analyzed_urls.py`
+- research status and reports: `test_research_status_avg_duration.py`,
+  `test_research_report_read.py`, `test_research_session_id_validation.py`
+- research sources and probes: `test_research_source_link_xss.py`,
+  `test_research_probe_errors.py`, `test_research_query_fallback.py`
+- research utilities: `test_research_utils.py`, `test_research_utils_low_quality_nonstring.py`
+- task scheduler: `test_task_endpoint_normalization.py`, `test_task_scheduler_cache.py`,
+  `test_task_scheduler_cancel.py`
+- task delivery and routes: `test_task_scheduler_session_delivery.py`, `test_task_routes_shim.py`
+- teacher: `test_teacher_eval_tier2.py`, `test_teacher_eval_nonstring_reply.py`,
+  `test_teacher_audit_owner_scope.py`
+- visual reports: the five `test_visual_report*.py`
 
 ### [RACE] A killed background job can still be auto-continued — the job store has no writer lock
 
@@ -220,12 +227,18 @@ run-level generation, counts and secret-gate validation belong to the coordinati
   The same file fences this class of content for the skill-distillation prompt
   (`_UNTRUSTED_TRACE_GUARD` `:133-146`, `_format_trace` `:347-359`), and the repo wraps untrusted
   tool output elsewhere (`untrusted_context_message`, used for the same job output in
-  `src/bg_monitor.py:27-36`). The patterns are reachable from any tool result: `^Unknown action`,
-  `^Failed to`, `^Invalid`, `\bnot found\b`, `\berror:\s` (`:74-88`). Mitigations: the student's
-  `external_untrusted_context_seen` is forwarded to the teacher run
-  (`src/agent_loop.py:6446-6448`), so its tool calls run under the tainted-run policy; a
-  teacher-generated skill is persisted only through an exact-approval card
-  (`tool_approval_store.create` `:747`); and the takeover is streamed to the user as it happens.
+  `src/bg_monitor.py:27-36`). The patterns are reachable from any tool result (`:74-88`):
+
+  - `^Unknown action`
+  - `^Failed to`
+  - `^Invalid`
+  - `\bnot found\b`
+  - `\berror:\s`
+
+  Three mitigations apply. The student's `external_untrusted_context_seen` is forwarded to the
+  teacher run (`src/agent_loop.py:6446-6448`), so its tool calls run under the tainted-run policy.
+  A teacher-generated skill is persisted only through an exact-approval card
+  (`tool_approval_store.create` `:747`). And the takeover is streamed to the user as it happens.
 - **Impact:** a page, email or document that gets its first 120 characters copied into the
   failure signal lands in the teacher's instruction context as if the user had written it, in a
   run that then calls tools with the user's authority. A payload only needs to appear at the head
@@ -248,12 +261,16 @@ run-level generation, counts and secret-gate validation belong to the coordinati
           break
   ```
 
-  `normalize_base` (`src/endpoint_resolver.py:225-234`) strips only known suffixes (`/models`,
-  `/chat/completions`, `/completions`, `/v1/messages`, `/responses`, `/api/chat`, `/api/tags`,
-  `/api/generate`); it neither reduces the URL to an origin nor requires a path boundary. Running
-  that predicate with the real `normalize_base` over two enabled endpoints —
+  `normalize_base` (`src/endpoint_resolver.py:225-234`) strips only known suffixes, and it neither
+  reduces the URL to an origin nor requires a path boundary. The suffixes are:
+
+  - `/models`, `/completions` and `/responses`
+  - `/chat/completions` and `/v1/messages`
+  - `/api/chat`, `/api/tags` and `/api/generate`
+
+  Running that predicate with the real `normalize_base` over two enabled endpoints,
   `http://gw.example.com/v1` and `http://gw.example.com/v1-beta`, with the resolved task URL
-  `http://gw.example.com/v1-beta/chat/completions` — selects `http://gw.example.com/v1`, i.e. the
+  `http://gw.example.com/v1-beta/chat/completions`, selects `http://gw.example.com/v1`. So the
   other endpoint's key is attached to a request aimed at `v1-beta`. The surrounding block is
   wrapped in `except Exception: pass`, so a resolution failure is silent.
 - **Impact:** an endpoint's API key is sent to a different endpoint — a different service or
@@ -270,17 +287,21 @@ run-level generation, counts and secret-gate validation belong to the coordinati
 - **Location:** `src/research_handler.py:601-631` (record built at `:611-629`)
 - **Severity:** low
 - **Disposition:** next
-- **Evidence:** `_save_result` builds a fresh dict — `query`, `status`, `result`, `raw_report`,
-  `sources`, `raw_findings`, `stats`, `category`, `started_at`, `completed_at`, `owner` — and
-  writes it over the whole file, while two other writers keep their state in the same file:
-  `hide_image` appends to `hidden_images` (`:691-695`) and `clear_result` sets `consumed`
-  (`:594-597`). Neither key is in the fresh dict. Measured: a record holding
-  `hidden_images: ["https://a/x.jpg", "https://b/y.jpg"]` and `consumed: true`, after
-  `_save_result` writes, has keys `category, completed_at, owner, query, raw_findings, raw_report,
-  result, sources, started_at, stats, status` — both keys gone. Reachable: a chat-side
-  continuation reuses the session id (`routes/chat_routes.py:1700-1745` reads the prior record via
-  `_get_session_json` and calls `start_research(..., prior_report=…)` with the same session), so
-  the record the user's hide choices live in is the one that gets overwritten.
+- **Evidence:** `_save_result` builds a fresh dict with eleven keys and writes it over the whole
+  file. The keys are:
+
+  - `query`, `status`, `result`, `raw_report`
+  - `sources`, `raw_findings`, `stats`, `category`
+  - `started_at`, `completed_at`, `owner`
+
+  Two other writers keep their state in the same file: `hide_image` appends to `hidden_images`
+  (`:691-695`) and `clear_result` sets `consumed` (`:594-597`). Neither key is in the fresh dict.
+  Measured: a record holding `hidden_images: ["https://a/x.jpg", "https://b/y.jpg"]` and
+  `consumed: true`, after `_save_result` writes, has only the eleven keys, so both are gone.
+  Reachable: a chat-side continuation reuses the session id (`routes/chat_routes.py:1700-1745`
+  reads the prior record via `_get_session_json` and calls `start_research(..., prior_report=…)`
+  with the same session), so the record the user's hide choices live in is the one that gets
+  overwritten.
 - **Impact:** images the user hid on a report reappear after continuing that research, and a
   consumed report re-renders as new. The same write is not atomic (see the finding below), so a
   crash during it leaves a record no reader can parse.

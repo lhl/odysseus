@@ -135,8 +135,8 @@ Forty-three suites were run over this surface — every file matching `ls tests 
 - **Disposition:** next
 - **Evidence:** each cited line opens a connection or issues a command inside a coroutine that
   has not awaited anything, so the whole round-trip runs on the loop thread. The same file
-  offloads identical work elsewhere — `:2391`, `:3216`, `:3966`, `:4767`, `:4829` and `:4919`
-  use `asyncio.to_thread` — and two routes spell out why:
+  offloads identical work with `asyncio.to_thread` at six other sites: `:2391`, `:3216`, `:3966`,
+  `:4767`, `:4829` and `:4919`. Two routes spell out why:
 
   ```python
   # routes/email_routes.py:2770-2772
@@ -146,15 +146,18 @@ Forty-three suites were run over this surface — every file matching `ls tests 
   ```
 
   The six attachment handlers fetch the whole message inline (`_imap_uid_fetch(conn, uid,
-  "(RFC822)")` at `:3288`, `:3306`, `:3333`, `:3395`, `:3716`, `:4207`), so their stall scales
-  with message size; the flag/move/delete handlers each pay a `SELECT` plus a `STORE`/`MOVE`
-  round-trip, and `resolve_contact` issues up to 200 serial header fetches per folder across
-  three folders (`uids = data[0].split()[-200:]`, `:4484`; `conn.fetch(...)`, `:4487`).
-  `test_account_config` connects and logs in to IMAP and SMTP inline (`_open_imap_connection`,
-  `:5893`; `smtplib.SMTP_SSL`, `:5938`), and `google_oauth_callback` makes two blocking `httpx`
-  calls (`:6059`, `:6081`). Measured with
-  `ODYSSEUS_IMAP_TIMEOUT_SECONDS=3` and a listener that accepts and never sends an IMAP
-  greeting, running the real `/accounts/test` coroutine next to a 50 ms heartbeat:
+  "(RFC822)")`), so their stall scales with message size. The calls are at `:3288`, `:3306`,
+  `:3333`, `:3395`, `:3716` and `:4207`. The other handlers cost as follows:
+
+  | Handler | Blocking work |
+  | --- | --- |
+  | Flag, move, delete | A `SELECT` plus a `STORE` or `MOVE` round-trip each |
+  | `resolve_contact` | Up to 200 serial header fetches per folder across three folders (`uids = data[0].split()[-200:]`, `:4484`; `conn.fetch(...)`, `:4487`) |
+  | `test_account_config` | IMAP and SMTP connect and login inline (`_open_imap_connection`, `:5893`; `smtplib.SMTP_SSL`, `:5938`) |
+  | `google_oauth_callback` | Two blocking `httpx` calls (`:6059`, `:6081`) |
+
+  Measured with `ODYSSEUS_IMAP_TIMEOUT_SECONDS=3` and a listener that accepts and never sends an
+  IMAP greeting, running the real `/accounts/test` coroutine next to a 50 ms heartbeat:
 
   ```
   endpoint returned in 5.03s: {'ok': False, 'imap': {'ok': False, 'error': 'timed out'}, 'smtp': None}

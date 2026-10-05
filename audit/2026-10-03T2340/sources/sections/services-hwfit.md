@@ -55,15 +55,26 @@ the 9 test files listed below.
 
 **Read structurally, not line by line:**
 
-- `services/hwfit/data/hf_models.json` (19,477 lines, 924 rows) and
-  `services/hwfit/data/mlx_community_models.json` (15,727 lines, 629 rows). Both were parsed and
-  every field of every row was type-censused with a script, and the head of each file plus
-  representative rows were read; the full text was not. The same census was run over the two runtime
-  caches a live instance feeds
-  into `get_models()` — `data/hwfit/hf_collection_models.json` (501 rows) and
-  `data/hwfit/mlx_community_models.json` (659 rows), untracked runtime state present in this
-  checkout. Result: `name`, `parameter_count`, `quantization`, `use_case`, `provider` are strings in
-  every row of all four files
+- two catalogue files, which were parsed and type-censused field by field with a script. The head of
+  each file plus representative rows were read; the full text was not.
+
+  | File | Lines | Rows |
+  | --- | ---: | ---: |
+  | `services/hwfit/data/hf_models.json` | 19,477 | 924 |
+  | `services/hwfit/data/mlx_community_models.json` | 15,727 | 629 |
+
+  The same census was run over the two runtime caches a live instance feeds into `get_models()`.
+  They are untracked runtime state present in this checkout:
+
+  | File | Rows |
+  | --- | ---: |
+  | `data/hwfit/hf_collection_models.json` | 501 |
+  | `data/hwfit/mlx_community_models.json` | 659 |
+
+  The census result, in every row of all four files:
+
+- `name`, `use_case` and `provider` are strings
+- `parameter_count` and `quantization` are strings
 - `parameters_raw` and `context_length` are ints in every row
 - `active_parameters` is an int or `null` (52 static rows)
 - 29 static rows carry `release_date: null` (handled by the `newest` sort and by the front end, so
@@ -438,8 +449,11 @@ slug, so it is recorded here rather than as a finding.
   monkeypatch `_discover_quant_repos` (`tests/test_image_models_nonstring_search.py`), which reads as
   if the path were live. A literal `return False` with no comment also hides whether this is a
   deliberate kill switch or a debugging leftover.
-- **Fix:** pick one. If variant discovery is retired, delete `_should_discover_variants`,
-  `_discover_quant_repos`, `_best_variant_repo`, `_variant_score`, `_hf_model_search`, the two
-  caches, the two empty seed lists and the `quant_repos` plumbing, and drop the now-pointless
-  monkeypatches in the tests. If it is meant to be on, give the predicate a documented condition and
-  a test that exercises the discovery path end to end.
+- **Fix:** pick one.
+
+  - If variant discovery is retired, delete `_should_discover_variants`, `_discover_quant_repos`
+    and `_best_variant_repo`, then `_variant_score` and `_hf_model_search`, plus the two caches,
+    the two empty seed lists and the `quant_repos` plumbing, and drop the now-pointless
+    monkeypatches in the tests.
+  - If it is meant to be on, give the predicate a documented condition and a test that exercises
+    the discovery path end to end.

@@ -67,22 +67,36 @@ what the server then runs, not whether the stores or the tools underneath are co
 - `_validate_serve_cmd` called directly with the shipped GGUF prelude and a modified one (third
   finding)
 
-Twenty-six suites were run over this surface — `ls tests | grep -iE 'cookbook'`, plus
-`tests/test_task_cookbook_admin_gate.py`: `tests/test_cookbook_helpers.py`,
-`tests/test_cookbook_diagnosis.py`, `tests/test_cookbook_error_feedback.py`,
-`tests/test_cookbook_serve_lifecycle.py`, `tests/test_cookbook_endpoint_registration.py`,
-`tests/test_cookbook_hf_token.py`, `tests/test_cookbook_deps_recipes.py`,
-`tests/test_cookbook_dependency_completion_regression.py`, `tests/test_cookbook_cpu_only_serve.py`,
-`tests/test_cookbook_dead_download_status.py`, `tests/test_cookbook_docker_access.py`,
-`tests/test_cookbook_package_detection.py`, `tests/test_cookbook_gemma4_thinking_template.py`,
-`tests/test_cookbook_local_serve_pid_winpid.py`, `tests/test_cookbook_remote_windows_diffusers.py`,
-`tests/test_cookbook_agent_tool_ssh_validation.py`, `tests/test_codex_cookbook_admin_gate.py`,
-`tests/test_builtin_actions_cookbook_serve_state.py`, `tests/test_task_cookbook_admin_gate.py`, and
-the seven JS-string suites (`tests/test_cookbook_diagnosis_js.py`,
-`tests/test_cookbook_download_toast_duration.py`, `tests/test_cookbook_error_tail_lines.py`,
-`tests/test_cookbook_port_parsing_js.py`, `tests/test_cookbook_progress_signal_js.py`,
-`tests/test_cookbook_same_host_server_profiles_js.py`, `tests/test_cookbook_windows_stop_tree_js.py`)
-— **229 passed, 1 skipped**.
+Twenty-six suites were run over this surface: **229 passed, 1 skipped**. They are the files from
+`ls tests | grep -iE 'cookbook'`, plus `tests/test_task_cookbook_admin_gate.py`:
+
+- `tests/test_cookbook_helpers.py`
+- `tests/test_cookbook_diagnosis.py`
+- `tests/test_cookbook_error_feedback.py`
+- `tests/test_cookbook_serve_lifecycle.py`
+- `tests/test_cookbook_endpoint_registration.py`
+- `tests/test_cookbook_hf_token.py`
+- `tests/test_cookbook_deps_recipes.py`
+- `tests/test_cookbook_dependency_completion_regression.py`
+- `tests/test_cookbook_cpu_only_serve.py`
+- `tests/test_cookbook_dead_download_status.py`
+- `tests/test_cookbook_docker_access.py`
+- `tests/test_cookbook_package_detection.py`
+- `tests/test_cookbook_gemma4_thinking_template.py`
+- `tests/test_cookbook_local_serve_pid_winpid.py`
+- `tests/test_cookbook_remote_windows_diffusers.py`
+- `tests/test_cookbook_agent_tool_ssh_validation.py`
+- `tests/test_codex_cookbook_admin_gate.py`
+- `tests/test_builtin_actions_cookbook_serve_state.py`
+- `tests/test_task_cookbook_admin_gate.py`
+- the seven JS-string suites:
+  - `tests/test_cookbook_diagnosis_js.py`
+  - `tests/test_cookbook_download_toast_duration.py`
+  - `tests/test_cookbook_error_tail_lines.py`
+  - `tests/test_cookbook_port_parsing_js.py`
+  - `tests/test_cookbook_progress_signal_js.py`
+  - `tests/test_cookbook_same_host_server_profiles_js.py`
+  - `tests/test_cookbook_windows_stop_tree_js.py`
 
 ### [BUG] The remote setup endpoint interpolates its install script into a shell command, so no platform receives the script it built
 

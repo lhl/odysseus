@@ -10,17 +10,21 @@ does YouTube URL detection, transcript fetch, yt-dlp comment fetch and LLM conte
 `services/faces/__init__.py` is a one-line placeholder package; the four package `__init__` files
 re-export the public names and `services/__init__.py` is the package facade.
 
-The boundary: `routes-shell.md` owns `routes/shell_routes.py`, the live shell and code-execution
-router. That router does **not** import this section's `ShellService` — the only importers are
-`services/__init__.py` and `tests/test_shell_service.py` — so the child-process behaviour routes-shell
-reports there belongs to a second, separate implementation; this section owns `services/shell/service.py`
-itself and does not restate routes-shell's findings. `routes-rest-media-files.md` owns
-`routes/tts_routes.py`, `routes/stt_routes.py` and `routes/upload_routes.py` and already reports that the
-speech handlers run their blocking service calls on the request event loop (citing
-`services/tts/tts_service.py:189` and `services/stt/stt_service.py:144`); that finding is not repeated
-here. The chat-side callers (`src/chat_handler.py`, `src/chat_processor.py`, `src/youtube_handler.py`),
-the settings store (`src/settings.py`), the `ModelEndpoint` rows the API providers read, and the router
-registration in `app.py` belong to other sections and are read here only where a finding rests on them.
+The boundary with the neighbouring sections:
+
+- `routes-shell` owns `routes/shell_routes.py`, the live shell and code-execution router. That
+  router does **not** import this section's `ShellService`: the only importers are
+  `services/__init__.py` and `tests/test_shell_service.py`. So the child-process behaviour
+  `routes-shell` reports belongs to a second, separate implementation. This section owns
+  `services/shell/service.py` itself and does not restate `routes-shell`'s findings.
+- `routes-rest-media-files` owns `routes/tts_routes.py`, `routes/stt_routes.py` and
+  `routes/upload_routes.py`. It already reports that the speech handlers run their blocking service
+  calls on the request event loop (citing `services/tts/tts_service.py:189` and
+  `services/stt/stt_service.py:144`); that finding is not repeated here.
+- Other sections own the chat-side callers (`src/chat_handler.py`, `src/chat_processor.py`,
+  `src/youtube_handler.py`), the settings store (`src/settings.py`), the `ModelEndpoint` rows the
+  API providers read, and the router registration in `app.py`. They are read here only where a
+  finding rests on them.
 
 ## Coverage
 
@@ -214,14 +218,14 @@ run — **150 passed**.
       logger.warning("yt-dlp not installed — cannot fetch comments")
       return {"success": False, "error": "yt-dlp not installed", "comments": []}
   ```
-- **Impact:** on the container image and on any host that installed `requirements.txt`, the "Audience
-  Reception" half of the YouTube breakdown never runs: `format_comments_for_context` returns `""` for a
-  failed fetch (`:283-285`), so the context carries the transcript only, and the operator sees a warning
-  in the log rather than a broken request. `requirements-optional.txt` is the project's declared home for
-  feature extras — it lists `faster-whisper`, `kokoro`, `ddgs`, `PyMuPDF` and `markitdown` under the note
-  "The app handles their absence gracefully" — and yt-dlp is not there, so nothing in the repository
-  tells an operator the binary is needed. Nothing pins its version either, so the flags the command uses
-  are the only record of what it expects.
+- **Impact:** on the container image and on any host that installed `requirements.txt`, the
+  "Audience Reception" half of the YouTube breakdown never runs. `format_comments_for_context`
+  returns `""` for a failed fetch (`:283-285`), so the context carries the transcript only, and the
+  operator sees a warning in the log rather than a broken request. `requirements-optional.txt` is
+  the project's declared home for feature extras, under the note "The app handles their absence
+  gracefully". It lists five extras (faster-whisper, kokoro, ddgs, PyMuPDF and markitdown), and
+  yt-dlp is not there, so nothing in the repository tells an operator the binary is needed. Nothing pins
+  its version either, so the flags the command uses are the only record of what it expects.
 - **Fix:** add `yt-dlp` to `requirements-optional.txt` with a one-line feature note (or install it in the
   image), name the binary in the module docstring, and state the version floor the flags assume.
 

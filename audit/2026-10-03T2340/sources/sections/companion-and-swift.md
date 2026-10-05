@@ -85,8 +85,10 @@ Both companion test suites were read in full.
 
 **Not read:**
 
-- the rest of `app.py`, `core/middleware.py`, `core/database.py`, `routes/codex_routes.py`,
-  `routes/email_routes.py` and `scripts/mlx_image_server.py`
+- the rest of these files:
+  - `app.py`, `core/middleware.py` and `core/database.py`
+  - `routes/codex_routes.py` and `routes/email_routes.py`
+  - `scripts/mlx_image_server.py`
 - the mobile client itself (not in this repository)
 - `integrations/*` beyond the 11 assigned files
 - the vendored Swift dependencies `mlx-lama-swift` and `mlx-ddcolor-swift`
@@ -132,12 +134,12 @@ by reading and by the Python caller.
                   token_prefix=raw_token[:8], scopes=COMPANION_SCOPE, is_active=True))
   ```
 
-  `ApiToken` has no expiry column and no consumption flag — `id`, `owner`, `name`, `token_hash`,
-  `token_prefix`, `scopes`, `is_active`, `last_used_at` (`core/database.py:638-645`). The auth
-  cache loads every active row (`app.py:321`), and the middleware's only write on a successful
-  bearer request is `last_used_at` (`app.py:441-456`). The spec is accurate and the code matches
-  it: `specs/integrations.md:136` says the POST "mints a normal chat-scoped API token". Nothing
-  binds the credential to the requesting device either: `pairing_payload` carries only
+  `ApiToken` has no expiry column and no consumption flag. Its columns are id, owner, name,
+  token_hash, token_prefix, scopes, is_active and last_used_at (`core/database.py:638-645`).
+  The auth cache loads every active row (`app.py:321`), and the middleware's only write on a
+  successful bearer request is `last_used_at` (`app.py:441-456`). The spec is accurate and the code
+  matches it: `specs/integrations.md:136` says the POST "mints a normal chat-scoped API token".
+  Nothing binds the credential to the requesting device either: `pairing_payload` carries only
   `{"v", "host", "port", "token"}` (`companion/pairing.py:208-210`), so any client holding the
   payload can use it concurrently.
 - **Impact:** an admin who pairs a phone reads "one-time" and may assume the code is spent after

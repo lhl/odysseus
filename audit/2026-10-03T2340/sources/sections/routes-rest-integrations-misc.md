@@ -100,26 +100,36 @@ PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest -q -p no:cacheprovider $TEST
 ```
 
 **57 files, 253 passed in 6.28s**, with one SQLAlchemy `declarative_base()` deprecation warning.
-Two stdin Python probes used temporary data directories outside the checkout, an in-memory DB,
-and synthetic request state. They checked SSH reachability with a mocked runner, event-loop
-execution with mocked search functions, non-object JSON responses, vault file modes, all ten
-shim identities, and comparison ownership. Results appear below where they support findings.
-All ten aliases were identical to their canonical module objects. The five typed JSON endpoints
-(vault config/login/unlock, compare record and sync chat) returned 422 for both `[]` and a string;
-the two search endpoints returned 200 with their missing-query error. Thus the non-object-body
-500 class from `routes-rest-auth-admin` does not recur in this section's canonical handlers.
-The adjacent task parser is outside this section's implementation scope.
 
-Outgoing webhook management and all vault/diagnostics handlers require admin. The outgoing
+Two stdin Python probes used temporary data directories outside the checkout, an in-memory DB and
+synthetic request state. Results appear below where they support findings. The probes checked:
+
+- SSH reachability with a mocked runner
+- event-loop execution with mocked search functions
+- non-object JSON responses
+- vault file modes
+- all ten shim identities
+- comparison ownership
+
+All ten aliases were identical to their canonical module objects. The five typed JSON endpoints
+(vault config, login and unlock; compare record; sync chat) returned 422 for both `[]` and a string.
+The two search endpoints returned 200 with their missing-query error. So the non-object-body 500
+class from `routes-rest-auth-admin` does not recur in this section's canonical handlers. The
+adjacent task parser is outside this section's implementation scope.
+
+Outgoing webhook management and all vault and diagnostics handlers require admin. The outgoing
 webhook module has no unauthenticated receiver: `/api/v1/chat` additionally requires a chat-scoped
-API token. None of these seven routers is auth-exempt. The dynamic exemption is the task
-receiver's secret-bearing path, whose handler checks the stored token and active status before
-asking the scheduler to run. It uses a reusable URL credential, not a timestamped signature;
-repeated authorized triggers are intentional. External receivers' replay checks were not tested.
+API token. None of these seven routers is auth-exempt.
+
+The dynamic exemption is the task receiver's secret-bearing path. Its handler checks the stored
+token and active status before asking the scheduler to run. It uses a reusable URL credential, not
+a timestamped signature; repeated authorized triggers are intentional. External receivers' replay
+checks were not tested.
+
 Cleanup derives its owner from request state, not client input, and its service applies strict
 owner filters to archival, deletion candidates and the protected recent-session set. It deletes
-eligible session rows (messages have a cascading foreign key) and removes their cached sessions;
-this pass did not establish cleanup of every ancillary file/table.
+eligible session rows (messages have a cascading foreign key) and removes their cached sessions.
+This pass did not establish cleanup of every ancillary file or table.
 
 `audit.py` and run-level validation were not run, as instructed; integration and the secret gate
 remain the parent's responsibility. No source, test, or other run file was edited.

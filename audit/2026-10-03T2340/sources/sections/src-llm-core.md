@@ -104,18 +104,23 @@ what it does with the reply.
   `build_headers` (`p_cgpt.py`)
 - the local-model gate's waiting counter with one holder and one waiter (`p_gate.py`)
 
-Also `httpx.get("http://slots", timeout=5)` timed directly, and greps for the importers of
-`src/model_capability_readers` (only `tests/test_model_capability_readers.py`), `finish_reason`
-across `src/`, `routes/`, `core/` and `static/js/` (one comment, no reader),
-`CHATGPT_SUBSCRIPTION_BASE_URL` writers, producers of a list-content `system` message, writers of a
-string-typed `Session.headers`, and the credential-forwarding shape in `_reconcile_selected_route`
-(`routes/chat_routes.py:670-700`). On the SSRF question specifically: nothing in this section
-accepts a caller-supplied endpoint URL. `_resolve_model` (`src/ai_interaction.py:78-213`) matches a
-model name against the caller's enabled `ModelEndpoint` rows and takes the URL *and* the key from
-the same row via `resolve_endpoint_runtime`, and `_reconcile_selected_route` uses a form-supplied
-`selected_endpoint_url` only to match a stored row, building the request from that row
-(`routes/chat_routes.py:697-700`). The two `check_outbound_url` calls in `src/ai_interaction.py`
-(`:1149`, `:1431`) guard the *provider-supplied* image result URL, not an endpoint.
+Also checked:
+
+- `httpx.get("http://slots", timeout=5)`, timed directly
+- importers of `src/model_capability_readers` (only `tests/test_model_capability_readers.py`)
+- `finish_reason` across `src/`, `routes/`, `core/` and `static/js/` (one comment, no reader)
+- writers of `CHATGPT_SUBSCRIPTION_BASE_URL`
+- producers of a list-content `system` message
+- writers of a string-typed `Session.headers`
+- the credential-forwarding shape in `_reconcile_selected_route` (`routes/chat_routes.py:670-700`)
+
+On the SSRF question specifically: nothing in this section accepts a caller-supplied endpoint URL.
+`_resolve_model` (`src/ai_interaction.py:78-213`) matches a model name against the caller's enabled
+`ModelEndpoint` rows and takes the URL *and* the key from the same row via
+`resolve_endpoint_runtime`. `_reconcile_selected_route` uses a form-supplied `selected_endpoint_url`
+only to match a stored row, building the request from that row (`routes/chat_routes.py:697-700`).
+The two `check_outbound_url` calls in `src/ai_interaction.py` (`:1149`, `:1431`) guard the
+*provider-supplied* image result URL, not an endpoint.
 
 One ordering artifact, recorded because it is a check result rather than a finding: run in a
 non-alphabetical order (`test_llm_core_*.py` before `test_foreground_model_routing.py`) the same 44
@@ -146,19 +151,21 @@ leaking suite is outside this section and was not chased. The 44 suites matching
 - `tests/test_chatgpt_subscription_routes.py`
 - `tests/test_ai_interaction_owner_scope.py`
 
-Four hypotheses did not survive checking and are not findings. (1) A `Session.headers` value that is
-a JSON string would raise `ValueError` in the Ollama branch (`h.update(headers)`,
-`src/llm_core.py:2620`) and `AttributeError` in the Anthropic branch (`_build_anthropic_headers`),
-where the sync `llm_call` explicitly tolerates one (`:180`); no live writer stores a string — the
-three assignment sites pass `build_headers(...)` or `{}`, and `core/session_manager.py` normalizes a
-string to a dict on load. (2) A `system` message whose `content` is a list would raise `TypeError` in
-`_sanitize_llm_messages`; no caller in `src/`, `routes/` or `core/` builds one. (3) The reader
-modules in `src/model_capability_readers/` have no production caller (only their own test file
-imports the package) — that is the documented state, not a defect:
-`specs/model-capability-canonical.md:170` records "Canonical records are not yet used by runtime
-discovery, endpoint resolution, model context, request shaping, or frontend pickers." (4) A
-caller-supplied endpoint URL or model name cannot redirect a request to a chosen address or attach a
-stored credential — see the SSRF note in the checks above.
+Four hypotheses did not survive checking and are not findings.
+
+1. A `Session.headers` value that is a JSON string would raise `ValueError` in the Ollama branch
+   (`h.update(headers)`, `src/llm_core.py:2620`) and `AttributeError` in the Anthropic branch
+   (`_build_anthropic_headers`), where the sync `llm_call` explicitly tolerates one (`:180`). No
+   live writer stores a string: the three assignment sites pass `build_headers(...)` or `{}`, and
+   `core/session_manager.py` normalizes a string to a dict on load.
+2. A `system` message whose `content` is a list would raise `TypeError` in
+   `_sanitize_llm_messages`. No caller in `src/`, `routes/` or `core/` builds one.
+3. The reader modules in `src/model_capability_readers/` have no production caller (only their own
+   test file imports the package). That is the documented state, not a defect:
+   `specs/model-capability-canonical.md:170` records "Canonical records are not yet used by runtime
+   discovery, endpoint resolution, model context, request shaping, or frontend pickers."
+4. A caller-supplied endpoint URL or model name cannot redirect a request to a chosen address or
+   attach a stored credential. See the SSRF note in the checks above.
 
 ### [PERF] Context-length discovery runs two synchronous HTTP probes on the event loop, once per local request
 
@@ -264,12 +271,18 @@ stored credential — see the SSRF note in the checks above.
   truncated there"). A real window *larger* than the default only costs an early compaction. The
   known-model table covers most well-known ids, which is why the fallback is invisible for common
   models.
-- **Fix:** add `headers: Optional[dict] = None` to `get_context_length`, `get_context_length_known`,
-  `_get_context_length_cached`, `_query_context_length` and `_proxy_catalog_context`, and pass
-  `headers=headers` to the three `httpx.get` calls; every caller in this section already has the
-  headers in scope. The cache key is `(endpoint_url, model)` today; the probe shows the same endpoint
-  answers differently with and without a key, so a keyless result cached under that key would
-  outlive the fix unless the key is cleared or the cache key includes the credential.
+- **Fix:** add `headers: Optional[dict] = None` to these five functions and pass `headers=headers`
+  to the three `httpx.get` calls; every caller in this section already has the headers in scope.
+
+  - `get_context_length`
+  - `get_context_length_known`
+  - `_get_context_length_cached`
+  - `_query_context_length`
+  - `_proxy_catalog_context`
+
+  The cache key is `(endpoint_url, model)` today. The probe shows the same endpoint answers
+  differently with and without a key, so a keyless result cached under that key would outlive the
+  fix unless the key is cleared or the cache key includes the credential.
 
 ### [ERROR-HANDLING] A stream that ends without `[DONE]`, or is cut off at the token limit, is reported as a complete answer
 

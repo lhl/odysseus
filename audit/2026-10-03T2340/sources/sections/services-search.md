@@ -26,13 +26,30 @@ sites are their own sections and are cited here only where a finding lands in th
 
 ## Coverage
 
-**Read fully:** all nine assigned files (2,222 lines): `providers.py` (641), `core.py` (478),
-`content.py` (442), `ranking.py` (164), `query.py` (149), `analytics.py` (148), `service.py`
-(102), `cache.py` (63), `__init__.py` (35). Also read fully for the boundaries the findings
-rest on: `routes/search/search_routes.py` (111), `src/outbound_fetch.py` (354),
-`src/settings_scrub.py` (70), `src/agent_tools/web_tools.py` (171), `src/search/*` (eight files:
-six `sys.modules` aliases, a re-exporting `ranking.py`, and the package `__init__.py`), and
-`specs/search.md`.
+**Read fully:** all nine assigned files, 2,222 lines.
+
+| File | Lines |
+| --- | ---: |
+| `providers.py` | 641 |
+| `core.py` | 478 |
+| `content.py` | 442 |
+| `ranking.py` | 164 |
+| `query.py` | 149 |
+| `analytics.py` | 148 |
+| `service.py` | 102 |
+| `cache.py` | 63 |
+| `__init__.py` | 35 |
+
+Also read fully, for the boundaries the findings rest on:
+
+| File | Lines |
+| --- | ---: |
+| `routes/search/search_routes.py` | 111 |
+| `src/outbound_fetch.py` | 354 |
+| `src/settings_scrub.py` | 70 |
+| `src/agent_tools/web_tools.py` | 171 |
+| `src/search/*` | Eight files: six `sys.modules` aliases, a re-exporting `ranking.py`, and the package `__init__.py` |
+| `specs/search.md` | |
 
 **Read partially:**
 
@@ -61,26 +78,34 @@ six `sys.modules` aliases, a re-exporting `ranking.py`, and the package `__init_
 - the tests beyond the suites run
 - every other `services-*` section
 
-**Checks run:** five throwaway probes under `/tmp` (not part of the target tree), each quoted in
-the finding it settles — the Google PSE 403 probe (`probe_search_cred.py`), the
-malformed-provider-row probe (`probe_search_rows.py`, which also holds the large-page timing
-case), a dedicated `SearchService` probe (`probe_search_service.py`), an AST call-site probe for
-the exported entry points (`probe_search_callsites.py`), and the settings-scrub probe — plus two
-one-line checks: `issubclass(httpx.HTTPStatusError, httpx.RequestError)` → `False`, and `wc -l`
-for the line counts above. Also the greps recorded in the findings
-(`searxng_search_results` / `invalidate_search_cache` / `get_search_stats` / `_record_query`
-across the repository) and `git log -S`. The large-page probe (1.37 MB of HTML through the real
-extractor) took 1.9 s with the four summarizer helpers at 0.02 s, so the extraction cost is
-bounded by the 2 MB soft cap and is not reported. The suites that import
-this module were discovered with
-`grep -rl "services\.search\|src\.search\|services/search\|src/search" tests/*.py` (32 files)
-plus `tests/test_search_query_nonstring.py`, which loads `query.py` by path — **230 passed**. The
-broader set the assignment names, `ls tests | grep -iE 'search|searxng|ddg|og_image|analytics|query|ranking|content'`
+**Checks run:**
+
+- five throwaway probes under `/tmp` (not part of the target tree), each quoted in the finding it
+  settles:
+  - the Google PSE 403 probe (`probe_search_cred.py`)
+  - the malformed-provider-row probe (`probe_search_rows.py`, which also holds the large-page timing
+    case)
+  - a dedicated `SearchService` probe (`probe_search_service.py`)
+  - an AST call-site probe for the exported entry points (`probe_search_callsites.py`)
+  - the settings-scrub probe
+- two one-line checks: `issubclass(httpx.HTTPStatusError, httpx.RequestError)` → `False`, and `wc -l`
+  for the line counts above
+- the greps recorded in the findings (`searxng_search_results`, `invalidate_search_cache`,
+  `get_search_stats` and `_record_query` across the repository) and `git log -S`
+
+The large-page probe (1.37 MB of HTML through the real extractor) took 1.9 s with the four
+summarizer helpers at 0.02 s, so the extraction cost is bounded by the 2 MB soft cap and is not
+reported.
+
+The suites that import this module were discovered with
+`grep -rl "services\.search\|src\.search\|services/search\|src/search" tests/*.py` (32 files), plus
+`tests/test_search_query_nonstring.py`, which loads `query.py` by path: **230 passed**. The broader
+set the assignment names, `ls tests | grep -iE 'search|searxng|ddg|og_image|analytics|query|ranking|content'`
 (74 files), was also run: 73 files, **391 passed, 1 skipped**. The 74th,
 `tests/test_owned_document_query.py`, fails collection inside that batch
-(`ModuleNotFoundError: No module named 'src.agent_tools.document_tools'; 'src.agent_tools' is
-not a package`) and passes alone (2 passed); its subject is the document tools, not this
-section, so it is recorded here and not reported as a finding.
+(`ModuleNotFoundError: No module named 'src.agent_tools.document_tools'; 'src.agent_tools' is not a
+package`) and passes alone (2 passed). Its subject is the document tools, not this section, so it is
+recorded here and not reported as a finding.
 
 ### [SECURITY] An upstream HTTP error status puts the Google PSE API key into the log, the returned context and the research report
 
@@ -208,11 +233,14 @@ section, so it is recorded here and not reported as a finding.
   would evict any entry older than an hour on the next write, cutting the 24-hour TTL short.
   An operator tuning `search_result_count` or reading `specs/search.md` for how caching works is
   reading about code that does not run.
-- **Fix:** either delete `searxng_search_results`, `invalidate_search_cache`, `get_search_stats`,
-  `analytics.py`, `cache.py` and their exports (the tests pin behaviour no caller can reach), or
-  route the standalone search path through `searxng_search_results` so the documented cache and
-  analytics are live. Reconnecting it also means fixing the TTL mismatch and adding a caller for
-  `invalidate_search_cache`, which nothing calls today.
+- **Fix:** either delete the dead code or reconnect it.
+
+  - Delete the three functions `searxng_search_results`, `invalidate_search_cache` and
+    `get_search_stats`, the files `analytics.py` and `cache.py`, and their exports. The tests pin
+    behaviour no caller can reach.
+  - Or route the standalone search path through `searxng_search_results` so the documented cache and
+    analytics are live. Reconnecting it also means fixing the TTL mismatch and adding a caller for
+    `invalidate_search_cache`, which nothing calls today.
 
 ### [TYPE-SAFETY] A provider row with a non-string field aborts the whole search instead of dropping one result
 
