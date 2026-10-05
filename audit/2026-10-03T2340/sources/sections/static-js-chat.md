@@ -2,14 +2,16 @@
 
 ## Overview
 
-The thirteen modules assigned here are the main chat surface: `chat.js` (6,738 lines — the send
-path, the SSE reader, the detached-stream lifecycle, the composer wiring and the terminal handlers),
-`sessions.js` (the session list, `selectSession`, the history pager, background-stream polling and
-the running/completed rail state), `chatRenderer.js` (message bubbles, footers, metrics popups and
-the model-provenance labels), the stream pipeline (`chatStream.js`, `streamingSegmenter.js`,
-`streamingRenderer.js`, `chatStreamErrors.js`, `liveThinkingThrottle.js`), the composer helpers
-(`composerArrowUpRecall.js`, `slashAutocomplete.js`, `slashCommands.js`) and two small support
-modules (`assistant.js`, `chatModelProvenance.js`).
+The thirteen modules assigned here are the main chat surface:
+
+| Module | What it holds |
+| --- | --- |
+| `chat.js` (6,738 lines) | The send path, the SSE reader, the detached-stream lifecycle, the composer wiring and the terminal handlers |
+| `sessions.js` | The session list, `selectSession`, the history pager, background-stream polling and the running and completed rail state |
+| `chatRenderer.js` | Message bubbles, footers, metrics popups and the model-provenance labels |
+| Stream pipeline | `chatStream.js`, `streamingSegmenter.js`, `streamingRenderer.js`, `chatStreamErrors.js`, `liveThinkingThrottle.js` |
+| Composer helpers | `composerArrowUpRecall.js`, `slashAutocomplete.js`, `slashCommands.js` |
+| Support | `assistant.js`, `chatModelProvenance.js` |
 
 The boundary: this section covers what these modules render and what they persist, not the
 endpoints they call. `/api/chat_stream`, `/api/history/{id}`, `/api/session*` and the metrics
@@ -48,11 +50,22 @@ Three things this section was asked to settle, and the answers:
 
 ## Coverage
 
-**Read fully:** `assistant.js` (475 lines), `chatModelProvenance.js` (104), `chatStream.js` (327),
-`chatStreamErrors.js` (23), `composerArrowUpRecall.js` (171), `liveThinkingThrottle.js` (206),
-`slashAutocomplete.js` (313), `streamingRenderer.js` (206), `streamingSegmenter.js` (190) — 2,215
-lines. `chatRenderer.js` (3,126) and `sessions.js` (3,689) were read in full across the two passes
-of this section.
+**Read fully:** nine modules, 2,215 lines.
+
+| File | Lines |
+| --- | ---: |
+| `assistant.js` | 475 |
+| `chatModelProvenance.js` | 104 |
+| `chatStream.js` | 327 |
+| `chatStreamErrors.js` | 23 |
+| `composerArrowUpRecall.js` | 171 |
+| `liveThinkingThrottle.js` | 206 |
+| `slashAutocomplete.js` | 313 |
+| `streamingRenderer.js` | 206 |
+| `streamingSegmenter.js` | 190 |
+
+`chatRenderer.js` (3,126 lines) and `sessions.js` (3,689) were read in full across the two passes of
+this section.
 
 **Read partially:** `chat.js` (6,738) — read in full for the send path (`:1106-2065`), the stream
 reader and its terminal branches (`:2066-4600`, `:4700-5250`), the research spinner and progress

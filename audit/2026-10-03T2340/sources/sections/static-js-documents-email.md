@@ -11,18 +11,17 @@ the calendar (`static/js/calendar.js`, `static/js/calendar/*.js`) and the galler
 (`static/js/signature.js`). The section covers what these modules insert into the DOM, which
 stored or remote value they insert, and where a value crosses a trust boundary on the way in.
 
-The boundary: `routes-email.md` and `src-email-integrations.md` own the backend that produces
-the objects these modules render (the IMAP read path, the thread parser, the send path); the
-findings here are about the client-side sink, and the backend facts they rest on are cited as
-evidence rather than restated. `static-js-rest.md` owns `static/js/markdown.js`, so the
-`mdToHtml` / `sanitizeAllowedHtml` sanitizers the document editor calls are read here only
-where a finding rests on them. `static-assets-vendored.md` owns the app's Content-Security-Policy
-(`core/middleware.py:141-152`) and already reports that the policy has no `'unsafe-inline'` in
-`script-src`; this section depends on that policy for its severity judgements and cross-references
-it instead of restating it. `routes-gallery-document.md` owns the gallery/document routes,
-`static-js-cookbook-settings-models.md` owns `settings.js`, and `ui.js` (the shared `esc`,
-`showToast`, `showError`, `styledConfirm` helpers the modules here call) is another section's file —
-it was read only to decide whether a sink escapes.
+The findings here are about the client-side sink. The backend facts they rest on are cited as
+evidence rather than restated. Each neighbour owns one piece:
+
+| Owner | What it owns |
+| --- | --- |
+| `routes-email.md`, `src-email-integrations.md` | The backend that produces the objects these modules render: the IMAP read path, the thread parser, the send path |
+| `static-js-rest.md` | `static/js/markdown.js`. The `mdToHtml` and `sanitizeAllowedHtml` sanitizers the document editor calls are read here only where a finding rests on them |
+| `static-assets-vendored.md` | The app's Content-Security-Policy (`core/middleware.py:141-152`). It reports that the policy has no `'unsafe-inline'` in `script-src`; this section depends on that for its severity judgements and cross-references it |
+| `routes-gallery-document.md` | The gallery and document routes |
+| `static-js-cookbook-settings-models.md` | `settings.js` |
+| Another section | `ui.js`, the shared `esc`, `showToast`, `showError` and `styledConfirm` helpers the modules here call. It was read only to decide whether a sink escapes |
 
 ## Coverage
 
@@ -33,11 +32,18 @@ static/js/documentLibrary.js static/js/notes.js static/js/calendar.js static/js/
 static/js/gallery.js static/js/galleryEditor.js static/js/signature.js` prints nothing (0 paths),
 so every citation resolves at both revisions.
 
-**Read fully (8 files, 2,418 lines):** `static/js/emailInbox.js` (1,456),
-`static/js/emailLibrary/utils.js` (248), `static/js/emailLibrary/signatureFold.js` (339),
-`static/js/calendar/reminders.js` (114), `static/js/calendar/utils.js` (180),
-`static/js/emailLibrary/state.js` (35), `static/js/emailLibrary/replyRecipients.js` (27),
-`static/js/emailShared.js` (19).
+**Read fully (8 files, 2,418 lines):**
+
+| File | Lines |
+| --- | ---: |
+| `static/js/emailInbox.js` | 1,456 |
+| `static/js/emailLibrary/utils.js` | 248 |
+| `static/js/emailLibrary/signatureFold.js` | 339 |
+| `static/js/calendar/reminders.js` | 114 |
+| `static/js/calendar/utils.js` | 180 |
+| `static/js/emailLibrary/state.js` | 35 |
+| `static/js/emailLibrary/replyRecipients.js` | 27 |
+| `static/js/emailShared.js` | 19 |
 
 **Read partially (8 files, 40,403 lines):** the remaining assigned files are large and were read
 by sink, not end to end. For each one I enumerated every `innerHTML` / `insertAdjacentHTML` /
@@ -86,14 +92,17 @@ venv/bin/python -m pytest -q tests/test_calendar_event_contrast.py \
 24 passed, 1 warning in 0.80s
 ```
 
-337 tests pass. Beyond pytest, the render claims below were settled in a real browser: a
-read-only local HTTP server (`/tmp/audit-probe/serve.py`) serving the repo tree under `/repo/`
-and the probe pages under `/`, driven by headless Chromium
+337 tests pass. Beyond pytest, the render claims below were settled in a real browser: a read-only
+local HTTP server (`/tmp/audit-probe/serve.py`) serving the repo tree under `/repo/` and the probe
+pages under `/`, driven by headless Chromium
 (`/home/lhl/.cache/ms-playwright/chromium_headless_shell-1200/…`) through Playwright. The probes
 import the real modules (`static/js/emailLibrary/utils.js`) or replicate the cited function
 verbatim, and one probe page is served with the app's exact CSP header copied from
-`core/middleware.py:141-152`. The drivers are `/tmp/audit-probe/rerun.py` (all pages),
-`beacon.py`, `battery.py`, `csp_out.py` and `run_detached.py`.
+`core/middleware.py:141-152`. The drivers are in `/tmp/audit-probe/`:
+
+- `rerun.py`, which runs all pages
+- `beacon.py`, `battery.py`
+- `csp_out.py`, `run_detached.py`
 
 ### [SECURITY] A calendar event's location is only partly escaped, so a synced or imported event injects HTML and CSS into the calendar UI
 
@@ -212,12 +221,12 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
   render sink at `static/js/emailLibrary.js:5585` (`_safeRenderEmailBody`)
 - **Severity:** medium
 - **Disposition:** next
-- **Evidence:** `_sanitizeHtmlOnce` strips `src`/`href`/`srcset`/`poster`/`background` only when the
-  URL uses `javascript:`, `vbscript:` or `data:` (`utils.js:184`, `:199-202`), and
-  `STRIP_CSS_PROPS` covers `color`, `background`, `background-color`, `font*`, `position` and
-  `z-index` but not `background-image` or other URL-bearing properties (`utils.js:186-188`). Running
-  the real `_sanitizeHtml` over a sender-style body and inserting the result into a live element
-  (as the reader does at `:5585`) gave:
+- **Evidence:** `_sanitizeHtmlOnce` strips the URL attributes (`src`, `href`, `srcset`, then `poster` and
+  `background`) only when the URL uses `javascript:`, `vbscript:` or `data:` (`utils.js:184`, `:199-202`).
+  `STRIP_CSS_PROPS` covers `color`, `background`, `background-color` and `font*`, and
+  separately `position` and `z-index`, but not `background-image` or other URL-bearing properties (`utils.js:186-188`).
+  Running the real `_sanitizeHtml` over a sender-style body and inserting the result into a live
+  element (as the reader does at `:5585`) gave:
 
   ```
   { "sanitized": "<p>hello</p><div style=\"background-image:url(http://127.0.0.1:8765/px?css=1)\">css bg</div><img src=\"http://127.0.0.1:8765/px?img=1\"><video poster=\"http://127.0.0.1:8765/px?poster=1\"></video>" }
@@ -228,16 +237,21 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
   ```
 
   All three URLs survive the sanitizer and all three were fetched once the result was inserted (the
-  three loads complete in varying order between runs). The
-  `<img>` beacon is the one the app does block: `_prepareEmailInlineImages`
-  (`static/js/emailLibrary.js:5852-5889`) rewrites `root.querySelectorAll('img')` into a "Remote
-  image blocked" placeholder, and it returns early when the body has no `<img>` at all
-  (`if (!/<img[\s>]/i.test(raw)) return raw;`), so a CSS-only body never reaches even that pass. The
-  CSS and `poster` beacons have no guard and fire as soon as the reader renders. A 24-payload
-  battery through the same sanitizer (inline handlers, `javascript:` hrefs, `<svg>`/`<math>`,
-  `<template>`, `srcdoc`, `meta refresh`, `base`, `noscript` mutation-XSS, `srcset`, `data:` images,
-  `expression()`, entity-split quotes) set none of the 17 `window.__xss*` flags it checks and left no
-  dangerous URL alive, so the sanitizer is sound on the scheme axis; this is the residual gap.
+  three loads complete in varying order between runs). The `<img>` beacon is the one the app does
+  block: `_prepareEmailInlineImages` (`static/js/emailLibrary.js:5852-5889`) rewrites
+  `root.querySelectorAll('img')` into a "Remote image blocked" placeholder, and it returns early when
+  the body has no `<img>` at all (`if (!/<img[\s>]/i.test(raw)) return raw;`), so a CSS-only body
+  never reaches even that pass. The CSS and `poster` beacons have no guard and fire as soon as the
+  reader renders.
+
+  A 24-payload battery through the same sanitizer set none of the 17 `window.__xss*` flags it checks
+  and left no dangerous URL alive, so the sanitizer is sound on the scheme axis; this is the
+  residual gap. The payload classes were:
+
+  - inline handlers and `javascript:` hrefs
+  - `<svg>` and `<math>`, `<template>` and `srcdoc`
+  - `meta refresh` and `base`, `noscript` mutation-XSS
+  - `srcset`, `data:` images, `expression()` and entity-split quotes
 - **Impact:** any sender can tell when a message was opened, from which IP, and with a per-recipient
   token, defeating the "Remote image blocked" affordance the reader shows the user. It needs no
   click: opening the email is enough.
@@ -371,14 +385,15 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
 - **Disposition:** backlog
 - **Evidence:** the reply's `To:` is `data.from_address` (`static/js/emailInbox.js:901-903`; only a
   message that is itself the user's own falls back to the original `To`, then `Cc`, then `From`),
-  and no `Reply-To` header is consulted anywhere in the path. `grep -rn "Reply-To\|reply_to\b\|replyTo" routes/ static/js/ --include=*.py
-  --include=*.js` (filtering out `in_reply_to`/`In-Reply-To`) returns one line,
-  `routes/email_pollers.py:709: # (e.g. someone forging a Reply-To with our address as the` — a
-  comment about the `From` header, not an implementation. The read response dict built
-  in `_read_email_sync` (`routes/email_routes.py:3127-3145`) carries `from_name`, `from_address`,
-  `to`, `cc`, `in_reply_to` and `references` but no `Reply-To`. The `Cc:` for reply-all comes from
-  the raw `To`/`Cc` headers via `buildReplyAllCc` (`static/js/emailLibrary/replyRecipients.js:20-27`), which is
-  the standard behaviour.
+  and no `Reply-To` header is consulted anywhere in the path.
+  `grep -rn "Reply-To\|reply_to\b\|replyTo" routes/ static/js/ --include=*.py --include=*.js`
+  (filtering out `in_reply_to` and `In-Reply-To`) returns one line,
+  `routes/email_pollers.py:709: # (e.g. someone forging a Reply-To with our address as the`, a
+  comment about the `From` header, not an implementation. The read response dict built in
+  `_read_email_sync` (`routes/email_routes.py:3127-3145`) carries the sender, recipient and threading fields
+  (`from_name`, `from_address`, `to`, then `cc`, `in_reply_to`, `references`) but no `Reply-To`. The `Cc:` for reply-all comes from the raw
+  `To` and `Cc` headers via `buildReplyAllCc` (`static/js/emailLibrary/replyRecipients.js:20-27`),
+  which is the standard behaviour.
 - **Impact:** on any list that sets `Reply-To:` (Mailman, Google Groups, most ticketing systems) the
   user's reply is addressed to the individual who posted rather than to the list — the message lands
   in one person's mailbox instead of the thread the user meant to join. The direction is the safe

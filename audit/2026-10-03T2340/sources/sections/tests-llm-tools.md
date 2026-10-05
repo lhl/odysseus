@@ -3,11 +3,15 @@
 ## Overview
 
 This section covers the 121 test modules that pin the agent loop, the tool surface and the LLM call
-path: `tests/test_agent_loop*`, `tests/test_action_intents*`, `tests/test_tool_*`,
-`tests/test_skill*`, `tests/test_search_*`, `tests/test_research_*`, `tests/test_task*`,
-`tests/test_scheduler*` and the MCP tests. Its job is not to describe what the tests are named
-after, but to establish what they prove: whether a file drives the real loop or a transcription of
-it, and whether its assertions would fail if the behaviour under test changed.
+path. They are the modules matching these name patterns, plus the MCP tests:
+
+- `tests/test_agent_loop*`, `tests/test_action_intents*`, `tests/test_tool_*`
+- `tests/test_skill*`, `tests/test_search_*`, `tests/test_research_*`
+- `tests/test_task*`, `tests/test_scheduler*`
+
+Its job is not to describe what the tests are named after, but to establish what they prove: whether
+a file drives the real loop or a transcription of it, and whether its assertions would fail if the
+behaviour under test changed.
 
 Boundary: the implementation defects those tests are meant to catch belong to `src-agent-loop`,
 `src-tools-parse-exec`, `src-tools-capabilities-policy` and `src-tools-schema-index`; the route that
@@ -38,26 +42,80 @@ Three surfaces the brief asked about, answered up front:
 
 ## Coverage
 
-**Read fully (46 of 121).** Every line of:
-`test_agent_loop.py`, `test_agent_loop_tool_output_truncation.py`, `test_action_intents.py`,
-`test_action_intents_shell_verbs.py`, `test_agent_rounds_exhausted.py`, `test_agent_bash_windows.py`,
-`test_agent_migration_manifest.py`, `test_agent_round_model_provenance_ui.py`,
-`test_agent_tool_budget_nonnumeric.py`, `test_agent_tools_truncate_nonstring.py`,
-`test_ask_user_persistence.py`, `test_bg_jobs_store.py`, `test_bg_monitor_stream.py`,
-`test_compaction_summary_failure.py`, `test_loop_breaker_runaway.py`, `test_mcp_common_truncate.py`,
-`test_mcp_dependency_compatibility.py`, `test_mcp_routes_shim.py`, `test_research_routes_shim.py`,
-`test_research_session_id_validation.py`, `test_research_source_link_xss.py`,
-`test_search_analytics_defaults.py`, `test_search_content_extraction_parity.py`,
-`test_search_content_url_guards.py`, `test_search_module_consolidation.py`, `test_search_query.py`,
-`test_search_routes_shim.py`, `test_skill_edit_no_collapse_on_outside_click_js.py`,
-`test_skill_extractor_rows.py`, `test_skill_format_timestamp.py`, `test_skill_index_toolset_gating.py`,
-`test_task_routes_shim.py`, `test_task_session_folder.py`, `test_tool_approval_frontend_routing.py`,
-`test_tool_approval_single_action_scope.py`, `test_tool_implementations_shim.py`,
-`test_tool_index_keyword_boundaries.py`, `test_tool_index_schema_parity.py`,
-`test_tool_output_prompt_injection.py`, `test_tool_parsing_bare_end_marker.py`,
-`test_tool_parsing_hermes_json.py`, `test_tool_parsing_nonstring.py`,
-`test_tool_task_cancelled_on_disconnect.py`, `test_tool_utils_import_clean.py`, `test_tool_policy.py`,
-`tests/conftest.py`.
+**Read fully (46 of 121).** Every line of these files, grouped by area. All are under `tests/`:
+
+**Agent loop**
+
+- `test_agent_loop.py`
+- `test_agent_loop_tool_output_truncation.py`
+- `test_agent_rounds_exhausted.py`
+- `test_agent_bash_windows.py`
+- `test_agent_migration_manifest.py`
+- `test_agent_round_model_provenance_ui.py`
+- `test_agent_tool_budget_nonnumeric.py`
+- `test_agent_tools_truncate_nonstring.py`
+- `test_loop_breaker_runaway.py`
+
+**Action intents**
+
+- `test_action_intents.py`
+- `test_action_intents_shell_verbs.py`
+
+**Background jobs and compaction**
+
+- `test_ask_user_persistence.py`
+- `test_bg_jobs_store.py`
+- `test_bg_monitor_stream.py`
+- `test_compaction_summary_failure.py`
+
+**MCP**
+
+- `test_mcp_common_truncate.py`
+- `test_mcp_dependency_compatibility.py`
+- `test_mcp_routes_shim.py`
+
+**Research**
+
+- `test_research_routes_shim.py`
+- `test_research_session_id_validation.py`
+- `test_research_source_link_xss.py`
+
+**Search**
+
+- `test_search_analytics_defaults.py`
+- `test_search_content_extraction_parity.py`
+- `test_search_content_url_guards.py`
+- `test_search_module_consolidation.py`
+- `test_search_query.py`
+- `test_search_routes_shim.py`
+
+**Skills and tasks**
+
+- `test_skill_edit_no_collapse_on_outside_click_js.py`
+- `test_skill_extractor_rows.py`
+- `test_skill_format_timestamp.py`
+- `test_skill_index_toolset_gating.py`
+- `test_task_routes_shim.py`
+- `test_task_session_folder.py`
+
+**Tools**
+
+- `test_tool_approval_frontend_routing.py`
+- `test_tool_approval_single_action_scope.py`
+- `test_tool_implementations_shim.py`
+- `test_tool_index_keyword_boundaries.py`
+- `test_tool_index_schema_parity.py`
+- `test_tool_output_prompt_injection.py`
+- `test_tool_parsing_bare_end_marker.py`
+- `test_tool_parsing_hermes_json.py`
+- `test_tool_parsing_nonstring.py`
+- `test_tool_task_cancelled_on_disconnect.py`
+- `test_tool_utils_import_clean.py`
+- `test_tool_policy.py`
+
+**Harness**
+
+- `tests/conftest.py`
 
 **Read partially (3).** `test_agent_state_dir_confinement.py` — the module docstring, all 47 test
 names, the default-roots block (`:60-160`) and three bodies (`:108-140`, `:487-506`, `:573-590`); it
@@ -73,19 +131,17 @@ counts, module-scope `sys.modules` stubbing, source-file reads, `monkeypatch` us
 `inspect` use and whether the file calls `stream_agent_loop`. That scan chose the files above; it is
 not a coverage claim for the rest.
 
-**Not opened (72).** Named so the shape of the gap is visible: the MCP group
-(`test_mcp_add_server_args_validation`, `test_mcp_cache_invalidation`, `test_mcp_email_decode_header_spaces`,
-`test_mcp_manager`, `test_mcp_memory_owner_scope`, `test_mcp_oauth`, `test_mcp_param_hint_hardening`,
-`test_mcp_reconnect_args`, `test_mcp_tool_params_in_prompt`), the research group (15 files, including
-`test_research_routes_path_confinement`, `test_research_owner_scope_routes`, `test_research_service`,
-`test_research_utils`), the search group (13 files, including `test_search_ranking*`,
-`test_search_config_no_key_leak`, `test_search_query_nonstring`), the skills group (14 files,
-including `test_skill_importer_security`, `test_skill_importer_ssrf_redirect`,
-`test_skills_manager_owner_isolation`, `test_skill_index_prompt_injection`), the task/scheduler group
-(11 files), `test_tool_approvals`, `test_tool_approval_task_scope`, `test_tool_path_confinement`'s
-remainder, `test_tool_rag_*`, `test_tool_support_heuristic`, `test_ask_user_tool`, `test_bg_job_tools`
-and the three remaining `test_app_*` files. Their absence from the findings below is an absence of
-evidence, not evidence of quality.
+**Not opened (72).** Named so the shape of the gap is visible. Their absence from the findings below
+is an absence of evidence, not evidence of quality.
+
+| Group | Files |
+| --- | --- |
+| MCP | `test_mcp_add_server_args_validation`, `test_mcp_cache_invalidation`, `test_mcp_email_decode_header_spaces`, `test_mcp_manager`, `test_mcp_memory_owner_scope`, `test_mcp_oauth`, `test_mcp_param_hint_hardening`, `test_mcp_reconnect_args`, `test_mcp_tool_params_in_prompt` |
+| Research (15 files) | Including `test_research_routes_path_confinement`, `test_research_owner_scope_routes`, `test_research_service`, `test_research_utils` |
+| Search (13 files) | Including `test_search_ranking*`, `test_search_config_no_key_leak`, `test_search_query_nonstring` |
+| Skills (14 files) | Including `test_skill_importer_security`, `test_skill_importer_ssrf_redirect`, `test_skills_manager_owner_isolation`, `test_skill_index_prompt_injection` |
+| Tasks and scheduler | 11 files |
+| Other | `test_tool_approvals`, `test_tool_approval_task_scope`, the remainder of `test_tool_path_confinement`, `test_tool_rag_*`, `test_tool_support_heuristic`, `test_ask_user_tool`, `test_bg_job_tools` and the three remaining `test_app_*` files |
 
 **Checks run.** All 121 assigned files, and separately the 57 files that mention `web_search`,
 `SOURCES`, `web_sources` or `stream_agent_loop`; a line tracer over `src/agent_loop.py` for three of

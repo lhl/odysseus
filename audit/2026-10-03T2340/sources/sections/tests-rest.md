@@ -2,8 +2,6 @@
 
 ## Overview
 
-`tests/bombadil-spec.ts`, `tests/live_thinking_scheduler.test.mjs`, `tests/markdown_codefence_placeholder_regression.mjs`, `tests/test_active_document_clear.py`, `tests/test_active_email_reply_guard.py`, `tests/test_add_directory_event_loop.py`, `tests/test_admin_device_flow_static.py`, `tests/test_admin_tools_registry.py`, `tests/test_admin_wipe_gallery.py`, `tests/test_admin_wipe_routes_shim.py`, `tests/test_amd_gpu_check_args.py`, `tests/test_anthropic_response_parse.py`, `tests/test_api_call_integration_routing.py`, `tests/test_api_chat_security.py`, `tests/test_api_key_file_permissions.py`, `tests/test_api_key_manager_atomic_save.py`, `tests/test_api_key_manager_corrupt_load.py`, `tests/test_api_key_manager_resilience.py`, `tests/test_api_token_routes.py`, `tests/test_api_token_tool_authority.py`, `tests/test_api_token_user_route_gate.py`, `tests/test_app.py`, `tests/test_approved_replay_message_shape.py`, `tests/test_archived_sessions_model_filter.py`, `tests/test_atomic_io.py`, `tests/test_aux_llm_owner_scope.py`, `tests/test_backup_cli_security.py`, `tests/test_backup_import_cross_user_dedup.py`, `tests/test_backup_import_skills.py`, `tests/test_backup_import_skills_dedup.py`, `tests/test_blind_compare_redaction.py`, `tests/test_budget_auto_sentinel.py`, `tests/test_build_user_content_pdf_marker.py`, `tests/test_builtin_actions_cookbook_serve_state.py`, `tests/test_builtin_actions_nonstring.py`, `tests/test_builtin_actions_owner_scope.py`, `tests/test_builtin_mcp_bg_tasks.py`, `tests/test_builtin_mcp_npx_cache.py`, `tests/test_builtin_mcp_pythonpath.py`, `tests/test_builtin_memory_consolidation.py`, `tests/test_cache_affinity_local_only.py`, `tests/test_canvas_coords_empty_touches_js.py`, `tests/test_carddav_password_encryption.py`, `tests/test_censor_pref_js.py`, `tests/test_cerebras_cache_affinity.py`, `tests/test_check_outbound_url_nonstring.py`, `tests/test_checkin_digest_owner_scope.py`, `tests/test_ci_authoritative_validation.py`, `tests/test_claim_ownerless_json.py`, `tests/test_classify_events_memory_text.py`, `tests/test_cleanup_owner_scope.py`, `tests/test_cleanup_routes_shim.py`, `tests/test_cleanup_service_utcnow.py`, `tests/test_code_nav_tools.py`, `tests/test_codex_cookbook_admin_gate.py`, `tests/test_codex_ssh_host_validation.py`, `tests/test_compact_truncate_tool_call_args.py`, `tests/test_companion_pairing.py`, `tests/test_companion_readonly.py`, `tests/test_compare_ask_user_routing.py`, `tests/test_compare_endpoint_owner_scope.py`, `tests/test_compare_js.py`, `tests/test_compare_routes_shim.py`, `tests/test_compare_stop_disconnect_poll.py`, `tests/test_composer_arrow_up_recall_js.py`, `tests/test_compute_next_run_monthly_clamp.py`, `tests/test_consolidate_memory_explicit_drops.py`, `tests/test_copilot.py`, `tests/test_copilot_routes.py`, `tests/test_copy_message_strips_thinking_js.py`, `tests/test_cors_preflight.py`, `tests/test_database_utcnow.py`, `tests/test_ddg_redirect_resolution.py`, `tests/test_deep_research_date_context.py`, `tests/test_deep_research_extraction_controls.py`, `tests/test_deep_research_parse_json_array_echo.py`, `tests/test_deep_research_search_error.py`, `tests/test_deep_research_synthesis_resilience.py`, `tests/test_delete_message_no_session.py`, `tests/test_delete_user_invalidates_token_cache.py`, `tests/test_delete_user_revokes_api_tokens.py`, `tests/test_deleted_session_sidebar_regression.py`, `tests/test_derive_title_nonstring.py`, `tests/test_device_flow_routes.py`, `tests/test_dialog_aria.py`, `tests/test_diffusion_server_security.py`, `tests/test_digest_windows.py`, `tests/test_direct_upload_limits.py`, `tests/test_docker_devops_hardening.py`, `tests/test_docs_no_orphan_images.py`, `tests/test_docs_query_nondict_rows.py`, `tests/test_edit_file.py`, `tests/test_editor_draft_payload.py`, `tests/test_emoji_shortcodes_js.py`, `tests/test_emoji_svg_hardening.py`, `tests/test_esc_menu_stack_js.py`, `tests/test_estimate_tokens_tool_calls.py`, `tests/test_external_context_tool_gate.py`, `tests/test_extract_quotes.py`, `tests/test_extract_skill_json_nonstring.py`, `tests/test_extract_statistics.py`, `tests/test_extract_urls.py`, `tests/test_fastembed_cache_path.py`, `tests/test_fenced_example_not_executed_for_native_models.py`, `tests/test_fenced_inline_args.py`, `tests/test_fenced_invoke_no_raw_xml.py`, `tests/test_focused_test_guidance.py`, `tests/test_font_routes.py`, `tests/test_foreground_model_routing.py`, `tests/test_fork_session_metadata.py`, `tests/test_form_markdown_roundtrip.py`, `tests/test_forwarded_message_divider.py`, `tests/test_function_call_non_object_args.py`, `tests/test_function_model_tool_call.py`, `tests/test_gemma_tool_call_parsing.py`, `tests/test_generated_image_confinement.py`, `tests/test_gmail_quote_attribution_js.py`, `tests/test_group_character_dropdown.py`, `tests/test_group_chat_storage.py`, `tests/test_harmonize_masks_invalid_layers_js.py`, `tests/test_harmony_tool_aliasing.py`, `tests/test_helpers_import_state.py`, `tests/test_hex_to_rgb_js.py`, `tests/test_history_compact_tool_calls.py`, `tests/test_history_db_fallback_hidden.py`, `tests/test_history_display_model_hydration.py`, `tests/test_history_order_by_timestamp_regression.py`, `tests/test_history_routes_shim.py`, `tests/test_history_topics_owner_scope.py`, `tests/test_icloud_imap_full_fetch.py`, `tests/test_inside_base_dir_nonstring.py`, `tests/test_integration_api_call_ssrf.py`, `tests/test_integrations_api_call_truncation.py`, `tests/test_integrations_store_shape.py`, `tests/test_integrations_url_join.py`, `tests/test_interactive_gate_passive_paths.py`, `tests/test_internal_api_base.py`, `tests/test_issue_description_check.py`, `tests/test_keybind_altgr_js.py`, `tests/test_kimi_code_hosts.py`, `tests/test_kimi_code_user_agent.py`, `tests/test_kokoro_optional_requirements.py`, `tests/test_kv_cache_invalidation_2927.py`, `tests/test_lang_icon_null_opts_js.py`, `tests/test_launcher.py`, `tests/test_legacy_default_fallback_ui.py`, `tests/test_live_fallback_round_attribution.py`, `tests/test_live_strip_email_tool_fences.py`, `tests/test_live_thinking_chat_integration.py`, `tests/test_live_thinking_scheduler_js.py`, `tests/test_llama_server_models_url.py`, `tests/test_llamacpp_discovery.py`, `tests/test_lmstudio_discovery.py`, `tests/test_lmstudio_models_url.py`, `tests/test_lmstudio_vision.py`, `tests/test_local_endpoint_api_key_js.py`, `tests/test_local_endpoint_js.py`, `tests/test_log_safety.py`, `tests/test_manage_mcp_command_allowlist.py`, `tests/test_manage_memory_blank_id.py`, `tests/test_manage_memory_list.py`, `tests/test_manage_notes_owner_gate.py`, `tests/test_manage_settings_token_budget.py`, `tests/test_manage_skills_action_required.py`, `tests/test_manage_tasks_owner_scope.py`, `tests/test_markdown_dom_xss_helpers.py`, `tests/test_markdown_lazy_lib_loading_js.py`, `tests/test_markdown_rendering_js.py`, `tests/test_markdown_table_row_js.py`, `tests/test_markitdown_format_nonstring.py`, `tests/test_markitdown_runtime.py`, `tests/test_match_model_key_js.py`, `tests/test_matchescombo_nonstring_js.py`, `tests/test_merge_last_assistant_rows.py`, `tests/test_migrate_faiss_to_chroma.py`, `tests/test_misfenced_read_file_tool_call.py`, `tests/test_mlx_image_server_security.py`, `tests/test_modal_dock_composer_clearance.py`, `tests/test_multiple_mcp_servers_timeout.py`, `tests/test_native_tool_result_threading.py`, `tests/test_new_chat_clears_input.py`, `tests/test_new_chat_model_preference.py`, `tests/test_nix_upload_text.py`, `tests/test_null_owner_gates.py`, `tests/test_odysseus_dispatcher.py`, `tests/test_odysseus_doc_fence_normalization.py`, `tests/test_og_image_extraction.py`, `tests/test_ollama_multimodal.py`, `tests/test_ollama_port_detection.py`, `tests/test_ollama_runner_hint.py`, `tests/test_ordinal_suffix_js.py`, `tests/test_owned_document_query.py`, `tests/test_owner_identity.py`, `tests/test_panel_loader_js.py`, `tests/test_parse_due_time_first.py`, `tests/test_parse_msg_content_jsonlike_string.py`, `tests/test_plain_ui_control_open_panel.py`, `tests/test_plan_mode.py`, `tests/test_platform_compat.py`, `tests/test_poll_endpoint_no_task_interrupt.py`, `tests/test_popup_opener_isolation_js.py`, `tests/test_portal_dropdown_z_js.py`, `tests/test_pr6020_browser_review_regressions.py`, `tests/test_pr6020_rebase_regressions.py`, `tests/test_prefs_atomic_write.py`, `tests/test_prefs_routes.py`, `tests/test_prefs_single_user_no_clobber.py`, `tests/test_preset_atomic_save.py`, `tests/test_preset_expand_owner_scope.py`, `tests/test_preset_fill_missing_defaults.py`, `tests/test_preset_local_storage_js.py`, `tests/test_preset_store_shape.py`, `tests/test_promote_image_fields.py`, `tests/test_public_blocked_tool_nonstring.py`, `tests/test_question_type_detection.py`, `tests/test_rate_limiter.py`, `tests/test_readiness.py`, `tests/test_readme_ascii_fenced.py`, `tests/test_realesrgan_torchvision_compat.py`, `tests/test_redos_cal_extract.py`, `tests/test_redos_llm_parsers.py`, `tests/test_redos_think_blocks.py`, `tests/test_redos_verdict_continuation.py`, `tests/test_redos_xml_tool_parsers.py`, `tests/test_reminder_ntfy_ssrf.py`, `tests/test_rename_user_case_insensitive.py`, `tests/test_rename_user_owner_sync.py`, `tests/test_rename_user_token_cache.py`, `tests/test_replace_messages_multimodal.py`, `tests/test_replace_messages_upload_reservations.py`, `tests/test_reply_all_cc_nonstring_js.py`, `tests/test_reply_recipients_js.py`, `tests/test_resend_message_nondestructive.py`, `tests/test_reserved_username_admin_escalation.py`, `tests/test_resolve_endpoint_fallbacks.py`, `tests/test_resolve_model_offloaded.py`, `tests/test_resolve_session_auth_chatgpt.py`, `tests/test_resolve_upload_path_nondict.py`, `tests/test_retired_settings_interfaces.py`, `tests/test_review_regressions.py`, `tests/test_rewrite_persist_column.py`, `tests/test_route_validators.py`, `tests/test_run_focus.py`, `tests/test_run_order_report.py`, `tests/test_runtime_paths.py`, `tests/test_sanitize_multimodal_merge.py`, `tests/test_sanitize_preserves_reasoning.py`, `tests/test_scheduled_poll_race.py`, `tests/test_searxng_image_pinned.py`, `tests/test_searxng_settings_migration.py`, `tests/test_select_dropdown_theme_css.py`, `tests/test_sender_signature_skip_roles.py`, `tests/test_serve_html_with_nonce.py`, `tests/test_serve_profiles.py`, `tests/test_service_health_chromadb.py`, `tests/test_service_health_collect.py`, `tests/test_service_health_email.py`, `tests/test_service_health_ntfy.py`, `tests/test_service_health_providers.py`, `tests/test_service_health_search.py`, `tests/test_service_search_provider_guards.py`, `tests/test_services_research_low_quality_sources.py`, `tests/test_services_search_analytics_defaults.py`, `tests/test_set_admin.py`, `tests/test_settings_error_paths.py`, `tests/test_settings_scrub.py`, `tests/test_settings_shell_js_behavior.py`, `tests/test_settings_store_shape.py`, `tests/test_setup_admin_user.py`, `tests/test_setup_device_auth_static.py`, `tests/test_setup_llamacpp_hint_js.py`, `tests/test_shell_routes.py`, `tests/test_shell_service.py`, `tests/test_signature_fold_js.py`, `tests/test_signature_fold_self_closing_br_js.py`, `tests/test_signature_route_hardening.py`, `tests/test_signature_settings_dom_xss.py`, `tests/test_slash_autocomplete_static.py`, `tests/test_slash_setup_provider_aliases.py`, `tests/test_snap_other_layers_nonarray_js.py`, `tests/test_speech_service_toggles.py`, `tests/test_spinner_stops_when_never_attached_js.py`, `tests/test_split_chunks_no_duplicate_tail.py`, `tests/test_sqlite_foreign_keys.py`, `tests/test_src_search_query_nonstring.py`, `tests/test_startup_session_bootstrap_js.py`, `tests/test_startup_shell_js.py`, `tests/test_streaming_segmenter_js.py`, `tests/test_strip_reasoning_prose_dataloss.py`, `tests/test_strip_think.py`, `tests/test_svc_research_sources_nondict.py`, `tests/test_tailscale_discovery_cache.py`, `tests/test_taxonomy.py`, `tests/test_teacher_audit_owner_scope.py`, `tests/test_teacher_eval_nonstring_reply.py`, `tests/test_teacher_eval_tier2.py`, `tests/test_tidy_research_owner_scope.py`, `tests/test_tile_manager_snap_zones_js.py`, `tests/test_tls_overrides_scope.py`, `tests/test_toast_dismiss_pointer_events.py`, `tests/test_totp_failclosed.py`, `tests/test_truncate_message_count_regression.py`, `tests/test_ui_control_rag_toggle.py`, `tests/test_ui_visibility_js.py`, `tests/test_unknown_tool_calls.py`, `tests/test_update_database_script.py`, `tests/test_update_plan_tool.py`, `tests/test_url_safety.py`, `tests/test_user_time.py`, `tests/test_vcard_unfolding.py`, `tests/test_venice_hosts.py`, `tests/test_vision_model_detection.py`, `tests/test_vision_owner_scope.py`, `tests/test_visual_report.py`, `tests/test_visual_report_icon_url.py`, `tests/test_visual_report_nonstring.py`, `tests/test_visual_report_slug_unique.py`, `tests/test_visual_report_toc_code_fence.py`, `tests/test_warmup_ping_urls.py`, `tests/test_windows_update_script.py`, `tests/test_workspace_confine.py`, `tests/test_write_file_empty_body.py`.
-
 This is the catch-all test section: the 322 paths that belong to no other `tests-*` section,
 three of which are not Python at all. It asks of each one what the
 sibling test sections ask of theirs — not whether it passes, but which edit to the production
@@ -11,15 +9,19 @@ code would make it fail. Two answers carry almost every finding below: the asser
 substring of a production source file rather than an observation of behaviour, and the fixture
 replaces the code under test with something that cannot disagree with it.
 
-The boundary: the harness itself (`tests/conftest.py`, `tests/helpers/*`, `tests/run_focus.py`,
-`tests/run_order_report.py`, `tests/_taxonomy.py`, `tests/streaming/*`, `tests/cli/*`,
-`tests/TESTING_STANDARD.md` and the other `tests/*.md` artifacts) belongs to `tests-harness`; it
-is cited here only as the repository's own rulebook. The security, prompt-injection and
-auth-guard group belongs to `tests-security`; the email/calendar, cookbook/models, LLM/tools,
-session/chat/memory and documents/media groups belong to their own sections. The production code
-these files pin belongs to the matching `src-*`, `routes-*`, `core-*`, `services-*` and
-`static-js-*` sections, so where a weak test sits on top of a defect another section already
-reports, this section names the test and cross-references the defect instead of restating it.
+The boundary with the neighbouring sections:
+
+- `tests-harness` owns the harness itself. It is cited here only as the repository's own rulebook.
+  - `tests/conftest.py`, `tests/helpers/*`, `tests/streaming/*` and `tests/cli/*`
+  - `tests/run_focus.py`, `tests/run_order_report.py` and `tests/_taxonomy.py`
+  - `tests/TESTING_STANDARD.md` and the other `tests/*.md` artifacts
+- `tests-security` owns the security, prompt-injection and auth-guard group. The email and calendar,
+  cookbook and models, LLM and tools, session, chat and memory, and documents and media groups
+  belong to their own sections.
+- The production code these files pin belongs to the matching sections: the src, routes, core,
+  services and static-js families. Where a weak test sits on top of a defect another section
+  already reports, this section names the test and cross-references the defect instead of
+  restating it.
 
 ## Coverage
 
@@ -27,12 +29,14 @@ reports, this section names the test and cross-references the defect instead of 
 were read end to end, 8 more were read in the regions a finding or a cross-check rests on, and
 267 were not opened.** The sample was chosen by risk, in this order:
 
-1. **Files whose name promises a security property** (`*_security`, `*_auth*`, `*_xss*`,
-   `*_owner*`, `*_scope*`, `*_confinement*`, `*_ssrf*`, `*_allowlist*`, `*_gate*`, `*_hardening*`,
-   `*_permissions*`, `*_redaction*`, `*_totp*`, `*_cors*`) — 42 files, rising to 68 once
-   `*_token*`, `*_admin*`, `*_inject*`, `*_sanitiz*`, `*_path*` and `*_revoke*` are added. These
-   are where a test that passes without exercising its guard costs the most, so most of them were
-   at least scanned for the anti-patterns below.
+1. **Files whose name promises a security property.** 42 files match one of fourteen name patterns,
+   rising to 68 once six more are added. These are where a test that passes without exercising its
+   guard costs the most, so most of them were at least scanned for the anti-patterns below.
+
+   | Set | Name patterns |
+   | --- | --- |
+   | The 42 files | `*_security`, `*_auth*`, `*_xss*`, `*_owner*`, `*_scope*`, `*_confinement*`, `*_ssrf*`, `*_allowlist*`, `*_gate*`, `*_hardening*`, `*_permissions*`, `*_redaction*`, `*_totp*`, `*_cors*` |
+   | Added, for 68 | `*_token*`, `*_admin*`, `*_inject*`, `*_sanitiz*`, `*_path*`, `*_revoke*` |
 2. **Files that pin a route this run already reported a defect in.** `tests/test_focused_test_guidance.py`
    (a `build-install-deploy` finding), `tests/test_blind_compare_redaction.py` (the `[CMP]` blind-mode
    contract that `static-js-compare` deliberately left to another section),
@@ -48,55 +52,98 @@ were read end to end, 8 more were read in the regions a finding or a cross-check
    test files that import no project module at all (96 files, most of them Node wrappers that
    legitimately import nothing).
 
-**Read fully (47):** `tests/bombadil-spec.ts` (107), `tests/markdown_codefence_placeholder_regression.mjs`
-(69), `tests/test_active_email_reply_guard.py` (13), `tests/test_add_directory_event_loop.py` (394),
-`tests/test_admin_wipe_routes_shim.py` (25), `tests/test_amd_gpu_check_args.py` (21),
-`tests/test_api_chat_security.py` (404), `tests/test_api_key_file_permissions.py` (51),
-`tests/test_api_token_tool_authority.py` (327), `tests/test_app.py` (98),
-`tests/test_aux_llm_owner_scope.py` (72), `tests/test_blind_compare_redaction.py` (92),
-`tests/test_builtin_mcp_pythonpath.py` (22), `tests/test_cerebras_cache_affinity.py` (27),
-`tests/test_checkin_digest_owner_scope.py` (70), `tests/test_ci_authoritative_validation.py` (35),
-`tests/test_claim_ownerless_json.py` (24), `tests/test_cleanup_owner_scope.py` (191),
-`tests/test_cors_preflight.py` (30), `tests/test_direct_upload_limits.py` (61),
-`tests/test_emoji_svg_hardening.py` (54), `tests/test_focused_test_guidance.py` (148),
-`tests/test_generated_image_confinement.py` (72), `tests/test_group_chat_storage.py` (13),
-`tests/test_live_thinking_scheduler_js.py` (29), `tests/test_manage_mcp_command_allowlist.py` (168),
-`tests/test_manage_memory_list.py` (7), `tests/test_manage_notes_owner_gate.py` (120),
-`tests/test_markdown_dom_xss_helpers.py` (38), `tests/test_migrate_faiss_to_chroma.py` (36),
-`tests/test_odysseus_dispatcher.py` (13), `tests/test_owner_identity.py` (102),
-`tests/test_retired_settings_interfaces.py` (119), `tests/test_searxng_image_pinned.py` (26),
-`tests/test_setup_admin_user.py` (72), `tests/test_setup_device_auth_static.py` (42),
-`tests/test_settings_error_paths.py` (94), `tests/test_signature_settings_dom_xss.py` (26),
-`tests/test_taxonomy.py` (151), `tests/test_teacher_audit_owner_scope.py` (72),
-`tests/test_tidy_research_owner_scope.py` (159), `tests/test_tls_overrides_scope.py` (149),
-`tests/test_totp_failclosed.py` (21), `tests/test_update_database_script.py` (8),
-`tests/test_url_safety.py` (117), `tests/test_vision_owner_scope.py` (101),
-`tests/test_windows_update_script.py` (18).
+**Read fully (47 files, 4,108 lines):**
 
-**Read partially (8):** `tests/test_truncate_message_count_regression.py` (`:1-40` of 78, the
-fixture the finding rests on), `tests/live_thinking_scheduler.test.mjs` (`:1-60` of 277, enough to
-see that it drives the real module), `tests/test_history_topics_owner_scope.py` (`:140-280` of 280;
-the first half was skimmed for its fixtures), `tests/test_compare_endpoint_owner_scope.py`
-(`:1-50` of 104, the query stub), `tests/test_rename_user_owner_sync.py` (the 22 `read_text()`
-call sites and their assertions, of 752), `tests/test_api_token_user_route_gate.py` (`:1-27` of 62),
-`tests/test_builtin_mcp_npx_cache.py` (`:1-76` of 185),
-`tests/test_docker_devops_hardening.py` (`:240-255` of 255, the `TEST_DOCS` venv guard).
+| File | Lines |
+| --- | ---: |
+| `tests/bombadil-spec.ts` | 107 |
+| `tests/markdown_codefence_placeholder_regression.mjs` | 69 |
+| `tests/test_active_email_reply_guard.py` | 13 |
+| `tests/test_add_directory_event_loop.py` | 394 |
+| `tests/test_admin_wipe_routes_shim.py` | 25 |
+| `tests/test_amd_gpu_check_args.py` | 21 |
+| `tests/test_api_chat_security.py` | 404 |
+| `tests/test_api_key_file_permissions.py` | 51 |
+| `tests/test_api_token_tool_authority.py` | 327 |
+| `tests/test_app.py` | 98 |
+| `tests/test_aux_llm_owner_scope.py` | 72 |
+| `tests/test_blind_compare_redaction.py` | 92 |
+| `tests/test_builtin_mcp_pythonpath.py` | 22 |
+| `tests/test_cerebras_cache_affinity.py` | 27 |
+| `tests/test_checkin_digest_owner_scope.py` | 70 |
+| `tests/test_ci_authoritative_validation.py` | 35 |
+| `tests/test_claim_ownerless_json.py` | 24 |
+| `tests/test_cleanup_owner_scope.py` | 191 |
+| `tests/test_cors_preflight.py` | 30 |
+| `tests/test_direct_upload_limits.py` | 61 |
+| `tests/test_emoji_svg_hardening.py` | 54 |
+| `tests/test_focused_test_guidance.py` | 148 |
+| `tests/test_generated_image_confinement.py` | 72 |
+| `tests/test_group_chat_storage.py` | 13 |
+| `tests/test_live_thinking_scheduler_js.py` | 29 |
+| `tests/test_manage_mcp_command_allowlist.py` | 168 |
+| `tests/test_manage_memory_list.py` | 7 |
+| `tests/test_manage_notes_owner_gate.py` | 120 |
+| `tests/test_markdown_dom_xss_helpers.py` | 38 |
+| `tests/test_migrate_faiss_to_chroma.py` | 36 |
+| `tests/test_odysseus_dispatcher.py` | 13 |
+| `tests/test_owner_identity.py` | 102 |
+| `tests/test_retired_settings_interfaces.py` | 119 |
+| `tests/test_searxng_image_pinned.py` | 26 |
+| `tests/test_setup_admin_user.py` | 72 |
+| `tests/test_setup_device_auth_static.py` | 42 |
+| `tests/test_settings_error_paths.py` | 94 |
+| `tests/test_signature_settings_dom_xss.py` | 26 |
+| `tests/test_taxonomy.py` | 151 |
+| `tests/test_teacher_audit_owner_scope.py` | 72 |
+| `tests/test_tidy_research_owner_scope.py` | 159 |
+| `tests/test_tls_overrides_scope.py` | 149 |
+| `tests/test_totp_failclosed.py` | 21 |
+| `tests/test_update_database_script.py` | 8 |
+| `tests/test_url_safety.py` | 117 |
+| `tests/test_vision_owner_scope.py` | 101 |
+| `tests/test_windows_update_script.py` | 18 |
 
-**Not read (267).** The shape of what was skipped. **Sixteen of them are over 400 lines** and
-were grepped for the anti-patterns above and otherwise left alone, because evaluating them
-properly needs fixture work this section's budget did not cover:
-`tests/test_foreground_model_routing.py` (3,649), `tests/test_external_context_tool_gate.py`
-(1,473), `tests/test_review_regressions.py` (1,449),
-`tests/test_pr6020_browser_review_regressions.py` (933), `tests/test_api_token_routes.py` (578),
-`tests/test_history_display_model_hydration.py` (549), `tests/test_shell_routes.py` (538),
-`tests/test_workspace_confine.py` (533), `tests/test_markdown_lazy_lib_loading_js.py` (510),
-`tests/test_run_focus.py` (492), `tests/test_companion_readonly.py` (484),
-`tests/test_kv_cache_invalidation_2927.py` (463), `tests/test_compare_stop_disconnect_poll.py`
-(463), `tests/test_companion_pairing.py` (448), `tests/test_helpers_import_state.py` (426) and
-`tests/test_teacher_eval_tier2.py` (406). A few of those are named in the section's own boundary
-as another section's subject (`test_run_focus.py`, `test_helpers_import_state.py` to
-`tests-harness`; `test_compare_stop_disconnect_poll.py` to `static-js-compare`) and are listed
-here only because the mechanical sweeps still ran over them.
+**Read partially (8):**
+
+| File | Region read | Why |
+| --- | --- | --- |
+| `tests/test_truncate_message_count_regression.py` | `:1-40` of 78 | The fixture the finding rests on |
+| `tests/live_thinking_scheduler.test.mjs` | `:1-60` of 277 | Enough to see that it drives the real module |
+| `tests/test_history_topics_owner_scope.py` | `:140-280` of 280 | The first half was skimmed for its fixtures |
+| `tests/test_compare_endpoint_owner_scope.py` | `:1-50` of 104 | The query stub |
+| `tests/test_rename_user_owner_sync.py` | The 22 `read_text()` call sites and their assertions, of 752 | |
+| `tests/test_api_token_user_route_gate.py` | `:1-27` of 62 | |
+| `tests/test_builtin_mcp_npx_cache.py` | `:1-76` of 185 | |
+| `tests/test_docker_devops_hardening.py` | `:240-255` of 255 | The `TEST_DOCS` venv guard |
+
+**Not read (267).** Sixteen of them are over 400 lines. They were grepped for the anti-patterns
+above and otherwise left alone, because evaluating them properly needs fixture work this section's
+budget did not cover:
+
+| File | Lines |
+| --- | ---: |
+| `tests/test_foreground_model_routing.py` | 3,649 |
+| `tests/test_external_context_tool_gate.py` | 1,473 |
+| `tests/test_review_regressions.py` | 1,449 |
+| `tests/test_pr6020_browser_review_regressions.py` | 933 |
+| `tests/test_api_token_routes.py` | 578 |
+| `tests/test_history_display_model_hydration.py` | 549 |
+| `tests/test_shell_routes.py` | 538 |
+| `tests/test_workspace_confine.py` | 533 |
+| `tests/test_markdown_lazy_lib_loading_js.py` | 510 |
+| `tests/test_run_focus.py` | 492 |
+| `tests/test_companion_readonly.py` | 484 |
+| `tests/test_kv_cache_invalidation_2927.py` | 463 |
+| `tests/test_compare_stop_disconnect_poll.py` | 463 |
+| `tests/test_companion_pairing.py` | 448 |
+| `tests/test_helpers_import_state.py` | 426 |
+| `tests/test_teacher_eval_tier2.py` | 406 |
+
+A few of those are named in the section's own boundary as another section's subject
+(`test_run_focus.py` and `test_helpers_import_state.py` belong to `tests-harness`;
+`test_compare_stop_disconnect_poll.py` to `static-js-compare`). They are listed here only because
+the mechanical sweeps still ran over them.
 
 **The other 251 unread files are all under 400 lines**, and most are under 100. 50 of them match
 `*_nonstring.py`, `*_js.py` or `*_shim.py` — the small pins that assert one helper's behaviour —
@@ -123,19 +170,22 @@ odysseus-odysseus:latest`) and `tests/test_markitdown_runtime.py:64` (`could not
 'markitdown': No module named 'markitdown'`). **Zero failures, zero xfail** — every finding below
 is about a test that passes.
 
-`node v24.16.0` is on PATH here, so no JS wrapper skipped. The probes live under `/tmp/audit-probe/`
-and are not part of the target tree. Three of them matter enough to name: `block_modules.py` (a
-pytest plugin whose `find_spec` raises `ModuleNotFoundError` for a `BLOCK_MODULES` list, plus
-`control_blocked.py`, which fails unless the block actually took effect), `mutate_read_text.py`
-(a plugin that serves mutated production text to `pathlib.Path.read_text`, so a source-grep test
-can be run against a behaviourally-changed tree), and `probe_db_state.py` (reports the process's
-`DATABASE_URL` and engine URL). Running the suite left the tracked tree untouched: `git status
---porcelain` shows only `audit/`, and `sha256sum` of `data/auth.json` and `data/features.json` is
-unchanged. `data/app.db` is not a counterexample to that — `data/` is gitignored
-(`.gitignore:28`), and that file's hash did change, at 20:57 JST, after this section's last
-measured run and while the sibling sections' suites were running in the same working tree. Any
-pytest process here can rewrite it, which is the point of the finding below about
-`tests/test_truncate_message_count_regression.py`.
+`node v24.16.0` is on PATH here, so no JS wrapper skipped. The probes live under
+`/tmp/audit-probe/` and are not part of the target tree. Three of them matter enough to name:
+
+- `block_modules.py`: a pytest plugin whose `find_spec` raises `ModuleNotFoundError` for a
+  `BLOCK_MODULES` list, plus `control_blocked.py`, which fails unless the block actually took
+  effect
+- `mutate_read_text.py`: a plugin that serves mutated production text to `pathlib.Path.read_text`,
+  so a source-grep test can be run against a behaviourally-changed tree
+- `probe_db_state.py`: reports the process's `DATABASE_URL` and engine URL
+
+Running the suite left the tracked tree untouched: `git status --porcelain` shows only `audit/`, and
+`sha256sum` of `data/auth.json` and `data/features.json` is unchanged. `data/app.db` is not a
+counterexample to that. `data/` is gitignored (`.gitignore:28`), and that file's hash did change,
+at 20:57 JST, after this section's last measured run and while the sibling sections' suites were
+running in the same working tree. Any pytest process here can rewrite it, which is the point of the
+finding below about `tests/test_truncate_message_count_regression.py`.
 
 ### [BUG] The blind-mode naming scan passes with the blind guard inverted
 

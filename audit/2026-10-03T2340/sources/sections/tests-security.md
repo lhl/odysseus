@@ -2,36 +2,56 @@
 
 ## Overview
 
-`tests/test_auth_config_lock_concurrency.py`, `tests/test_auth_disabled_document_access.py`, `tests/test_auth_event_loop.py`, `tests/test_auth_policy.py`, `tests/test_auth_regressions.py`, `tests/test_auth_require_privilege_nondict.py`, `tests/test_auth_root_path.py`, `tests/test_auth_session_revocation.py`, `tests/test_db_stubs_helper.py`, `tests/test_is_youtube_url_nonstring.py`, `tests/test_is_youtube_url_nonstring_svc.py`, `tests/test_pr_blocker_audit.py`, `tests/test_pr_description_check.py`, `tests/test_prompt_injection_audit.py`, `tests/test_prompt_security.py`, `tests/test_security_headers_middleware.py`, `tests/test_security_headers_pdf_preview.py`, `tests/test_security_regressions.py`, `tests/test_token_cache_atomic_swap.py`, `tests/test_vault_password_not_in_argv.py`, `tests/test_vault_routes_shim.py`.
-
 This section asks what these tests prove, not whether they pass. A test that passes without
 exercising the guard it names is worse than no test, because it is counted as coverage. The
 question for each file is therefore: what is the assertion, what is the fixture, and which
 behaviour would have to break for the assertion to fail?
 
-The boundary: the test harness itself (`tests/conftest.py`, `tests/helpers/*`,
-`tests/run_focus.py`, `tests/TESTING_STANDARD.md` as an artifact) belongs to `tests-harness`; it
-is cited here only as the repository's own rulebook for what a test is required to do. The
-production code these files pin belongs to the matching `src-*`, `routes-*`, `core-*` and
-`services-*` sections. Where a weak test maps onto a defect another section already reports, the
-finding cross-references it instead of restating it — `src-security` for the
-`require_privilege` fail-open, `services-media` for the `is_youtube_url` substring match,
-`repository-root` for the `X-Odysseus-Owner` override, `build-install-deploy` for the compose
-bind assertions.
+The boundary with the neighbouring sections:
+
+- `tests-harness` owns the test harness itself: `tests/conftest.py`, `tests/helpers/*`,
+  `tests/run_focus.py` and `tests/TESTING_STANDARD.md` as an artifact. It is cited here only as
+  the repository's own rulebook for what a test is required to do.
+- The production code these files pin belongs to the matching `src-`, `routes-`, `core-` and
+  `services-` sections.
+
+Where a weak test maps onto a defect another section already reports, the finding cross-references
+it instead of restating it:
+
+| Defect | Section |
+| --- | --- |
+| The `require_privilege` fail-open | `src-security` |
+| The `is_youtube_url` substring match | `services-media` |
+| The `X-Odysseus-Owner` override | `repository-root` |
+| The compose bind assertions | `build-install-deploy` |
 
 ## Coverage
 
-**Read fully:** all 21 assigned files, 5,731 lines — `tests/test_auth_config_lock_concurrency.py`
-(240), `tests/test_auth_disabled_document_access.py` (280), `tests/test_auth_event_loop.py` (118),
-`tests/test_auth_policy.py` (363), `tests/test_auth_regressions.py` (370),
-`tests/test_auth_require_privilege_nondict.py` (36), `tests/test_auth_root_path.py` (283),
-`tests/test_auth_session_revocation.py` (173), `tests/test_db_stubs_helper.py` (121),
-`tests/test_is_youtube_url_nonstring.py` (14), `tests/test_is_youtube_url_nonstring_svc.py` (13),
-`tests/test_pr_blocker_audit.py` (964), `tests/test_pr_description_check.py` (327),
-`tests/test_prompt_injection_audit.py` (261), `tests/test_prompt_security.py` (203),
-`tests/test_security_headers_middleware.py` (67), `tests/test_security_headers_pdf_preview.py`
-(36), `tests/test_security_regressions.py` (1,546), `tests/test_token_cache_atomic_swap.py` (188),
-`tests/test_vault_password_not_in_argv.py` (117), `tests/test_vault_routes_shim.py` (11).
+**Read fully:** all 21 assigned files, 5,731 lines.
+
+| File | Lines |
+| --- | ---: |
+| `tests/test_auth_config_lock_concurrency.py` | 240 |
+| `tests/test_auth_disabled_document_access.py` | 280 |
+| `tests/test_auth_event_loop.py` | 118 |
+| `tests/test_auth_policy.py` | 363 |
+| `tests/test_auth_regressions.py` | 370 |
+| `tests/test_auth_require_privilege_nondict.py` | 36 |
+| `tests/test_auth_root_path.py` | 283 |
+| `tests/test_auth_session_revocation.py` | 173 |
+| `tests/test_db_stubs_helper.py` | 121 |
+| `tests/test_is_youtube_url_nonstring.py` | 14 |
+| `tests/test_is_youtube_url_nonstring_svc.py` | 13 |
+| `tests/test_pr_blocker_audit.py` | 964 |
+| `tests/test_pr_description_check.py` | 327 |
+| `tests/test_prompt_injection_audit.py` | 261 |
+| `tests/test_prompt_security.py` | 203 |
+| `tests/test_security_headers_middleware.py` | 67 |
+| `tests/test_security_headers_pdf_preview.py` | 36 |
+| `tests/test_security_regressions.py` | 1,546 |
+| `tests/test_token_cache_atomic_swap.py` | 188 |
+| `tests/test_vault_password_not_in_argv.py` | 117 |
+| `tests/test_vault_routes_shim.py` | 11 |
 
 **Read partially — the code each finding rests on:** `app.py:376-396` (the internal-tool
 impersonation branch); `routes/mcp/mcp_routes.py` handler definitions and `require_admin` call

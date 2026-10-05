@@ -2,25 +2,38 @@
 
 ## Overview
 
-The 53 modules under `static/js/editor/` that make up the gallery image editor: the AI tool
-surface (`ai-inpaint.js`, `ai-rembg.js`, `ai-models.js`, `ai-tool-runner.js`, `ai-tools-misc.js`),
-the canvas core (`canvas-coords.js`, `canvas-events.js`, `canvas-transforms.js`,
-`clipboard-and-drop.js`, `checkerboard.js`, `composite-helpers.js`, `mask-utils.js`,
-`stroke-pipeline.js`, `snap.js`, `state.js`), the tools (`tools/`), the FX/pixel pipeline
-(`fx/`, `filters/`, `layer-helpers.js`, `layer-panel.js`), and the topbar/panel build and wiring
-modules (`build/`, `wire-*.js`, `keyboard-shortcuts.js`, `slider-ux.js`).
+The 53 modules under `static/js/editor/` that make up the gallery image editor, in four groups:
 
-The boundary: the orchestrator that imports and wires every one of these modules —
-`static/js/galleryEditor.js` (`_buildEditor`, `composite`, `_saveState`/`_snapshotState`,
-`createLayer`, `closeEditor`, `openEditor`) — is assigned to `static-js-documents-email` together with
-`static/js/gallery.js`, so it is read here only as evidence and its own defects are not restated.
-The server side of every AI call these modules make (`routes/gallery/gallery_routes.py`:
-`/api/image/inpaint`, `/api/image/harmonize`, `/api/image/remove-bg`, `/api/image/upscale-local`,
-`/api/image/sharpen`, `/api/gallery/style-transfer`) belongs to `routes-gallery-document`; this
-section covers what the client sends and what it does with what comes back, not how the server
-validates or executes it. `static-js-rest` owns `static/js/modelSort.js`, which `ai-models.js`
-imports. Findings below are located in the editor modules even where the visible symptom only
-appears through `galleryEditor.js`.
+| Group | Modules |
+| --- | --- |
+| AI tool surface | `ai-inpaint.js`, `ai-rembg.js`, `ai-models.js`, `ai-tool-runner.js`, `ai-tools-misc.js` |
+| Canvas core | `canvas-coords.js`, `canvas-events.js`, `canvas-transforms.js`, `clipboard-and-drop.js`, `checkerboard.js`, `composite-helpers.js`, `mask-utils.js`, `stroke-pipeline.js`, `snap.js`, `state.js` |
+| Tools and effects | `tools/`, `fx/`, `filters/`, `layer-helpers.js`, `layer-panel.js` |
+| Topbar and panels | `build/`, `wire-*.js`, `keyboard-shortcuts.js`, `slider-ux.js` |
+
+The boundary with the neighbouring sections:
+
+- `static/js/galleryEditor.js` is the orchestrator that imports and wires every one of these
+  modules (for example `_buildEditor`, `composite` and `createLayer`). It is assigned to `static-js-documents-email` together with
+  `static/js/gallery.js`, so it is read here only as evidence and its own defects are not restated.
+- The server side of every AI call these modules make belongs to `routes-gallery-document`. The
+  six routes are in `routes/gallery/gallery_routes.py`:
+
+  | Route | Used for |
+  | --- | --- |
+  | `/api/image/inpaint` | Inpainting |
+  | `/api/image/harmonize` | Harmonize |
+  | `/api/image/remove-bg` | Background removal |
+  | `/api/image/upscale-local` | Local upscale |
+  | `/api/image/sharpen` | Sharpen |
+  | `/api/gallery/style-transfer` | Style transfer |
+
+  This section covers what the client sends and what it does with what comes back, not how the
+  server validates or executes it.
+- `static-js-rest` owns `static/js/modelSort.js`, which `ai-models.js` imports.
+
+Findings below are located in the editor modules even where the visible symptom only appears
+through `galleryEditor.js`.
 
 ## Coverage
 
@@ -37,8 +50,15 @@ all of them `.js`, and the 53 match the section's `paths` list exactly.
 | `fx/`, `filters/`, layer/mask helpers | 9 | 2,042 |
 | `build/`, `wire-*.js`, panels, keyboard/slider | 17 | 2,858 |
 
-Largest single files: `fx/adj-popup.js` (677), `layer-panel.js` (601), `build/controls.js` (401),
-`tools/transform-session.js` (381), `ai-inpaint.js` (380).
+The five largest files:
+
+| File | Lines |
+| --- | ---: |
+| `fx/adj-popup.js` | 677 |
+| `layer-panel.js` | 601 |
+| `build/controls.js` | 401 |
+| `tools/transform-session.js` | 381 |
+| `ai-inpaint.js` | 380 |
 
 **Read partially** — boundary files, read only where a finding or a reachability claim rests on
 them, none of them assigned to this section:
@@ -50,9 +70,13 @@ them, none of them assigned to this section:
   `_wireInpaintPopoverWindow` (`:2844-2870`), `_promptCanvasSize` (`:3931-3945`),
   `openEditor`/`closeEditor` (`:4068-4375`)
 - `static/js/platform.js` at `isAltGrEvent` (`:40-47`), for the keyboard-shortcut guard
-- `routes/gallery/gallery_routes.py` at the `_endpoint` handling of `inpaint_proxy` (`:1267-1300`),
-  `harmonize_image` (`:1529-1565`), `sharpen_image` (`:1716-1734`), `upscale_image_local`
-  (`:1792-1832`), `remove_background` (`:1963-2050`), `gallery_style_transfer` (`:596-640`)
+- `routes/gallery/gallery_routes.py` at the `_endpoint` handling of six handlers:
+  - `inpaint_proxy` (`:1267-1300`)
+  - `harmonize_image` (`:1529-1565`)
+  - `sharpen_image` (`:1716-1734`)
+  - `upscale_image_local` (`:1792-1832`)
+  - `remove_background` (`:1963-2050`)
+  - `gallery_style_transfer` (`:596-640`)
 - `static/style.css` at `.ge-inpaint-popover-head` (`:29585`), `.ge-canvas-size` (`:30107`), and the
   `.ge-edge-menu` / `.ge-resize-menu` rules
 
@@ -82,11 +106,12 @@ written inside the repository):
 - `node -e` counting the checkerboard loop for four document sizes (see the PERF finding), and
   `node -e` reproducing the `::` split for an IPv6 base URL (see the last finding).
 - Dedup sweep: `grep -rn "js/editor" audit/2026-10-03T2340/sources/sections/` matches only this
-  section's own path list, and no section mentions `_adjFinal`, `checkerboard`, `ge-edge-menu`,
-  `ge-wand-rembg`, `filter-string` or `_getSelectedAIEndpoint`, so none of the findings below is a
-  restatement. `static-js-research-memory-rag.md:458` already reports the "document-level listener
-  registered per render and never removed" class in `static/js/memory.js`; the accumulation finding
-  here is a different call site and is cross-referenced rather than repeated.
+  section's own path list. No section mentions any of six names (`_adjFinal`, `checkerboard`,
+  `ge-edge-menu`; and `ge-wand-rembg`, `filter-string`, `_getSelectedAIEndpoint`), so none of the
+  findings below is a restatement. `static-js-research-memory-rag.md:458` already reports the
+  "document-level listener registered per render and never removed" class in `static/js/memory.js`;
+  the accumulation finding here is a different call site and is cross-referenced rather than
+  repeated.
 
 ### [BUG] A layer's adjustment cache is keyed only by the adjustment stack, so strokes and pixel edits on that layer never render
 
@@ -216,11 +241,14 @@ written inside the repository):
   Every copy passes the same `state.editorOpen` gate, so they all run; none calls
   `stopImmediatePropagation`. The same "register per open, never detach" pattern appears in five
   more editor modules, with no misbehaviour demonstrated but the same unbounded growth:
-  `canvas-events.js:44-45` (`window` mousemove/mouseup), `clipboard-and-drop.js:36` (`window` paste,
-  registered in the capture phase — the `true` option is at `:76`), `tools/transform-session.js:294-311`
-  (five `document` handlers, added per Transform popup open), `build/right-panel.js:181,189`
-  (`document` mousemove/mouseup, per panel build) and `slider-ux.js:116,131` (`document`
-  pointermove/pointerup).
+
+  | Module | Lines | Listeners |
+  | --- | --- | --- |
+  | `canvas-events.js` | `:44-45` | `window` mousemove and mouseup |
+  | `clipboard-and-drop.js` | `:36` | `window` paste, registered in the capture phase (the `true` option is at `:76`) |
+  | `tools/transform-session.js` | `:294-311` | Five `document` handlers, added per Transform popup open |
+  | `build/right-panel.js` | `:181`, `:189` | `document` mousemove and mouseup, per panel build |
+  | `slider-ux.js` | `:116`, `:131` | `document` pointermove and pointerup |
 - **Impact:** after the Nth open/close cycle in one page session, one Ctrl+Z performs N undo steps
   and one Ctrl+Shift+Z N redo steps — silent loss of undo depth and a state the user did not ask
   for. Ctrl+S clicks the Save menu item N times (each accumulated handler calls
@@ -291,14 +319,17 @@ written inside the repository):
   | `ge-resize-menu-btn`, `ge-resize-menu` | `wire-topbar-menus.js:148-172`, `wire-topbar.js:39-40` | only `.ge-resize-menu` |
   | `ge-topbar-mask-color` | `wire-inpaint-controls.js:156,162,164` | `.ge-topbar-mask-color*` (3 rules) |
 
-  `build/topbar.js:50-76` emits only `resize`, `rotate-90`, `rotate-180`, `flip-h` and `flip-v` as
-  `data-image-action` values, so the `selection` and `fill` branches in `wire-topbar-menus.js:108-109`
-  are unreachable too. The consequence of the first row is that `applyEdgeAction`
-  (`wire-topbar.js:149-159`, the selection edge feather/delete) has no caller: its `if (btn && menu)`
-  block at `:163` is never entered, and the Image-menu item that used to click it is gone. The third
-  row means `attachColorPicker(topbarMaskColor)` (`wire-inpaint-controls.js:164-167`) never runs and
-  the "keep the topbar swatch and the inpaint-section swatch in sync" logic (`:150-160`) is
-  half-dead.
+  `build/topbar.js:50-76` emits only five `data-image-action` values: `resize`, then the
+  rotations `rotate-90` and `rotate-180`, then the flips `flip-h` and `flip-v`. So the `selection`
+  and `fill` branches in `wire-topbar-menus.js:108-109` are unreachable too. Two consequences
+  follow:
+
+  - The first row means `applyEdgeAction` (`wire-topbar.js:149-159`, the selection edge feather and
+    delete) has no caller. Its `if (btn && menu)` block at `:163` is never entered, and the
+    Image-menu item that used to click it is gone.
+  - The third row means `attachColorPicker(topbarMaskColor)` (`wire-inpaint-controls.js:164-167`)
+    never runs, and the "keep the topbar swatch and the inpaint-section swatch in sync" logic
+    (`:150-160`) is half-dead.
 - **Impact:** dead weight only — no user-visible failure beyond the features being absent from the
   UI (edge feather/delete is currently unreachable, and the mask tint colour can only be changed
   from the inpaint section). It costs maintenance attention: the topbar modules look like they wire
@@ -314,13 +345,13 @@ written inside the repository):
 - **Severity:** low
 - **Disposition:** backlog
 - **Evidence:** `document.getElementById('ge-wand-rembg')?.addEventListener(...)` is guarded by
-  optional chaining, and `git grep -l "ge-wand-rembg"` matches only this file — the ID appears in no
-  markup and no CSS rule, though three comments still describe the button as live
-  (`ai-rembg.js:26`, `:199`, `galleryEditor.js:3385`). The wand controls markup in
-  `build/controls.js:76-102` has `ge-wand-grow`, `ge-wand-vis`, `ge-wand-clear`, `ge-wand-invert`,
-  `ge-wand-delete`, `ge-wand-copy` and `ge-wand-mask`, but no `ge-wand-rembg`. The handler is
-  therefore never attached and its `wandClear()` / `applyImageTool('/api/image/remove-bg', …)` path
-  is unreachable.
+  optional chaining, and `git grep -l "ge-wand-rembg"` matches only this file. The ID appears in no
+  markup and no CSS rule, though three comments still describe the button as live (`ai-rembg.js:26`,
+  `:199`, `galleryEditor.js:3385`). The wand controls markup in `build/controls.js:76-102` has seven
+  IDs, and `ge-wand-rembg` is not one of them: `ge-wand-grow`, `ge-wand-vis`, `ge-wand-clear`,
+  then `ge-wand-invert`, `ge-wand-delete`, `ge-wand-copy` and `ge-wand-mask`. The handler is
+  therefore never attached and its `wandClear()` and `applyImageTool('/api/image/remove-bg', …)`
+  path is unreachable.
 - **Impact:** none at runtime; the selection-hint rembg path (`buildSelectionHintMask`, returned by
   `ai-rembg.js:203`) is still reachable through the toolbar Bg Remove button, which calls it at
   `ai-rembg.js:62`. The dead handler is misleading about which entry points exist.
@@ -355,13 +386,13 @@ written inside the repository):
   <span class="ge-canvas-size" id="ge-canvas-size" title="Canvas size" hidden></span>
   ```
 
-  Eight call sites write its text content (`canvas-transforms.js:88`, `ai-tools-misc.js:93,140`,
-  `wire-topbar-menus.js:73`, `wire-topbar-overflow.js:20`, `galleryEditor.js:1348,4147,4218`), but
-  nothing removes `hidden` — `grep -rn "ge-canvas-size" static/js/` shows only `textContent`
-  assignments. The single CSS rule for the class lives inside a media query and sets only font,
-  padding and line-height (`static/style.css:30107-30111`), so the user-agent `[hidden] {
-  display: none }` rule still applies. (`#ge-canvas-size-overlay`, `galleryEditor.js:3938`, is the
-  canvas-size prompt modal, an unrelated element.)
+  Eight call sites write its text content (`canvas-transforms.js:88`, `ai-tools-misc.js:93` and
+  `:140`, `wire-topbar-menus.js:73`, `wire-topbar-overflow.js:20`, and `galleryEditor.js` at `:1348`,
+  `:4147` and `:4218`), but nothing removes `hidden`: `grep -rn "ge-canvas-size" static/js/` shows
+  only `textContent` assignments. The single CSS rule for the class lives inside a media query and
+  sets only font, padding and line-height (`static/style.css:30107-30111`), so the user-agent
+  `[hidden] { display: none }` rule still applies. (`#ge-canvas-size-overlay`,
+  `galleryEditor.js:3938`, is the canvas-size prompt modal, an unrelated element.)
 - **Impact:** the document dimensions are never visible in the editor topbar; the writers run on
   every resize/rotate/upscale for nothing. The dedicated mobile rule suggests the badge was meant
   to be visible at least at narrow widths, so this looks like a dropped `hidden` removal rather than

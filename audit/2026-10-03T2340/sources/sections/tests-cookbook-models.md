@@ -18,47 +18,65 @@ already describes at `tests/conftest.py:20`.
 Line numbers refer to `2992bf6d368a`; `git diff --stat 2992bf6d368a -- tests/` is empty, so the
 working tree matches the reviewed commit for every path below.
 
-**Read fully (59 of 112 files, 5,162 lines):** all 23 `tests/test_cookbook_*.py` files; the whole
-`tests/test_provider_endpoints_*.py` group and `test_provider_label_js.py`,
-`test_providers_mixtral_logo_js.py`, `test_provider_device_flow_js.py`; all three
-`tests/test_endpoint_resolver_*.py` files; `test_model_interaction_registry.py`,
-`test_model_helper_owner_scope.py`, `test_model_name_tooltip.py`, `test_model_sort_js.py`;
-`test_gpu_compose_standalone.py`; five of the seventeen `tests/test_hwfit_*.py` files
-(`bandwidth_nonstring`, `gpu_count_nonnumeric`, `models_nonstring_fields`, `params_b_malformed`,
-`remote_validation`); `test_llm_core_concurrency.py`, `test_llm_core_connect_timeout.py`,
-`test_llm_core_reasoning_content_fallback.py`, `test_llm_core_sanitize_tool_calls.py`;
-`test_embedding_cache_confinement.py`, `test_embedding_endpoint_config.py`; three of the four
-`tests/test_tts_*.py` files plus `test_stt_leak.py`; all five `tests/test_youtube_*.py` files.
+**Read fully (59 of 112 files, 5,162 lines):**
 
-**Sampled — the region each claim rests on, plus the whole test-name index (5 files, 2,732 lines):**
-every one of the 112 files was parsed to an AST index of its test-function names, so the *names* of
-all 929 test functions were read. Beyond that I opened: `tests/test_llm_core_fallback.py` (the
-fallback-eligibility region `:1400-1500`, plus greps over the whole file),
-`tests/test_model_capability_readers.py` (imports and `:1-80`, then the test-name index),
-`tests/test_endpoint_owner_scope_followup.py` (the three source-text tests at `:360-414`),
-`tests/test_tts_service_enforce_cache_limit.py` (`:19-96`),
-`tests/test_hwfit_container_visibility_warning.py` (`:1-47`). Selection rule: I read in full
-every file that is itself a source-text or JavaScript assertion (because that is this section's
-subject), every file named by the run brief's two priority surfaces (Cookbook shell-command
-construction, provider URL handling), and every file that a `grep` over the slice flagged as a
-`*_js.py` or `read_text` module. I sampled the remaining groups (`test_llm_core_*` transport,
-`test_hwfit_*` ranking, `test_embedding_lanes*`, `test_provider_classification*` /
-`test_provider_detection_*`) by reading their test names and grepping them for the failure shapes
-this section hunts, rather than by reading their bodies.
+- all 23 `tests/test_cookbook_*.py` files
+- the whole `tests/test_provider_endpoints_*.py` group, plus `test_provider_label_js.py`,
+  `test_providers_mixtral_logo_js.py` and `test_provider_device_flow_js.py`
+- all three `tests/test_endpoint_resolver_*.py` files
+- `test_model_interaction_registry.py`, `test_model_helper_owner_scope.py`,
+  `test_model_name_tooltip.py` and `test_model_sort_js.py`
+- `test_gpu_compose_standalone.py`
+- five of the seventeen `tests/test_hwfit_*.py` files, named by their suffix: bandwidth_nonstring,
+  gpu_count_nonnumeric, models_nonstring_fields, params_b_malformed and remote_validation
+- `test_llm_core_concurrency.py`, `test_llm_core_connect_timeout.py`,
+  `test_llm_core_reasoning_content_fallback.py` and `test_llm_core_sanitize_tool_calls.py`
+- `test_embedding_cache_confinement.py` and `test_embedding_endpoint_config.py`
+- three of the four `tests/test_tts_*.py` files, plus `test_stt_leak.py`
+- all five `tests/test_youtube_*.py` files
 
-**Not read at all (48 files, 8,363 lines):** the six `tests/test_embedding_lanes*.py` files and
-`test_embeddings.py` / `test_embeddings_client.py`; `tests/test_endpoint_probing.py`; eleven
-`tests/test_hwfit_*.py` files (`amd`, `apple_bandwidth`, `cpu_arch_detection`, `cpu_only_fallback`,
-`gemma4_12b`, `macos`, `manual_backend`, `native_quant_labels`, `quant_formats`, `unified_nvidia`,
-`windows`); seventeen `tests/test_llm_core_*.py` files (Anthropic cache/temperature, Mistral content,
-Ollama, reasoning, streaming, SSE, usage deltas, thinking models); five `tests/test_model_*.py` files
-(`capabilities`, `context`, `defaults`, `discovery_status`, `routes` — the last is 2,179 lines and is
-the largest single gap in this section); the six `tests/test_provider_classification*.py` /
-`test_provider_detection_*.py` files. For these I can say only that the collection succeeded and the
-tests passed; I make no claim about what they prove, and the counts below should be read with that
-caveat. The provider **rejection**-path question the brief raises is answered from the
-`test_provider_endpoints_*` and `test_endpoint_resolver_*` files, which I did read fully — the
-unread `test_provider_classification*` / `test_provider_detection_*` files are the classification
+**Sampled: the region each claim rests on, plus the whole test-name index (5 files, 2,732 lines).**
+Every one of the 112 files was parsed to an AST index of its test-function names, so the *names* of
+all 929 test functions were read. Beyond that I opened:
+
+- `tests/test_llm_core_fallback.py`: the fallback-eligibility region `:1400-1500`, plus greps over
+  the whole file
+- `tests/test_model_capability_readers.py`: imports and `:1-80`, then the test-name index
+- `tests/test_endpoint_owner_scope_followup.py`: the three source-text tests at `:360-414`
+- `tests/test_tts_service_enforce_cache_limit.py`: `:19-96`
+- `tests/test_hwfit_container_visibility_warning.py`: `:1-47`
+
+Selection rule: I read in full every file that is itself a source-text or JavaScript assertion
+(because that is this section's subject), every file named by the run brief's two priority surfaces
+(Cookbook shell-command construction, provider URL handling), and every file that a `grep` over the
+slice flagged as a `*_js.py` or `read_text` module. I sampled the remaining groups by reading
+their test names and grepping them for the failure shapes this section hunts, rather than by
+reading their bodies:
+
+- `test_llm_core_*` transport
+- `test_hwfit_*` ranking
+- `test_embedding_lanes*`
+- `test_provider_classification*` and `test_provider_detection_*`
+
+**Not read at all (48 files, 8,363 lines):**
+
+- the six `tests/test_embedding_lanes*.py` files, `test_embeddings.py` and `test_embeddings_client.py`
+- `tests/test_endpoint_probing.py`
+- eleven `tests/test_hwfit_*.py` files, named by their suffix: amd, apple_bandwidth,
+  cpu_arch_detection, cpu_only_fallback, gemma4_12b, macos, manual_backend, native_quant_labels,
+  quant_formats, unified_nvidia and windows
+- seventeen `tests/test_llm_core_*.py` files (Anthropic cache and temperature, Mistral content,
+  Ollama, reasoning, streaming, SSE, usage deltas, thinking models)
+- five `tests/test_model_*.py` files, named by their suffix: capabilities, context, defaults,
+  discovery_status and routes. The last is 2,179 lines and is the largest single gap in this
+  section.
+- the six `tests/test_provider_classification*.py` and `test_provider_detection_*.py` files
+
+For these I can say only that the collection succeeded and the tests passed; I make no claim about
+what they prove, and the counts below should be read with that caveat. The provider **rejection**-path
+question the brief raises is answered from the `test_provider_endpoints_*` and
+`test_endpoint_resolver_*` files, which I did read fully. The unread
+`test_provider_classification*` and `test_provider_detection_*` files are the classification
 tables, not the URL builders.
 
 **Checks run** (project venv, from the repository root):
@@ -116,10 +134,11 @@ onto several lines, because `assert lines` at `:23` catches the empty selection 
   ```
 
   `tests/test_llm_core_sanitize_tool_calls.py:23-30` is the same loop with the same names. The root
-  conftest pre-imports only `sqlalchemy`, `sqlalchemy.orm`, `core.database`, `src.database` and
-  `core.models` (`tests/conftest.py:25-31`, `:53-57`), so `src.agent_tools` is not protected: if it
-  has not been imported by the time either file is collected, the guard fires and the stub stays in
-  `sys.modules` for the rest of the session. `tests/test_model_interaction_registry.py:17` binds
+  conftest pre-imports only five modules: `sqlalchemy` and `sqlalchemy.orm`, then `core.database`,
+  `src.database`, `core.models` (`tests/conftest.py:25-31`, `:53-57`), so `src.agent_tools` is
+  not protected. If it has not been imported by the time either file is collected, the guard fires
+  and the stub stays in `sys.modules` for the rest of the session.
+  `tests/test_model_interaction_registry.py:17` binds
   `from src.agent_tools import model_interaction_tools as mit`, so it then tests a mock. Measured:
 
   ```

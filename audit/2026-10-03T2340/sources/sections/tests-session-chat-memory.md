@@ -2,51 +2,73 @@
 
 ## Overview
 
-`tests/test_chat_attachment_picker.py`, `tests/test_chat_cached_model_normalization.py`, `tests/test_chat_helpers.py`, `tests/test_chat_helpers_bg_tasks_tracked.py`, `tests/test_chat_image_routing.py`, `tests/test_chat_metrics.py`, `tests/test_chat_model_provenance_js.py`, `tests/test_chat_preprocess_tool_policy.py`, `tests/test_chat_processor_pinned_memory.py`, `tests/test_chat_processor_web_search.py`, `tests/test_chat_route_tool_policy.py`, `tests/test_chat_stream_errors_js.py`, `tests/test_chat_stream_scope.py`, `tests/test_chat_tool_screenshot_xss.py`, `tests/test_chat_upload_limit_config.py`, `tests/test_chat_url_prefetch_failure_context.py`, `tests/test_chatgpt_subscription_routes.py`, `tests/test_chroma_client.py`, `tests/test_context_budget.py`, `tests/test_context_cache_per_endpoint.py`, `tests/test_context_compactor.py`, `tests/test_context_compactor_nonstring.py`, `tests/test_memory_add_submit_regression.py`, `tests/test_memory_audit_timeout.py`, `tests/test_memory_bullet_extraction.py`, `tests/test_memory_cli_add_nondict.py`, `tests/test_memory_extract_chat_nondict.py`, `tests/test_memory_extraction_parse.py`, `tests/test_memory_extractor_rows.py`, `tests/test_memory_extractor_vector_cross_tenant.py`, `tests/test_memory_extractor_vector_degraded.py`, `tests/test_memory_fallback_dislike.py`, `tests/test_memory_imports.py`, `tests/test_memory_owner_isolation.py`, `tests/test_memory_provider.py`, `tests/test_memory_recall_nondict_rows.py`, `tests/test_memory_routes_session_owner.py`, `tests/test_memory_routes_shim.py`, `tests/test_memory_store_unreadable_no_wipe.py`, `tests/test_memory_validate_entries_nondict.py`, `tests/test_personal_delete_file_confinement.py`, `tests/test_personal_dir_symlink_escape.py`, `tests/test_personal_docs_exclusions.py`, `tests/test_personal_docs_keyword_nondict.py`, `tests/test_personal_docs_lists.py`, `tests/test_personal_docs_office_index.py`, `tests/test_personal_docs_pdf_index.py`, `tests/test_personal_docs_state_store.py`, `tests/test_personal_index_hidden_dirs.py`, `tests/test_personal_remove_dir_confinement.py`, `tests/test_personal_upload_isolation.py`, `tests/test_personal_upload_privilege.py`, `tests/test_rag_index_hidden_dirs.py`, `tests/test_rag_keyword_fallback_owner.py`, `tests/test_rag_manager_owner_compat.py`, `tests/test_rag_remove_directory_scope.py`, `tests/test_rag_search_signature.py`, `tests/test_rag_server_directory_nonstring.py`, `tests/test_rag_vector_id_stability.py`, `tests/test_rag_vector_rename_owner.py`, `tests/test_searchservice_search_call.py`, `tests/test_session_actions_cleanup.py`, `tests/test_session_concurrent.py`, `tests/test_session_context_excludes_slash.py`, `tests/test_session_discovery_message_count.py`, `tests/test_session_endpoint_owner_scope.py`, `tests/test_session_export_filename.py`, `tests/test_session_export_nonstring_content.py`, `tests/test_session_ghost_delete.py`, `tests/test_session_image_cleanup.py`, `tests/test_session_list_owner_scope.py`, `tests/test_session_manager.py`, `tests/test_session_manager_cleanup.py`, `tests/test_session_manager_persist_guard.py`, `tests/test_session_mode_helpers.py`, `tests/test_session_owner_attribution.py`, `tests/test_session_routes_utcnow.py`, `tests/test_session_search.py`, `tests/test_session_search_batch_fetch.py`, `tests/test_session_tools_registry.py`, `tests/test_topic_analyzer.py`.
-
 This section asks what these 81 modules prove, not whether they pass. Most of them are
 regression pins written against a specific reported bug, so the question for each is: what is
 the assertion, what is the fixture, and which edit to the production code would make it fail?
 The two answers this section spends its findings on are "the assertion is a substring of the
 production source" and "the fixture is a re-implementation of the production logic".
 
-The boundary: the test harness itself (`tests/conftest.py`, `tests/helpers/*`,
-`tests/TESTING_STANDARD.md` as an artifact) belongs to `tests-harness`; it is cited here only
-as the repository's own rulebook. The production code these files pin belongs to
-`src-chat-session`, `src-memory-rag`, `src-llm-core`, `core-auth-session`, `services-memory`,
-`routes-chat-session`, `routes-rest-memory-personal-research`, `static-js-chat` and the other
-matching sections. Where a weak test sits on top of a defect another section already reports,
-this section names the test and cross-references the defect rather than restating it.
+The boundary with the neighbouring sections:
+
+- `tests-harness` owns the test harness itself: `tests/conftest.py`, `tests/helpers/*` and
+  `tests/TESTING_STANDARD.md` as an artifact. It is cited here only as the repository's own
+  rulebook.
+- The production code these files pin belongs to the matching sections:
+  - `src-chat-session`, `src-memory-rag`, `src-llm-core`
+  - `core-auth-session`, `services-memory`
+  - `routes-chat-session`, `routes-rest-memory-personal-research`
+  - `static-js-chat`
+
+Where a weak test sits on top of a defect another section already reports, this section names the
+test and cross-references the defect rather than restating it.
 
 ## Coverage
 
-**Read fully:** all 81 assigned files, 7,682 lines. The largest are `tests/test_chat_helpers.py`
-(582), `tests/test_chat_route_tool_policy.py` (344), `tests/test_session_search.py` (298),
-`tests/test_context_compactor.py` (294), `tests/test_memory_routes_session_owner.py` (289),
-`tests/test_chatgpt_subscription_routes.py` (280), `tests/test_memory_store_unreadable_no_wipe.py`
-(255), `tests/test_chat_metrics.py` (214), `tests/test_chat_model_provenance_js.py` (203),
-`tests/test_session_tools_registry.py` (198), `tests/test_session_manager.py` (194); the
-remainder are between 6 and 181 lines each. Nothing in the assigned list was left unopened.
+**Read fully:** all 81 assigned files, 7,682 lines. Nothing in the assigned list was left unopened.
+The largest files are below; the remainder are between 6 and 181 lines each.
 
-**Read partially — the production code each finding rests on:** `routes/chat_routes.py`
-`:305-317` (`_BROWSER_MCP_TOOLS`), `:428-441` (`_clear_orphaned_session_endpoint`), `:493-510`,
-`:541-575`, `:1478-1620` (the `disabled_tools` block) and the four `owner_filter(q,
-ModelEndpoint, owner)` sites; `routes/chat_helpers.py:520-580` (`_match_cached_model_id`,
-`_normalize_model_id_from_cache`) and `:752`; `routes/session_routes.py:260-290` (the incognito
-purge); `src/agent_loop.py:4225-4250` (the hard-max read); `src/llm_core.py:3335-3345` (the
-end-of-stream block); `src/memory.py:261-280` (`save`); `static/js/chat.js:2790-2796`,
-`:3975-3990`; `static/js/chatRenderer.js:33-54`; `static/js/chatStreamErrors.js` (whole, 23
-lines); `tests/TESTING_STANDARD.md:88-133` (the determinism and behavioral-first rules);
-`tests/pr6020`-style Node harness idioms in `tests/test_pr6020_browser_review_regressions.py`
-`:26-56`. Line numbers are the working tree at `2992bf6d368a`.
+| File | Lines |
+| --- | ---: |
+| `tests/test_chat_helpers.py` | 582 |
+| `tests/test_chat_route_tool_policy.py` | 344 |
+| `tests/test_session_search.py` | 298 |
+| `tests/test_context_compactor.py` | 294 |
+| `tests/test_memory_routes_session_owner.py` | 289 |
+| `tests/test_chatgpt_subscription_routes.py` | 280 |
+| `tests/test_memory_store_unreadable_no_wipe.py` | 255 |
+| `tests/test_chat_metrics.py` | 214 |
+| `tests/test_chat_model_provenance_js.py` | 203 |
+| `tests/test_session_tools_registry.py` | 198 |
+| `tests/test_session_manager.py` | 194 |
 
-**Not read:** the production modules these tests cover beyond the ranges above — `src/memory.py`
-beyond `save`/`load_all_for_update`, `src/personal_docs.py`, `src/rag_vector.py`,
-`src/rag_manager.py`, `src/context_compactor.py`, `src/topic_analyzer.py`, `core/session_manager.py`,
-`core/database.py` beyond `get_db_session`/`get_session_mode`/`set_session_mode`,
-`mcp_servers/memory_server.py`, `mcp_servers/rag_server.py`, and every other section's paths.
-`static/js/chat.js` and `static/js/chatRenderer.js` were read only at the cited ranges. The
-81 test files are the coverage claim; the code they exercise is the other sections' claim.
+**Read partially:** the production code each finding rests on. Line numbers are the working tree at
+`2992bf6d368a`.
+
+| File | Regions read |
+| --- | --- |
+| `routes/chat_routes.py` | `:305-317` (`_BROWSER_MCP_TOOLS`), `:428-441` (`_clear_orphaned_session_endpoint`), `:493-510`, `:541-575`, `:1478-1620` (the `disabled_tools` block), and the four `owner_filter(q, ModelEndpoint, owner)` sites |
+| `routes/chat_helpers.py` | `:520-580` (`_match_cached_model_id`, `_normalize_model_id_from_cache`) and `:752` |
+| `routes/session_routes.py` | `:260-290` (the incognito purge) |
+| `src/agent_loop.py` | `:4225-4250` (the hard-max read) |
+| `src/llm_core.py` | `:3335-3345` (the end-of-stream block) |
+| `src/memory.py` | `:261-280` (`save`) |
+| `static/js/chat.js` | `:2790-2796`, `:3975-3990` |
+| `static/js/chatRenderer.js` | `:33-54` |
+| `static/js/chatStreamErrors.js` | Whole (23 lines) |
+| `tests/TESTING_STANDARD.md` | `:88-133` (the determinism and behavioral-first rules) |
+| `tests/test_pr6020_browser_review_regressions.py` | `:26-56`, for the `tests/pr6020`-style Node harness idioms |
+
+**Not read:** the production modules these tests cover beyond the ranges above, and every other
+section's paths. `static/js/chat.js` and `static/js/chatRenderer.js` were read only at the cited
+ranges. The 81 test files are the coverage claim; the code they exercise is the other sections'
+claim.
+
+- `src/memory.py` beyond `save` and `load_all_for_update`
+- `src/personal_docs.py`, `src/rag_vector.py`, `src/rag_manager.py`
+- `src/context_compactor.py`, `src/topic_analyzer.py`
+- `core/session_manager.py`
+- `core/database.py` beyond `get_db_session`, `get_session_mode` and `set_session_mode`
+- `mcp_servers/memory_server.py`, `mcp_servers/rag_server.py`
 
 **Checks run:** the assigned set in one process, and the probes quoted in the findings:
 

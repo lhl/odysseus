@@ -2,41 +2,73 @@
 
 ## Overview
 
-This section covers the 44 paths assigned to it — 42 first-party JavaScript modules plus
-`MODULE_SUMMARY.md` and `package.json` — that are left after the other `static/js` sections took
-their slices: the shared utilities (`ui.js`, `storage.js`, `platform.js`, `panels.js`, `init.js`,
-`workspace.js`, `section-management.js`, `sidebar-layout.js`, `toolWindowZOrder.js`, `ui_visibility.js`,
-`a11y.js`, `keyboard-shortcuts.js`, `dragSort.js`, `escMenuStack.js`, `tourHints.js`, `tourAutoplay.js`,
-`startupShell.js`, `appConfig.js`, `util/ordinal.js`, `color/hex.js`), the input and media helpers
-(`codeRunner.js`, `fileHandler.js`, `censor.js`, `markdown.js`, `markdown/tableRow.js`,
-`emojiPicker.js`, `emojiShortcodes.js`, `langIcons.js`, `voiceRecorder.js`, `tts-ai.js`), the window
-management layer (`modalManager.js`, `modalSnap.js`, `tileManager.js`, `windowDrag.js`,
-`windowResize.js`), the four large panels that have no section of their own (`settings.js`,
-`tasks.js`, `skills.js`, `group.js`), and `theme.js` with the colour picker.
+This section covers the 44 paths assigned to it: 42 first-party JavaScript modules plus
+`MODULE_SUMMARY.md` and `package.json`. They are what is left after the other `static/js` sections
+took their slices, in five groups:
 
-The boundary: `static-js-chat` owns `chat.js`, `chatStream.js`, `chatRenderer.js` and
-`slashCommands.js` — where the theme name of this section's first finding, and the spinner message
-that section reports, enter the client — and its findings are cross-referenced here, not restated;
-`static-js-cookbook-settings-models` owns `cookbook*`, `admin.js`, `models.js`, `modelPicker.js`,
-`providers.js` and the `settings/*.js` framework, and explicitly leaves `settings.js`, `tasks.js`
-and `ui.js` to this section; `static-js-documents-email` and `static-js-editor` own the library and editor modules that
-call into `windowDrag.js`, `modalSnap.js` and `tileManager.js`. The Python routes, services and
-agent tools these modules call are out of scope (`routes-*`, `src-*` and `src-mcp` own those), so
-this section reviews what the browser does with a value it already has — not whether the server
-should have sent it.
+| Group | Modules |
+| --- | --- |
+| Shared utilities | `ui.js`, `storage.js`, `platform.js`, `panels.js`, `init.js`, `workspace.js`, `section-management.js`, `sidebar-layout.js`, `toolWindowZOrder.js`, `ui_visibility.js`, `a11y.js`, `keyboard-shortcuts.js`, `dragSort.js`, `escMenuStack.js`, `tourHints.js`, `tourAutoplay.js`, `startupShell.js`, `appConfig.js`, `util/ordinal.js`, `color/hex.js` |
+| Input and media helpers | `codeRunner.js`, `fileHandler.js`, `censor.js`, `markdown.js`, `markdown/tableRow.js`, `emojiPicker.js`, `emojiShortcodes.js`, `langIcons.js`, `voiceRecorder.js`, `tts-ai.js` |
+| Window management | `modalManager.js`, `modalSnap.js`, `tileManager.js`, `windowDrag.js`, `windowResize.js` |
+| Large panels with no section of their own | `settings.js`, `tasks.js`, `skills.js`, `group.js` |
+| Theme | `theme.js` with the colour picker |
+
+The Python routes, services and agent tools these modules call are out of scope (`routes-*`,
+`src-*` and `src-mcp` own those). This section reviews what the browser does with a value it
+already has, not whether the server should have sent it. Three neighbours own the code on the
+other side:
+
+- `static-js-chat` owns `chat.js`, `chatStream.js`, `chatRenderer.js` and `slashCommands.js`. That
+  is where the theme name of this section's first finding, and the spinner message that section
+  reports, enter the client. Its findings are cross-referenced here, not restated.
+- `static-js-cookbook-settings-models` owns `cookbook*`, `admin.js`, `models.js` and `modelPicker.js`,
+  plus `providers.js` and the `settings/*.js` framework. It explicitly leaves `settings.js`,
+  `tasks.js` and `ui.js` to this section.
+- `static-js-documents-email` and `static-js-editor` own the library and editor modules that call
+  into `windowDrag.js`, `modalSnap.js` and `tileManager.js`.
 
 ## Coverage
 
-**Read fully:** the 32 modules at or under ~530 lines (7,537 lines) plus the section's two
-non-JavaScript paths — `util/ordinal.js` (13), `color/hex.js` (14), `markdown/tableRow.js` (19),
-`toolWindowZOrder.js` (46), `platform.js` (47), `panels.js` (53), `ui_visibility.js` (73),
-`appConfig.js` (86), `escMenuStack.js` (102), `storage.js` (125), `tourAutoplay.js` (133),
-`startupShell.js` (153), `a11y.js` (165), `tourHints.js` (179), `langIcons.js` (187),
-`workspace.js` (208), `windowResize.js` (233), `section-management.js` (260), `dragSort.js` (265),
-`voiceRecorder.js` (283), `keyboard-shortcuts.js` (292), `emojiPicker.js` (313), `windowDrag.js`
-(333), `censor.js` (356), `tileManager.js` (394), `codeRunner.js` (403), `init.js` (421),
-`colorPicker.js` (453), `emojiShortcodes.js` (458), `spinner.js` (463), `fileHandler.js` (483),
-`tts-ai.js` (524), `MODULE_SUMMARY.md` (229) and `package.json` (1).
+**Read fully:** the 32 modules at or under about 530 lines (7,537 lines), plus the section's two
+non-JavaScript paths.
+
+| File | Lines |
+| --- | ---: |
+| `util/ordinal.js` | 13 |
+| `color/hex.js` | 14 |
+| `markdown/tableRow.js` | 19 |
+| `toolWindowZOrder.js` | 46 |
+| `platform.js` | 47 |
+| `panels.js` | 53 |
+| `ui_visibility.js` | 73 |
+| `appConfig.js` | 86 |
+| `escMenuStack.js` | 102 |
+| `storage.js` | 125 |
+| `tourAutoplay.js` | 133 |
+| `startupShell.js` | 153 |
+| `a11y.js` | 165 |
+| `tourHints.js` | 179 |
+| `langIcons.js` | 187 |
+| `workspace.js` | 208 |
+| `windowResize.js` | 233 |
+| `section-management.js` | 260 |
+| `dragSort.js` | 265 |
+| `voiceRecorder.js` | 283 |
+| `keyboard-shortcuts.js` | 292 |
+| `emojiPicker.js` | 313 |
+| `windowDrag.js` | 333 |
+| `censor.js` | 356 |
+| `tileManager.js` | 394 |
+| `codeRunner.js` | 403 |
+| `init.js` | 421 |
+| `colorPicker.js` | 453 |
+| `emojiShortcodes.js` | 458 |
+| `spinner.js` | 463 |
+| `fileHandler.js` | 483 |
+| `tts-ai.js` | 524 |
+| `MODULE_SUMMARY.md` | 229 |
+| `package.json` | 1 |
 
 **Read in targeted ranges, or at structure level only:** the ten modules over 1,000 lines plus
 `sidebar-layout.js`. For these the section claims only what is listed, and every citation in the
@@ -310,14 +342,22 @@ finding is counted in that section.
   ```
 
   `_enterFs` (`:131-135`) is the only caller of `onEnterFullscreen`, so every `onEnterFullscreen`
-  passed by a caller is unreachable: `static/js/memory.js:131`, `static/js/notes.js:168`,
-  `static/js/theme.js:1475`, `static/js/emailLibrary.js:3420` and
-  `static/js/documentLibrary.js:1801`. Two fullscreen classes those callbacks add have no other
-  writer anywhere in the tree (`grep -rn "doclib-fullscreen" --include=*.js --include=*.html
-  --include=*.py` → only `documentLibrary.js:1763-1799` and `style.css`; the same for
-  `notes-window-fullscreen` → only `notes.js:164-185`), and `documentLibrary.js:1803` still passes
-  `enableFullscreen: false` as though the option were live. `git log -L 64,64:static/js/windowDrag.js`
-  shows the disable is deliberate and recent:
+  passed by a caller is unreachable:
+
+  | File | Line |
+  | --- | ---: |
+  | `static/js/memory.js` | `:131` |
+  | `static/js/notes.js` | `:168` |
+  | `static/js/theme.js` | `:1475` |
+  | `static/js/emailLibrary.js` | `:3420` |
+  | `static/js/documentLibrary.js` | `:1801` |
+
+  Two fullscreen classes those callbacks add have no other writer anywhere in the tree
+  (`grep -rn "doclib-fullscreen" --include=*.js --include=*.html --include=*.py` → only
+  `documentLibrary.js:1763-1799` and `style.css`; the same for `notes-window-fullscreen` → only
+  `notes.js:164-185`), and `documentLibrary.js:1803` still passes `enableFullscreen: false` as
+  though the option were live. `git log -L 64,64:static/js/windowDrag.js` shows the disable is
+  deliberate and recent:
 
   ```
   22bd77ee fix(windowDrag): disable duplicate top-edge fullscreen snap (#3495)

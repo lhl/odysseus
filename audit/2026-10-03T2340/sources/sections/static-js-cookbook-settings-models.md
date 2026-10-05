@@ -4,28 +4,53 @@
 
 First-party client-side JavaScript for the Cookbook (model download, dependency install, serve and
 schedule flows), the admin panel, the model picker, the provider registry, and the Settings panel
-framework — 24 files under `static/js/`, about 24,800 lines. This section covers what the browser
-does with values it receives from the server and with what the user types into these panels. It does
-not cover the Python routes, helpers or agent tools those modules call (`routes-cookbook`,
-`routes-models`, `routes-shell`, `routes-rest-auth-admin` and `src-mcp` own those), nor
-`static/js/settings.js`, `tasks.js`, `ui.js` and the other static modules outside the list above
-(`static-js-rest` owns those), nor the memory/RAG panels (`static-js-research-memory-rag`).
+framework: 24 files under `static/js/`, about 24,800 lines. This section covers what the browser
+does with values it receives from the server and with what the user types into these panels.
+
+It does not cover the Python routes, helpers or agent tools those modules call. Five sections own
+those: `routes-cookbook`, `routes-models` and `routes-shell`, then `routes-rest-auth-admin` and
+`src-mcp`.
+`static-js-rest` owns `static/js/settings.js`, `tasks.js`, `ui.js` and the other static modules
+outside the list above, and `static-js-research-memory-rag` owns the memory and RAG panels.
 
 ## Coverage
 
-**Read in full:** `cookbookPorts.js` (19), `cookbookProgressSignal.js` (29), `model/matchKey.js`
-(19), `modelSort.js` (33), `settings/dom.js` (7), `settings/navigation.js` (57),
-`settings/lifecycle.js` (176), `settings/search.js` (172), `settings/registry.js` (237),
-`settings/sidebar.js` (238), `cookbook-deps-recipes.js` (189), `providerDeviceFlow.js` (128),
-`cookbookSchedule.js` (386).
+**Read in full:** 13 files.
 
-**Read in part:** `admin.js` (3197), `cookbook.js` (3677), `cookbookServe.js` (4305),
-`cookbookRunning.js` (4435), `cookbook-hwfit.js` (2826), `cookbookDownload.js` (670),
-`cookbook-diagnosis.js` (1079), `models.js` (642), `presets.js` (1151), `modelPicker.js` (958),
-`providers.js` (186). These were reviewed by targeted search — every `innerHTML`/`insertAdjacentHTML`
-sink, every serve/download command builder, every `fetch` URL and request body, and every place a
-secret is persisted — plus line-by-line reading of each range cited below. They were not read line
-by line, so a defect outside those areas could remain.
+| File | Lines |
+| --- | ---: |
+| `cookbookPorts.js` | 19 |
+| `cookbookProgressSignal.js` | 29 |
+| `model/matchKey.js` | 19 |
+| `modelSort.js` | 33 |
+| `settings/dom.js` | 7 |
+| `settings/navigation.js` | 57 |
+| `settings/lifecycle.js` | 176 |
+| `settings/search.js` | 172 |
+| `settings/registry.js` | 237 |
+| `settings/sidebar.js` | 238 |
+| `cookbook-deps-recipes.js` | 189 |
+| `providerDeviceFlow.js` | 128 |
+| `cookbookSchedule.js` | 386 |
+
+**Read in part:** 11 files, reviewed by targeted search. The search covered every
+`innerHTML` and `insertAdjacentHTML` sink, every serve and download command builder, every `fetch`
+URL and request body, and every place a secret is persisted, plus line-by-line reading of each
+range cited below. They were not read line by line, so a defect outside those areas could remain.
+
+| File | Lines |
+| --- | ---: |
+| `admin.js` | 3,197 |
+| `cookbook.js` | 3,677 |
+| `cookbookServe.js` | 4,305 |
+| `cookbookRunning.js` | 4,435 |
+| `cookbook-hwfit.js` | 2,826 |
+| `cookbookDownload.js` | 670 |
+| `cookbook-diagnosis.js` | 1,079 |
+| `models.js` | 642 |
+| `presets.js` | 1,151 |
+| `modelPicker.js` | 958 |
+| `providers.js` | 186 |
 
 **Not read:** none of the 24 assigned paths was skipped entirely.
 
@@ -209,14 +234,23 @@ by line, so a defect outside those areas could remain.
   ```
 
   That is the whole MCP (16 ids), RAG (9), API-token (8), webhook (7), CalDAV (6) and feature-toggle
-  (1) markup. The entry points are null-guarded and return immediately — `admin.js:2068`
-  (`if (!list) return;`), `:2795` (`if (!urlIn || !saveBtn) return;`) — and five of the functions are
-  never called at all: `loadRag` (`:2414`), `initRag` (`:2482`), `loadWebhooks` (`:2689`),
-  `initWebhookForm` (`:2740`) and `loadFeatures` (`:2768`) appear only in their own definitions and in
-  calls from inside the dead cluster; `refreshAll` (`:3169-3176`) calls `loadMcpServers` and
-  `loadTokens`, which return on the guard, and `initAll` (`:3155-3164`) calls `initMcpForm`,
-  `initCalDAV` and `initTokenForm`, which do the same. `loadRag`'s own error path dereferences the
-  same missing elements, so it would throw again inside the `catch`:
+  (1) markup. The entry points are null-guarded and return immediately: `admin.js:2068`
+  (`if (!list) return;`) and `:2795` (`if (!urlIn || !saveBtn) return;`). Five of the functions are
+  never called at all. They appear only in their own definitions and in calls from inside the dead
+  cluster:
+
+  | Function | Line |
+  | --- | ---: |
+  | `loadRag` | `:2414` |
+  | `initRag` | `:2482` |
+  | `loadWebhooks` | `:2689` |
+  | `initWebhookForm` | `:2740` |
+  | `loadFeatures` | `:2768` |
+
+  `refreshAll` (`:3169-3176`) calls `loadMcpServers` and `loadTokens`, which return on the guard,
+  and `initAll` (`:3155-3164`) calls `initMcpForm`, `initCalDAV` and `initTokenForm`, which do the
+  same. `loadRag`'s own error path dereferences the same missing elements, so it would throw again
+  inside the `catch`:
 
   ```js
   // static/js/admin.js:2455-2458

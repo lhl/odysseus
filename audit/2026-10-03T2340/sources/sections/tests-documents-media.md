@@ -8,16 +8,28 @@ routes, and the image-model ranking helper — 256 tests in total. This section 
 those tests prove: each finding quotes the assertion and the fixture and says which behaviour is
 left untested.
 
-The boundary: the production code these suites exercise belongs to other sections — `src-documents`
-(the processor, actions, agent tools and `attachment_refs`), `routes-gallery-document` and
-`routes-rest-media-files` (the gallery, upload and document routes), `static-js-documents-email` and
-`static-js-editor` (document.js, documentLibrary.js, notes.js, fileHandler.js) and `services-media`.
-Where the code itself is at fault, those sections are cross-referenced in prose rather than
-restated; everything reported below is a defect in a test. On the test side the neighbours are
-`tests-security.md` (auth and security regressions), `tests-session-chat-memory.md` (chat, session
-and memory suites), `tests-rest.md`, `tests-llm-tools.md`, `tests-cookbook-models.md`,
-`tests-email-calendar.md` and `tests-harness.md` (conftest, helpers, taxonomy, run tooling). This
-section owns exactly the 57 `tests/` paths listed for `tests-documents-media` in `run.toml`.
+The boundary with the neighbouring sections. Where the code itself is at fault, those sections are
+cross-referenced in prose rather than restated; everything reported below is a defect in a test.
+
+The production code these suites exercise belongs to:
+
+| Section | What it owns |
+| --- | --- |
+| `src-documents` | The processor, actions, agent tools and `attachment_refs` |
+| `routes-gallery-document`, `routes-rest-media-files` | The gallery, upload and document routes |
+| `static-js-documents-email`, `static-js-editor` | `document.js`, `documentLibrary.js`, `notes.js`, `fileHandler.js` |
+| `services-media` | The media services |
+
+On the test side the neighbours are:
+
+| Section | What it owns |
+| --- | --- |
+| `tests-security` | Auth and security regressions |
+| `tests-session-chat-memory` | Chat, session and memory suites |
+| `tests-harness` | conftest, helpers, taxonomy, run tooling |
+| `tests-rest`, `tests-llm-tools`, `tests-cookbook-models`, `tests-email-calendar` | The remaining test groups |
+
+This section owns exactly the 57 `tests/` paths listed for `tests-documents-media` in `run.toml`.
 
 ## Coverage
 
@@ -55,11 +67,13 @@ Line numbers are the working tree at `2992bf6d368a`.
 **Not read:** the modules under test outside the regions above, and the other 57 sections' paths.
 The coverage claim here is about the test files; the code they exercise was reviewed by the owning
 sections and is not re-reviewed. The sibling suites for this surface that belong to other sections'
-assignments — `test_build_user_content_pdf_marker.py`, `test_owned_document_query.py`,
-`test_replace_messages_upload_reservations.py`, `test_security_headers_pdf_preview.py`,
-`test_active_document_clear.py`, `test_auth_disabled_document_access.py`,
-`test_personal_upload_*.py`, `test_generated_image_confinement.py` and the rest of `tests/` — were
-opened only where a finding cross-references them.
+assignments were opened only where a finding cross-references them:
+
+- `test_build_user_content_pdf_marker.py`, `test_owned_document_query.py`
+- `test_replace_messages_upload_reservations.py`, `test_security_headers_pdf_preview.py`
+- `test_active_document_clear.py`, `test_auth_disabled_document_access.py`
+- `test_personal_upload_*.py`, `test_generated_image_confinement.py`
+- the rest of `tests/`
 
 **Checks run:** the 57 files as one suite, plus throwaway probes under `/tmp/probe` (two pytest
 plugins — one that swaps a module for a textually mutated copy, one that raises from `find_spec`
@@ -76,19 +90,23 @@ The one skip is the only behavioural assertion in `tests/test_upload_content_det
 
 ### What these tests are made of
 
-21 of the 57 files assert on the text of a source file rather than on behaviour: 12 have no
-behavioural assertion at all (`test_doc_library_open_orphaned.py`,
-`test_document_ai_preview_refresh_js.py`, `test_document_deeplink.py`,
-`test_document_diff_discard_on_update_js.py`, `test_document_editor_scroll.py`,
-`test_document_library_delete_counters.py`, `test_gallery_album_owner_scope.py`,
-`test_gallery_image_privileges.py`, `test_notes_dom_xss_helpers.py`,
-`test_notes_search_reset_on_reopen_js.py`, `test_notes_select_esc_listener_js.py`,
-`test_upload_error_surfaced.py`) and 9 mix source-text assertions with behavioural ones. The
-repository's own standard discourages this and permits it only when the invariant cannot be driven
-at runtime, with the reason stated in the docstring (`tests/TESTING_STANDARD.md:118-132`). Most of
-the JS files state that reason ("document.js is browser-coupled and not importable in pytest"),
-which the Node-driven `tests/test_notes_z_order_js.py` shows is not true of every module in this
-set but is true of the ones making the claim. Three do not state a reason
+21 of the 57 files assert on the text of a source file rather than on behaviour. 12 have no
+behavioural assertion at all, and 9 mix source-text assertions with behavioural ones.
+
+The 12 with no behavioural assertion:
+
+- `test_doc_library_open_orphaned.py`, `test_document_ai_preview_refresh_js.py`
+- `test_document_deeplink.py`, `test_document_diff_discard_on_update_js.py`
+- `test_document_editor_scroll.py`, `test_document_library_delete_counters.py`
+- `test_gallery_album_owner_scope.py`, `test_gallery_image_privileges.py`
+- `test_notes_dom_xss_helpers.py`, `test_notes_search_reset_on_reopen_js.py`
+- `test_notes_select_esc_listener_js.py`, `test_upload_error_surfaced.py`
+
+The repository's own standard discourages this and permits it only when the invariant cannot be
+driven at runtime, with the reason stated in the docstring (`tests/TESTING_STANDARD.md:118-132`).
+Most of the JS files state that reason ("document.js is browser-coupled and not importable in
+pytest"), which the Node-driven `tests/test_notes_z_order_js.py` shows is not true of every module
+in this set but is true of the ones making the claim. Three do not state a reason
 (`test_document_ai_preview_refresh_js.py`, `test_gallery_image_privileges.py`,
 `test_notes_dom_xss_helpers.py`), and one states a reason the repository's own tests contradict
 (finding 1). The findings below are the individual cases where the source-text shortcut, or a
@@ -97,24 +115,33 @@ fixture, leaves a named behaviour unverified.
 ### Upload retention and attachment references
 
 These tests do cover the retention and reference machinery, and mostly by behaviour rather than by
-text. `tests/test_upload_handler_cleanup.py` (13 tests) drives `cleanup_old_uploads` and the
-`manual_cleanup` route endpoint against seeded upload indexes and a real temporary SQLite database,
-and covers: retention of an upload referenced from chat content and metadata, from
-`Document.current_content`, `DocumentVersion.content`, `Note.image_url`/`color`,
-`CalendarCal.color` and `CalendarEvent.color`/`description`/`location`, and from a gallery row's
-stored content hash; retention when two index rows disagree; retention when a row has no
-authoritative lifecycle metadata; fail-closed behaviour for a missing or corrupt index; index
-restore when file removal fails; and a 503 when reference discovery raises.
-`tests/test_upload_handler_atomicity.py` covers the `uploads.json` read-modify-write race and `.bak`
-recovery (though one of its two concurrency tests is finding 2 below).
-`tests/test_attachment_refs.py` exercises `persistable_message_content`, `search_index_text` and
-`attachment_ref` (including its hash aliases) on real inputs, and `tests/test_upload_routes_owner_scope.py` pins the
-owner gate and symlink confinement on the download/vision endpoints. What is *not* covered by these
-files: `persistable_message_content` with a string or scalar argument, and the `owner` argument of
-`UploadHandler.resolve_upload` — the attachment-budget and media-subtype tests replace the real
-handler with a stub whose `resolve_upload(self, fid, owner=None)` ignores `owner`, so no test in
-this set proves an attachment cannot be pulled into a turn by an id belonging to another user. The
-`src-documents` and `routes-rest-media-files` sections own the corresponding code.
+text. Four files carry it:
+
+- `tests/test_upload_handler_cleanup.py` (13 tests) drives `cleanup_old_uploads` and the
+  `manual_cleanup` route endpoint against seeded upload indexes and a real temporary SQLite
+  database. It covers:
+  - retention of an upload referenced from chat content and metadata
+  - retention of an upload referenced from `Document.current_content` or `DocumentVersion.content`
+  - retention of an upload referenced from `Note.image_url` or `color`
+  - retention of an upload referenced from `CalendarCal.color`, or from `CalendarEvent.color`,
+    `description` or `location`
+  - retention of an upload referenced from a gallery row's stored content hash
+  - retention when two index rows disagree, or when a row has no authoritative lifecycle metadata
+  - fail-closed behaviour for a missing or corrupt index
+  - index restore when file removal fails, and a 503 when reference discovery raises
+- `tests/test_upload_handler_atomicity.py` covers the `uploads.json` read-modify-write race and
+  `.bak` recovery (though one of its two concurrency tests is finding 2 below).
+- `tests/test_attachment_refs.py` exercises `persistable_message_content`, `search_index_text` and
+  `attachment_ref` (including its hash aliases) on real inputs.
+- `tests/test_upload_routes_owner_scope.py` pins the owner gate and symlink confinement on the
+  download and vision endpoints.
+
+What is *not* covered by these files: `persistable_message_content` with a string or scalar
+argument, and the `owner` argument of `UploadHandler.resolve_upload`. The attachment-budget and
+media-subtype tests replace the real handler with a stub whose `resolve_upload(self, fid,
+owner=None)` ignores `owner`, so no test in this set proves an attachment cannot be pulled into a
+turn by an id belonging to another user. The `src-documents` and `routes-rest-media-files`
+sections own the corresponding code.
 
 ### [BUG] The gallery album owner-scope tests assert on source text, and an unfiltered count and cover pass all five
 

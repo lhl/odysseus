@@ -14,14 +14,17 @@ The ten modules under `static/js/compare/` are the model-comparison tool:
 - `state.js` the shared mutable state
 - `icons.js` the SVG icons, eval prompts and storage keys
 
-The boundary: this section covers what these modules send to and render from the compare endpoints,
-not the endpoints themselves — `/api/probe-selected`, `/api/models`, `/api/session`,
-`/api/chat_stream`, `/api/search/query` and `/api/compare/record` and their gates belong to
-`routes-models`, `routes-rest-*` and `core-auth-session`. The markdown renderer the panes write
-model output through is `static-js-rest` (`markdown.js`) and `static-js-chat`
-(`chatRenderer.js`, which also owns the `getModelCost`, `renderAskUserCard` and
-`safeDisplayImageSrc` helpers `stream.js` imports). The `[CMP]` blind-mode naming contract is
-`routes-sessions`; its redaction tests are cited below rather than restated.
+This section covers what these modules send to and render from the compare endpoints, not the
+endpoints themselves. Three groups of code belong to other sections:
+
+- The endpoints and their gates belong to `routes-models`, `routes-rest-*` and `core-auth-session`:
+  - `/api/probe-selected`, `/api/models`, `/api/session`
+  - `/api/chat_stream`, `/api/search/query`, `/api/compare/record`
+- The markdown renderer the panes write model output through is `static-js-rest` (`markdown.js`)
+  and `static-js-chat` (`chatRenderer.js`, which also owns the `getModelCost`, `renderAskUserCard`
+  and `safeDisplayImageSrc` helpers `stream.js` imports).
+- The `[CMP]` blind-mode naming contract is `routes-sessions`; its redaction tests are cited below
+  rather than restated.
 
 Security provenance of the probe path, which this section was asked to settle: **no API key, bearer
 token or Authorization header exists anywhere in `static/js/compare/`** — `grep -rn
@@ -86,11 +89,17 @@ have; it is recorded in the rejected-hypotheses ledger rather than reported as a
 Line numbers are the working tree at `2992bf6d368a` (clean apart from this run's untracked `audit/`
 directory).
 
-**Checks run:** the six suites matching this surface — discovered with
-`ls tests | grep -iE 'compare'` → `test_blind_compare_redaction.py`,
-`test_compare_ask_user_routing.py`, `test_compare_endpoint_owner_scope.py`, `test_compare_js.py`,
-`test_compare_routes_shim.py`, `test_compare_stop_disconnect_poll.py` — plus
-`tests/test_esc_menu_stack_js.py`, which pins the dropdown-dismiss registry `panes.js` uses. Run:
+**Checks run:** the six suites matching this surface, discovered with `ls tests | grep -iE 'compare'`:
+
+- `test_blind_compare_redaction.py`
+- `test_compare_ask_user_routing.py`
+- `test_compare_endpoint_owner_scope.py`
+- `test_compare_js.py`
+- `test_compare_routes_shim.py`
+- `test_compare_stop_disconnect_poll.py`
+
+Also `tests/test_esc_menu_stack_js.py`, which pins the dropdown-dismiss registry `panes.js` uses.
+Run:
 
 ```
 $ venv/bin/python -m pytest -q tests/test_blind_compare_redaction.py \

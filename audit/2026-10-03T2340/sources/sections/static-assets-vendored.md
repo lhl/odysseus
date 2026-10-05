@@ -74,21 +74,40 @@ Line numbers refer to `2992bf6d368a` in the working tree; `git log --oneline -1`
 - `static/js/**` (other sections) except the lines cited below
 - `static/index.html` markup beyond the greps described above
 
-**Checks run:** a probe against the real ASGI app via `fastapi.testclient` (`GET /`, `/login`,
-`/static/sw.js`, `/static/{index,login,wave-variants,whirlpool-variants,modal-control-variants}.html`,
-`/static/manifest.json`, `/backgrounds`) recording status, `Location`, the
-`Content-Security-Policy` header and the response header name set; a script that extracts the URLs
-`index.html` actually requests and diffs them against `PRECACHE` in `sw.js`; a script that resolves
-the KaTeX `@font-face` URLs against `static/lib/katex/fonts/`; greps for `Service-Worker-Allowed`,
-`Content-Security-Policy`, `@import`, `url(http`, `qrcode`, `jsdelivr`, `createElement('script')`
-and remote `src=`/`href=` across the tree. Test suites were discovered with
+**Checks run:**
+
+- a probe against the real ASGI app via `fastapi.testclient`, recording status, `Location`, the
+  `Content-Security-Policy` header and the response header name set. It requested:
+  - `GET /`, `/login`, `/backgrounds`
+  - `/static/sw.js` and `/static/manifest.json`
+  - `index.html` and `login.html` under `/static/`
+  - the three prototype pages `wave-variants.html`, `whirlpool-variants.html` and
+    `modal-control-variants.html`
+- a script that extracts the URLs `index.html` actually requests and diffs them against `PRECACHE`
+  in `sw.js`
+- a script that resolves the KaTeX `@font-face` URLs against `static/lib/katex/fonts/`
+- greps across the tree for these strings:
+  - `Service-Worker-Allowed`, `Content-Security-Policy`, `@import`, `url(http`
+  - `qrcode`, `jsdelivr`, `createElement('script')`
+  - remote `src=` and `href=`
+
+Test suites were discovered with
 `ls tests | grep -iE 'static|sw|serve_html|nonce|security_header|font|markdown_lazy|panel_loader|app_config_shared'`
-and run as one command — `venv/bin/python -m pytest -q tests/test_serve_html_with_nonce.py
-tests/test_security_headers_middleware.py tests/test_security_headers_pdf_preview.py
-tests/test_app_static_mime.py tests/test_markdown_lazy_lib_loading_js.py tests/test_panel_loader_js.py
-tests/test_app_config_shared_fetch_js.py tests/test_font_routes.py tests/test_admin_device_flow_static.py
-tests/test_setup_device_auth_static.py tests/test_slash_autocomplete_static.py
-tests/test_document_render_pdf_iframe.py` — **64 passed, 1 warning**.
+and run as one command (`venv/bin/python -m pytest -q` over the twelve files below): **64 passed,
+1 warning**.
+
+- `tests/test_serve_html_with_nonce.py`
+- `tests/test_security_headers_middleware.py`
+- `tests/test_security_headers_pdf_preview.py`
+- `tests/test_app_static_mime.py`
+- `tests/test_markdown_lazy_lib_loading_js.py`
+- `tests/test_panel_loader_js.py`
+- `tests/test_app_config_shared_fetch_js.py`
+- `tests/test_font_routes.py`
+- `tests/test_admin_device_flow_static.py`
+- `tests/test_setup_device_auth_static.py`
+- `tests/test_slash_autocomplete_static.py`
+- `tests/test_document_render_pdf_iframe.py`
 
 **Out-of-scope observation, not counted as a finding:** `app.py:943` serves `/backgrounds` from
 `static/backgrounds.html`, which does not exist in the tree (`ls static/` has no such file), so an
@@ -124,8 +143,8 @@ authenticated `GET /backgrounds` reaches `serve_html_with_nonce` on a missing pa
   if (e.request.mode === 'navigate' && url.pathname === '/') {   // sw.js:196
   ```
 
-  `/`, `/notes`, `/calendar`, `/email`, `/library` and `/login` are all outside `/static/`
-  (`app.py:893-949`), and the only pages inside it are the unreferenced `*-variants.html`
+  The six app pages (root, notes, calendar, email, library and login) are all outside
+  `/static/` (`app.py:893-949`), and the only pages inside it are the unreferenced `*-variants.html`
   prototypes and `static/index.html` itself.
 - **Impact:** the PWA installs and the worker activates, but it intercepts nothing the app
   actually loads — no offline app shell, no cached HTML, no cached module responses for the real

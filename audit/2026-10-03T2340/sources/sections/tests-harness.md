@@ -37,23 +37,34 @@ working tree matches the reviewed commit for every path below.
 
 `tests/helpers/__init__.py` is empty (0 bytes) — it exists only to make `tests.helpers` a package.
 
-**Read partially — the code each finding rests on:** the 21 `scripts/odysseus-*` entry points each CLI
-test targets, at the function under test (`_text_len`, `_preview_text`, `_text_field`, `_mask_token`,
-`_recipient_list`, `_split_recipients`, `_memory_entries`, `_file_rows`, `_skill_entries`,
-`_contact_rows`, `_entry_or_fail`, `_json_list`, `_json_dict`, `_decode_png_data`, `_summarize`,
-`cmd_read`, `cmd_list`, `_resolve`, `_album_image_count`, `_calendar_name`, `_serialize`) and the
-imports they need; `static/js/markdown/tableRow.js` and `static/js/ui.js` (`esc`) for the streaming
-harness; `pyproject.toml` (`[tool.pytest.ini_options]`), `.github/workflows/ci.yml:104-146` (the
-pytest job) and `tests/test_docker_devops_hardening.py:26-30`, `:244-251` (the doc-interpreter guard);
-`tests/test_settings_shell_js_behavior.py` and `tests/test_streaming_segmenter_js.py`, which are the
-pytest entry points for two of this section's harness files.
+**Read partially:** the code each finding rests on.
 
-**Not read:** the ~800 remaining test modules and everything they cover — the other `tests-*` sections
-own those, and this section's claims are about the harness those modules run on, not about them.
-`tests/test_run_focus.py`, `tests/test_taxonomy.py`, `tests/test_run_order_report.py`,
-`tests/test_helpers_import_state.py`, `tests/test_db_stubs_helper.py` and the six
-`tests/test_embedding_lanes*.py` files are other sections' paths; they were read only as the
-consumers of this section's helpers.
+- the 21 `scripts/odysseus-*` entry points each CLI test targets, at the function under test, and
+  the imports they need. The functions are:
+  - text: `_text_len`, `_preview_text`, `_text_field`
+  - tokens and recipients: `_mask_token`, `_recipient_list`, `_split_recipients`
+  - row builders: `_memory_entries`, `_file_rows`, `_skill_entries`, `_contact_rows`
+  - JSON: `_entry_or_fail`, `_json_list`, `_json_dict`
+  - commands: `cmd_read`, `cmd_list`
+  - images and summaries: `_decode_png_data`, `_summarize`, `_serialize`
+  - lookups: `_resolve`, `_album_image_count`, `_calendar_name`
+- `static/js/markdown/tableRow.js` and `static/js/ui.js` (`esc`), for the streaming harness
+- `pyproject.toml` (`[tool.pytest.ini_options]`) and `.github/workflows/ci.yml:104-146` (the pytest
+  job)
+- `tests/test_docker_devops_hardening.py:26-30` and `:244-251` (the doc-interpreter guard)
+- `tests/test_settings_shell_js_behavior.py` and `tests/test_streaming_segmenter_js.py`, which are
+  the pytest entry points for two of this section's harness files
+
+**Not read:** the ~800 remaining test modules and everything they cover. The other `tests-*`
+sections own those, and this section's claims are about the harness those modules run on, not about
+them.
+
+Some of those are other sections' paths that were read only as the consumers of this section's
+helpers:
+
+- `tests/test_run_focus.py`, `tests/test_taxonomy.py` and `tests/test_run_order_report.py`
+- `tests/test_helpers_import_state.py` and `tests/test_db_stubs_helper.py`
+- the six `tests/test_embedding_lanes*.py` files
 
 **Checks run** (project venv, from the repository root):
 
@@ -207,24 +218,33 @@ that use them; no probe touched the target tree.
   security
   ```
 
-  `area_cli` is now 30 files, not 28, and two of them (`tests/test_calendar_cli_overlap.py`,
+  `area_cli` is now 30 files, not 28. Two of them (`tests/test_calendar_cli_overlap.py`,
   `tests/test_memory_cli_add_nondict.py`) are flat under `tests/` because `_taxonomy.py` matches the
   filename token `cli` (`tests/_taxonomy.py:26`, in the `KEYWORD_AREAS` priority order at `:42-48`)
-  and never looks at the directory — the same reason the inventory gives at `:94-98` for excluding
-  `tests/test_backup_cli_security.py`. So `tests/cli/` and `area_cli` no
-  longer agree, and the before/after count comparison the document prescribes (`:165-167`) cannot be
-  reproduced. The coupling claim is also stale: "every file imports only the script under test (via
-  `cli_loader`) plus `tests.helpers` stubs — no app, no routes, no real DB" (`:48-49`) is contradicted
-  by eight of the 28 files, which install stubs for production modules —
-  `tests/cli/test_mail_cli_recipients.py:9`, `:17` (`routes.email_helpers`, `routes.email_pollers`),
-  `tests/cli/test_mail_cli_read_empty_fetch.py:31`, `:38`, `tests/cli/test_contacts_cli_rows.py:9`
-  (`routes.contacts_routes`), `tests/cli/test_memory_cli_rows.py:9`, `tests/cli/test_skills_cli_rows.py:9`,
-  `tests/cli/test_skills_cli_preview.py:15` (`services.memory.*`), `tests/cli/test_personal_cli_rows.py:9`
-  (`src.personal_docs`), `tests/cli/test_signature_cli_export.py:8-11` (`sqlalchemy`, `core`,
-  `core.database`). The inventory's own coupling grep (`:137-138`) searches only for
+  and never looks at the directory. That is the same reason the inventory gives at `:94-98` for
+  excluding `tests/test_backup_cli_security.py`. So `tests/cli/` and `area_cli` no longer agree,
+  and the before and after count comparison the document prescribes (`:165-167`) cannot be
+  reproduced.
+
+  The coupling claim is also stale: "every file imports only the script under test (via
+  `cli_loader`) plus `tests.helpers` stubs — no app, no routes, no real DB" (`:48-49`) is
+  contradicted by eight of the 28 files, which install stubs for production modules:
+
+  | File | Lines | Stubbed |
+  | --- | --- | --- |
+  | `tests/cli/test_mail_cli_recipients.py` | `:9`, `:17` | `routes.email_helpers`, `routes.email_pollers` |
+  | `tests/cli/test_mail_cli_read_empty_fetch.py` | `:31`, `:38` | |
+  | `tests/cli/test_contacts_cli_rows.py` | `:9` | `routes.contacts_routes` |
+  | `tests/cli/test_memory_cli_rows.py` | `:9` | |
+  | `tests/cli/test_skills_cli_rows.py` | `:9` | |
+  | `tests/cli/test_skills_cli_preview.py` | `:15` | `services.memory.*` |
+  | `tests/cli/test_personal_cli_rows.py` | `:9` | `src.personal_docs` |
+  | `tests/cli/test_signature_cli_export.py` | `:8-11` | `sqlalchemy`, `core`, `core.database` |
+
+  The inventory's own coupling grep (`:137-138`) searches only for
   `TestClient|FastAPI|create_app|SessionLocal|sqlite|dependency_overrides`, so it would not have
-  surfaced any of them. `TESTING_STANDARD.md:55` was updated for the same move ("the current `area_cli`
-  set has moved to `tests/cli/`"); the inventory was not.
+  surfaced any of them. `TESTING_STANDARD.md:55` was updated for the same move ("the current
+  `area_cli` set has moved to `tests/cli/`"); the inventory was not.
 - **Impact:** the next refactor slice that trusts this document starts from a false baseline: the file
   list is wrong, the prescribed check prints `2`, and the "crisp, machine-checkable boundary" it uses
   to justify moving CLI tests ahead of everything else has already stopped being crisp. An agent or

@@ -30,9 +30,17 @@ what these seven files do with that data, not whether the backend is sound.
 
 ## Coverage
 
-**Read fully:** all seven assigned files (3,872 lines): `memory.js` (1,550),
-`research/panel.js` (1,259), `research/jobs.js` (382), `researchSynapse.js` (225),
-`search-chat.js` (223), `rag.js` (177), `search.js` (56).
+**Read fully:** all seven assigned files, 3,872 lines.
+
+| File | Lines |
+| --- | ---: |
+| `memory.js` | 1,550 |
+| `research/panel.js` | 1,259 |
+| `research/jobs.js` | 382 |
+| `researchSynapse.js` | 225 |
+| `search-chat.js` | 223 |
+| `rag.js` | 177 |
+| `search.js` | 56 |
 
 **Read partially:** the modules and call sites each finding rests on — `static/js/markdown.js` at
 `renderContent` (`:933-943`), `mdToHtml` (`:609-700`) and `sanitizeAllowedHtml` (`:180-300`),
@@ -46,13 +54,15 @@ the `research_started` handler (`:145-190`); `routes/research/research_routes.py
 `_format_research_report` (`:52-150`, `:335-420`); and `src/deep_research.py` for the progress
 events the panel consumes (the `_emit` call sites, `:273-353`, `:613`).
 
-**Not read:** the rest of `markdown.js`, `ui.js`, `app.js`, `chat.js`, `chatRenderer.js`,
-`chatStream.js`, `documentLibrary.js` and `research_routes.py`; `static/index.html` beyond the
-element ids cited; `static/style.css`; and every other section's paths. Line numbers are the
-working tree at `2992bf6d368a`; `git diff 2992bf6d368a -- static/js/memory.js static/js/rag.js
-static/js/research/jobs.js static/js/research/panel.js static/js/researchSynapse.js
-static/js/search-chat.js static/js/search.js` is empty, so the citations match the reviewed
-commit.
+**Not read:**
+
+- the rest of `markdown.js`, `ui.js`, `app.js` and `chat.js`
+- the rest of `chatRenderer.js`, `chatStream.js`, `documentLibrary.js` and `research_routes.py`
+- `static/index.html` beyond the element ids cited, and `static/style.css`
+- every other section's paths
+
+Line numbers are the working tree at `2992bf6d368a`. `git diff 2992bf6d368a` over the seven assigned
+files is empty, so the citations match the reviewed commit.
 
 **Checks run:** `node --check` (the JS half of the `check` gate in `.github/workflows/ci.yml`) on
 all seven files — every one OK:

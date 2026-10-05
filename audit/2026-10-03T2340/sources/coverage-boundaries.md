@@ -325,10 +325,12 @@ closed it.
   `tests/test_external_context_tool_gate.py:357` asserts.
 - **"A fence-callable tool can be missing from both the plan-mode denylist and the
   allowlist."** Computed `TOOL_TAGS - plan_mode_disabled_tools() - PLAN_MODE_READONLY_TOOLS` at
-  the snapshot: empty (77 fence tags, 54 denied, the rest allowlisted). The seven
-  fence-taggable tools with no native schema (`draft_email`, `draft_email_reply`,
-  `ai_draft_email_reply`, `download_attachment`, `generate_image`, `manage_research`,
-  `search_emails`) are all covered by the static mutator backstop or the allowlist.
+  the snapshot: empty (77 fence tags, 54 denied, the rest allowlisted). Seven fence-taggable tools
+  have no native schema, and all seven are covered by the static mutator backstop or the allowlist:
+
+  - `draft_email`, `draft_email_reply`, `ai_draft_email_reply`
+  - `download_attachment`, `generate_image`
+  - `manage_research`, `search_emails`
 - **"Every fence-callable tool with no native schema is reachable another way."** The
   seven names in the plan-mode bullet were re-checked for native reachability in
   `src-tools-schema-index.md`. Six are XML-only by design or have a native substitute
@@ -349,9 +351,13 @@ closed it.
   not a defense against it.
 - **"The other multiplexed tools' enums drift from their handlers the way
   `manage_documents` and `manage_session` do."** Compared each enum with its handler's
-  `action ==` / `action in (...)` branches: `manage_notes`, `manage_memory`, `manage_tasks`,
-  `manage_calendar`, `manage_contact`, `manage_skills`, `manage_research`, `ui_control` and
-  `edit_image` all match exactly. Only the two reported tools drift.
+  `action ==` / `action in (...)` branches. Nine tools match exactly:
+
+  - `manage_notes`, `manage_memory`, `manage_tasks`
+  - `manage_calendar`, `manage_contact`, `manage_skills`
+  - `manage_research`, `ui_control`, `edit_image`
+
+  Only the two reported tools drift.
 - **"A `tail_serve_output` native call reaches the dispatcher by some other route."**
   `function_call_to_tool_block` is the only native-to-`ToolBlock` converter (every parser
   entry point delegates to it), it returns `None` for a name outside `TOOL_TAGS` before the
@@ -432,9 +438,9 @@ closed it.
   the report *says* about the stragglers, and `ex.shutdown(wait=False)` returns without waiting
   for them. The thread count stays bounded by the probe concurrency.
 - **"The front-end persona list has drifted from `src/reminder_personas.py`."** Not today: the
-  five IDs in `static/js/presets.js:32-69` (`socrates`, `razor`, `nietzsche`, `spark`,
-  `odysseus`) are exactly the five keys of `PERSONAS`. No test pins the parity, so the next edit
-  to either list is unguarded — a hazard, not a defect.
+  five IDs in `static/js/presets.js:32-69` are exactly the five keys of `PERSONAS` (socrates, razor,
+  nietzsche, spark and odysseus). No test pins the parity, so the next edit to either list is
+  unguarded: a hazard, not a defect.
 - **"The unused helpers in `src/app_helpers.py` are a reachable path."** They are not reachable:
   `read_if_exists` and `file_to_data_url` have no caller anywhere in `src/ routes/ core/ services/
   app.py`, so the unbounded `f.read()` inside `file_to_data_url` has no consumer. Noted as dead
@@ -586,8 +592,9 @@ closed it.
   documents interleave — and no measurement produced a user-visible ordering error, so it is not a
   finding.
 - **"`VectorRAG._embed` disagreeing with `_collection` is a live defect."** It is latent, not live,
-  and is reported as a `FOOTGUN` for that reason: `grep` over `routes/`, `src/`, `mcp_servers/`,
-  `core/` and `app.py` finds no external caller of either, and `_embed` has no caller at all.
+  and is reported as a `FOOTGUN` for that reason: `grep` over `routes/`, `src/`, `mcp_servers/` and
+  `core/`, and over `app.py`, finds no external caller of either, and `_embed` has no caller at
+  all.
 - **"The memory store's non-atomic write is already covered, so the concurrent-write defect is a
   duplicate."** The two are different halves of one file. `core-data-platform` reports the hourly
   owner sweep rewriting `memory.json` with a plain truncating write

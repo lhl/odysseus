@@ -15077,25 +15077,38 @@ run — **150 passed**.
 
 ### Overview
 
-The 53 modules under `static/js/editor/` that make up the gallery image editor: the AI tool
-surface (`ai-inpaint.js`, `ai-rembg.js`, `ai-models.js`, `ai-tool-runner.js`, `ai-tools-misc.js`),
-the canvas core (`canvas-coords.js`, `canvas-events.js`, `canvas-transforms.js`,
-`clipboard-and-drop.js`, `checkerboard.js`, `composite-helpers.js`, `mask-utils.js`,
-`stroke-pipeline.js`, `snap.js`, `state.js`), the tools (`tools/`), the FX/pixel pipeline
-(`fx/`, `filters/`, `layer-helpers.js`, `layer-panel.js`), and the topbar/panel build and wiring
-modules (`build/`, `wire-*.js`, `keyboard-shortcuts.js`, `slider-ux.js`).
+The 53 modules under `static/js/editor/` that make up the gallery image editor, in four groups:
 
-The boundary: the orchestrator that imports and wires every one of these modules —
-`static/js/galleryEditor.js` (`_buildEditor`, `composite`, `_saveState`/`_snapshotState`,
-`createLayer`, `closeEditor`, `openEditor`) — is assigned to `static-js-documents-email` together with
-`static/js/gallery.js`, so it is read here only as evidence and its own defects are not restated.
-The server side of every AI call these modules make (`routes/gallery/gallery_routes.py`:
-`/api/image/inpaint`, `/api/image/harmonize`, `/api/image/remove-bg`, `/api/image/upscale-local`,
-`/api/image/sharpen`, `/api/gallery/style-transfer`) belongs to `routes-gallery-document`; this
-section covers what the client sends and what it does with what comes back, not how the server
-validates or executes it. `static-js-rest` owns `static/js/modelSort.js`, which `ai-models.js`
-imports. Findings below are located in the editor modules even where the visible symptom only
-appears through `galleryEditor.js`.
+| Group | Modules |
+| --- | --- |
+| AI tool surface | `ai-inpaint.js`, `ai-rembg.js`, `ai-models.js`, `ai-tool-runner.js`, `ai-tools-misc.js` |
+| Canvas core | `canvas-coords.js`, `canvas-events.js`, `canvas-transforms.js`, `clipboard-and-drop.js`, `checkerboard.js`, `composite-helpers.js`, `mask-utils.js`, `stroke-pipeline.js`, `snap.js`, `state.js` |
+| Tools and effects | `tools/`, `fx/`, `filters/`, `layer-helpers.js`, `layer-panel.js` |
+| Topbar and panels | `build/`, `wire-*.js`, `keyboard-shortcuts.js`, `slider-ux.js` |
+
+The boundary with the neighbouring sections:
+
+- `static/js/galleryEditor.js` is the orchestrator that imports and wires every one of these
+  modules (for example `_buildEditor`, `composite` and `createLayer`). It is assigned to `static-js-documents-email` together with
+  `static/js/gallery.js`, so it is read here only as evidence and its own defects are not restated.
+- The server side of every AI call these modules make belongs to `routes-gallery-document`. The
+  six routes are in `routes/gallery/gallery_routes.py`:
+
+  | Route | Used for |
+  | --- | --- |
+  | `/api/image/inpaint` | Inpainting |
+  | `/api/image/harmonize` | Harmonize |
+  | `/api/image/remove-bg` | Background removal |
+  | `/api/image/upscale-local` | Local upscale |
+  | `/api/image/sharpen` | Sharpen |
+  | `/api/gallery/style-transfer` | Style transfer |
+
+  This section covers what the client sends and what it does with what comes back, not how the
+  server validates or executes it.
+- `static-js-rest` owns `static/js/modelSort.js`, which `ai-models.js` imports.
+
+Findings below are located in the editor modules even where the visible symptom only appears
+through `galleryEditor.js`.
 
 ### Coverage
 
@@ -15112,8 +15125,15 @@ all of them `.js`, and the 53 match the section's `paths` list exactly.
 | `fx/`, `filters/`, layer/mask helpers | 9 | 2,042 |
 | `build/`, `wire-*.js`, panels, keyboard/slider | 17 | 2,858 |
 
-Largest single files: `fx/adj-popup.js` (677), `layer-panel.js` (601), `build/controls.js` (401),
-`tools/transform-session.js` (381), `ai-inpaint.js` (380).
+The five largest files:
+
+| File | Lines |
+| --- | ---: |
+| `fx/adj-popup.js` | 677 |
+| `layer-panel.js` | 601 |
+| `build/controls.js` | 401 |
+| `tools/transform-session.js` | 381 |
+| `ai-inpaint.js` | 380 |
 
 **Read partially** — boundary files, read only where a finding or a reachability claim rests on
 them, none of them assigned to this section:
@@ -15125,9 +15145,13 @@ them, none of them assigned to this section:
   `_wireInpaintPopoverWindow` (`:2844-2870`), `_promptCanvasSize` (`:3931-3945`),
   `openEditor`/`closeEditor` (`:4068-4375`)
 - `static/js/platform.js` at `isAltGrEvent` (`:40-47`), for the keyboard-shortcut guard
-- `routes/gallery/gallery_routes.py` at the `_endpoint` handling of `inpaint_proxy` (`:1267-1300`),
-  `harmonize_image` (`:1529-1565`), `sharpen_image` (`:1716-1734`), `upscale_image_local`
-  (`:1792-1832`), `remove_background` (`:1963-2050`), `gallery_style_transfer` (`:596-640`)
+- `routes/gallery/gallery_routes.py` at the `_endpoint` handling of six handlers:
+  - `inpaint_proxy` (`:1267-1300`)
+  - `harmonize_image` (`:1529-1565`)
+  - `sharpen_image` (`:1716-1734`)
+  - `upscale_image_local` (`:1792-1832`)
+  - `remove_background` (`:1963-2050`)
+  - `gallery_style_transfer` (`:596-640`)
 - `static/style.css` at `.ge-inpaint-popover-head` (`:29585`), `.ge-canvas-size` (`:30107`), and the
   `.ge-edge-menu` / `.ge-resize-menu` rules
 
@@ -15157,11 +15181,12 @@ written inside the repository):
 - `node -e` counting the checkerboard loop for four document sizes (see the PERF finding), and
   `node -e` reproducing the `::` split for an IPv6 base URL (see the last finding).
 - Dedup sweep: `grep -rn "js/editor" audit/2026-10-03T2340/sources/sections/` matches only this
-  section's own path list, and no section mentions `_adjFinal`, `checkerboard`, `ge-edge-menu`,
-  `ge-wand-rembg`, `filter-string` or `_getSelectedAIEndpoint`, so none of the findings below is a
-  restatement. `static-js-research-memory-rag.md:458` already reports the "document-level listener
-  registered per render and never removed" class in `static/js/memory.js`; the accumulation finding
-  here is a different call site and is cross-referenced rather than repeated.
+  section's own path list. No section mentions any of six names (`_adjFinal`, `checkerboard`,
+  `ge-edge-menu`; and `ge-wand-rembg`, `filter-string`, `_getSelectedAIEndpoint`), so none of the
+  findings below is a restatement. `static-js-research-memory-rag.md:458` already reports the
+  "document-level listener registered per render and never removed" class in `static/js/memory.js`;
+  the accumulation finding here is a different call site and is cross-referenced rather than
+  repeated.
 
 #### [BUG] A layer's adjustment cache is keyed only by the adjustment stack, so strokes and pixel edits on that layer never render
 
@@ -15291,11 +15316,14 @@ written inside the repository):
   Every copy passes the same `state.editorOpen` gate, so they all run; none calls
   `stopImmediatePropagation`. The same "register per open, never detach" pattern appears in five
   more editor modules, with no misbehaviour demonstrated but the same unbounded growth:
-  `canvas-events.js:44-45` (`window` mousemove/mouseup), `clipboard-and-drop.js:36` (`window` paste,
-  registered in the capture phase — the `true` option is at `:76`), `tools/transform-session.js:294-311`
-  (five `document` handlers, added per Transform popup open), `build/right-panel.js:181,189`
-  (`document` mousemove/mouseup, per panel build) and `slider-ux.js:116,131` (`document`
-  pointermove/pointerup).
+
+  | Module | Lines | Listeners |
+  | --- | --- | --- |
+  | `canvas-events.js` | `:44-45` | `window` mousemove and mouseup |
+  | `clipboard-and-drop.js` | `:36` | `window` paste, registered in the capture phase (the `true` option is at `:76`) |
+  | `tools/transform-session.js` | `:294-311` | Five `document` handlers, added per Transform popup open |
+  | `build/right-panel.js` | `:181`, `:189` | `document` mousemove and mouseup, per panel build |
+  | `slider-ux.js` | `:116`, `:131` | `document` pointermove and pointerup |
 - **Impact:** after the Nth open/close cycle in one page session, one Ctrl+Z performs N undo steps
   and one Ctrl+Shift+Z N redo steps — silent loss of undo depth and a state the user did not ask
   for. Ctrl+S clicks the Save menu item N times (each accumulated handler calls
@@ -15366,14 +15394,17 @@ written inside the repository):
   | `ge-resize-menu-btn`, `ge-resize-menu` | `wire-topbar-menus.js:148-172`, `wire-topbar.js:39-40` | only `.ge-resize-menu` |
   | `ge-topbar-mask-color` | `wire-inpaint-controls.js:156,162,164` | `.ge-topbar-mask-color*` (3 rules) |
 
-  `build/topbar.js:50-76` emits only `resize`, `rotate-90`, `rotate-180`, `flip-h` and `flip-v` as
-  `data-image-action` values, so the `selection` and `fill` branches in `wire-topbar-menus.js:108-109`
-  are unreachable too. The consequence of the first row is that `applyEdgeAction`
-  (`wire-topbar.js:149-159`, the selection edge feather/delete) has no caller: its `if (btn && menu)`
-  block at `:163` is never entered, and the Image-menu item that used to click it is gone. The third
-  row means `attachColorPicker(topbarMaskColor)` (`wire-inpaint-controls.js:164-167`) never runs and
-  the "keep the topbar swatch and the inpaint-section swatch in sync" logic (`:150-160`) is
-  half-dead.
+  `build/topbar.js:50-76` emits only five `data-image-action` values: `resize`, then the
+  rotations `rotate-90` and `rotate-180`, then the flips `flip-h` and `flip-v`. So the `selection`
+  and `fill` branches in `wire-topbar-menus.js:108-109` are unreachable too. Two consequences
+  follow:
+
+  - The first row means `applyEdgeAction` (`wire-topbar.js:149-159`, the selection edge feather and
+    delete) has no caller. Its `if (btn && menu)` block at `:163` is never entered, and the
+    Image-menu item that used to click it is gone.
+  - The third row means `attachColorPicker(topbarMaskColor)` (`wire-inpaint-controls.js:164-167`)
+    never runs, and the "keep the topbar swatch and the inpaint-section swatch in sync" logic
+    (`:150-160`) is half-dead.
 - **Impact:** dead weight only — no user-visible failure beyond the features being absent from the
   UI (edge feather/delete is currently unreachable, and the mask tint colour can only be changed
   from the inpaint section). It costs maintenance attention: the topbar modules look like they wire
@@ -15389,13 +15420,13 @@ written inside the repository):
 - **Severity:** low
 - **Disposition:** backlog
 - **Evidence:** `document.getElementById('ge-wand-rembg')?.addEventListener(...)` is guarded by
-  optional chaining, and `git grep -l "ge-wand-rembg"` matches only this file — the ID appears in no
-  markup and no CSS rule, though three comments still describe the button as live
-  (`ai-rembg.js:26`, `:199`, `galleryEditor.js:3385`). The wand controls markup in
-  `build/controls.js:76-102` has `ge-wand-grow`, `ge-wand-vis`, `ge-wand-clear`, `ge-wand-invert`,
-  `ge-wand-delete`, `ge-wand-copy` and `ge-wand-mask`, but no `ge-wand-rembg`. The handler is
-  therefore never attached and its `wandClear()` / `applyImageTool('/api/image/remove-bg', …)` path
-  is unreachable.
+  optional chaining, and `git grep -l "ge-wand-rembg"` matches only this file. The ID appears in no
+  markup and no CSS rule, though three comments still describe the button as live (`ai-rembg.js:26`,
+  `:199`, `galleryEditor.js:3385`). The wand controls markup in `build/controls.js:76-102` has seven
+  IDs, and `ge-wand-rembg` is not one of them: `ge-wand-grow`, `ge-wand-vis`, `ge-wand-clear`,
+  then `ge-wand-invert`, `ge-wand-delete`, `ge-wand-copy` and `ge-wand-mask`. The handler is
+  therefore never attached and its `wandClear()` and `applyImageTool('/api/image/remove-bg', …)`
+  path is unreachable.
 - **Impact:** none at runtime; the selection-hint rembg path (`buildSelectionHintMask`, returned by
   `ai-rembg.js:203`) is still reachable through the toolbar Bg Remove button, which calls it at
   `ai-rembg.js:62`. The dead handler is misleading about which entry points exist.
@@ -15430,13 +15461,13 @@ written inside the repository):
   <span class="ge-canvas-size" id="ge-canvas-size" title="Canvas size" hidden></span>
   ```
 
-  Eight call sites write its text content (`canvas-transforms.js:88`, `ai-tools-misc.js:93,140`,
-  `wire-topbar-menus.js:73`, `wire-topbar-overflow.js:20`, `galleryEditor.js:1348,4147,4218`), but
-  nothing removes `hidden` — `grep -rn "ge-canvas-size" static/js/` shows only `textContent`
-  assignments. The single CSS rule for the class lives inside a media query and sets only font,
-  padding and line-height (`static/style.css:30107-30111`), so the user-agent `[hidden] {
-  display: none }` rule still applies. (`#ge-canvas-size-overlay`, `galleryEditor.js:3938`, is the
-  canvas-size prompt modal, an unrelated element.)
+  Eight call sites write its text content (`canvas-transforms.js:88`, `ai-tools-misc.js:93` and
+  `:140`, `wire-topbar-menus.js:73`, `wire-topbar-overflow.js:20`, and `galleryEditor.js` at `:1348`,
+  `:4147` and `:4218`), but nothing removes `hidden`: `grep -rn "ge-canvas-size" static/js/` shows
+  only `textContent` assignments. The single CSS rule for the class lives inside a media query and
+  sets only font, padding and line-height (`static/style.css:30107-30111`), so the user-agent
+  `[hidden] { display: none }` rule still applies. (`#ge-canvas-size-overlay`,
+  `galleryEditor.js:3938`, is the canvas-size prompt modal, an unrelated element.)
 - **Impact:** the document dimensions are never visible in the editor topbar; the writers run on
   every resize/rotate/upscale for nothing. The dedicated mobile rule suggests the badge was meant
   to be visible at least at narrow widths, so this looks like a dropped `hidden` removal rather than
@@ -15496,14 +15527,17 @@ The ten modules under `static/js/compare/` are the model-comparison tool:
 - `state.js` the shared mutable state
 - `icons.js` the SVG icons, eval prompts and storage keys
 
-The boundary: this section covers what these modules send to and render from the compare endpoints,
-not the endpoints themselves — `/api/probe-selected`, `/api/models`, `/api/session`,
-`/api/chat_stream`, `/api/search/query` and `/api/compare/record` and their gates belong to
-`routes-models`, `routes-rest-*` and `core-auth-session`. The markdown renderer the panes write
-model output through is `static-js-rest` (`markdown.js`) and `static-js-chat`
-(`chatRenderer.js`, which also owns the `getModelCost`, `renderAskUserCard` and
-`safeDisplayImageSrc` helpers `stream.js` imports). The `[CMP]` blind-mode naming contract is
-`routes-sessions`; its redaction tests are cited below rather than restated.
+This section covers what these modules send to and render from the compare endpoints, not the
+endpoints themselves. Three groups of code belong to other sections:
+
+- The endpoints and their gates belong to `routes-models`, `routes-rest-*` and `core-auth-session`:
+  - `/api/probe-selected`, `/api/models`, `/api/session`
+  - `/api/chat_stream`, `/api/search/query`, `/api/compare/record`
+- The markdown renderer the panes write model output through is `static-js-rest` (`markdown.js`)
+  and `static-js-chat` (`chatRenderer.js`, which also owns the `getModelCost`, `renderAskUserCard`
+  and `safeDisplayImageSrc` helpers `stream.js` imports).
+- The `[CMP]` blind-mode naming contract is `routes-sessions`; its redaction tests are cited below
+  rather than restated.
 
 Security provenance of the probe path, which this section was asked to settle: **no API key, bearer
 token or Authorization header exists anywhere in `static/js/compare/`** — `grep -rn
@@ -15568,11 +15602,17 @@ have; it is recorded in the rejected-hypotheses ledger rather than reported as a
 Line numbers are the working tree at `2992bf6d368a` (clean apart from this run's untracked `audit/`
 directory).
 
-**Checks run:** the six suites matching this surface — discovered with
-`ls tests | grep -iE 'compare'` → `test_blind_compare_redaction.py`,
-`test_compare_ask_user_routing.py`, `test_compare_endpoint_owner_scope.py`, `test_compare_js.py`,
-`test_compare_routes_shim.py`, `test_compare_stop_disconnect_poll.py` — plus
-`tests/test_esc_menu_stack_js.py`, which pins the dropdown-dismiss registry `panes.js` uses. Run:
+**Checks run:** the six suites matching this surface, discovered with `ls tests | grep -iE 'compare'`:
+
+- `test_blind_compare_redaction.py`
+- `test_compare_ask_user_routing.py`
+- `test_compare_endpoint_owner_scope.py`
+- `test_compare_js.py`
+- `test_compare_routes_shim.py`
+- `test_compare_stop_disconnect_poll.py`
+
+Also `tests/test_esc_menu_stack_js.py`, which pins the dropdown-dismiss registry `panes.js` uses.
+Run:
 
 ```
 $ venv/bin/python -m pytest -q tests/test_blind_compare_redaction.py \
@@ -15874,14 +15914,16 @@ quoted below; neither is part of the target tree.
 
 ### Overview
 
-The thirteen modules assigned here are the main chat surface: `chat.js` (6,738 lines — the send
-path, the SSE reader, the detached-stream lifecycle, the composer wiring and the terminal handlers),
-`sessions.js` (the session list, `selectSession`, the history pager, background-stream polling and
-the running/completed rail state), `chatRenderer.js` (message bubbles, footers, metrics popups and
-the model-provenance labels), the stream pipeline (`chatStream.js`, `streamingSegmenter.js`,
-`streamingRenderer.js`, `chatStreamErrors.js`, `liveThinkingThrottle.js`), the composer helpers
-(`composerArrowUpRecall.js`, `slashAutocomplete.js`, `slashCommands.js`) and two small support
-modules (`assistant.js`, `chatModelProvenance.js`).
+The thirteen modules assigned here are the main chat surface:
+
+| Module | What it holds |
+| --- | --- |
+| `chat.js` (6,738 lines) | The send path, the SSE reader, the detached-stream lifecycle, the composer wiring and the terminal handlers |
+| `sessions.js` | The session list, `selectSession`, the history pager, background-stream polling and the running and completed rail state |
+| `chatRenderer.js` | Message bubbles, footers, metrics popups and the model-provenance labels |
+| Stream pipeline | `chatStream.js`, `streamingSegmenter.js`, `streamingRenderer.js`, `chatStreamErrors.js`, `liveThinkingThrottle.js` |
+| Composer helpers | `composerArrowUpRecall.js`, `slashAutocomplete.js`, `slashCommands.js` |
+| Support | `assistant.js`, `chatModelProvenance.js` |
 
 The boundary: this section covers what these modules render and what they persist, not the
 endpoints they call. `/api/chat_stream`, `/api/history/{id}`, `/api/session*` and the metrics
@@ -15920,11 +15962,22 @@ Three things this section was asked to settle, and the answers:
 
 ### Coverage
 
-**Read fully:** `assistant.js` (475 lines), `chatModelProvenance.js` (104), `chatStream.js` (327),
-`chatStreamErrors.js` (23), `composerArrowUpRecall.js` (171), `liveThinkingThrottle.js` (206),
-`slashAutocomplete.js` (313), `streamingRenderer.js` (206), `streamingSegmenter.js` (190) — 2,215
-lines. `chatRenderer.js` (3,126) and `sessions.js` (3,689) were read in full across the two passes
-of this section.
+**Read fully:** nine modules, 2,215 lines.
+
+| File | Lines |
+| --- | ---: |
+| `assistant.js` | 475 |
+| `chatModelProvenance.js` | 104 |
+| `chatStream.js` | 327 |
+| `chatStreamErrors.js` | 23 |
+| `composerArrowUpRecall.js` | 171 |
+| `liveThinkingThrottle.js` | 206 |
+| `slashAutocomplete.js` | 313 |
+| `streamingRenderer.js` | 206 |
+| `streamingSegmenter.js` | 190 |
+
+`chatRenderer.js` (3,126 lines) and `sessions.js` (3,689) were read in full across the two passes of
+this section.
 
 **Read partially:** `chat.js` (6,738) — read in full for the send path (`:1106-2065`), the stream
 reader and its terminal branches (`:2066-4600`, `:4700-5250`), the research spinner and progress
@@ -16430,18 +16483,17 @@ the calendar (`static/js/calendar.js`, `static/js/calendar/*.js`) and the galler
 (`static/js/signature.js`). The section covers what these modules insert into the DOM, which
 stored or remote value they insert, and where a value crosses a trust boundary on the way in.
 
-The boundary: `routes-email.md` and `src-email-integrations.md` own the backend that produces
-the objects these modules render (the IMAP read path, the thread parser, the send path); the
-findings here are about the client-side sink, and the backend facts they rest on are cited as
-evidence rather than restated. `static-js-rest.md` owns `static/js/markdown.js`, so the
-`mdToHtml` / `sanitizeAllowedHtml` sanitizers the document editor calls are read here only
-where a finding rests on them. `static-assets-vendored.md` owns the app's Content-Security-Policy
-(`core/middleware.py:141-152`) and already reports that the policy has no `'unsafe-inline'` in
-`script-src`; this section depends on that policy for its severity judgements and cross-references
-it instead of restating it. `routes-gallery-document.md` owns the gallery/document routes,
-`static-js-cookbook-settings-models.md` owns `settings.js`, and `ui.js` (the shared `esc`,
-`showToast`, `showError`, `styledConfirm` helpers the modules here call) is another section's file —
-it was read only to decide whether a sink escapes.
+The findings here are about the client-side sink. The backend facts they rest on are cited as
+evidence rather than restated. Each neighbour owns one piece:
+
+| Owner | What it owns |
+| --- | --- |
+| `routes-email.md`, `src-email-integrations.md` | The backend that produces the objects these modules render: the IMAP read path, the thread parser, the send path |
+| `static-js-rest.md` | `static/js/markdown.js`. The `mdToHtml` and `sanitizeAllowedHtml` sanitizers the document editor calls are read here only where a finding rests on them |
+| `static-assets-vendored.md` | The app's Content-Security-Policy (`core/middleware.py:141-152`). It reports that the policy has no `'unsafe-inline'` in `script-src`; this section depends on that for its severity judgements and cross-references it |
+| `routes-gallery-document.md` | The gallery and document routes |
+| `static-js-cookbook-settings-models.md` | `settings.js` |
+| Another section | `ui.js`, the shared `esc`, `showToast`, `showError` and `styledConfirm` helpers the modules here call. It was read only to decide whether a sink escapes |
 
 ### Coverage
 
@@ -16452,11 +16504,18 @@ static/js/documentLibrary.js static/js/notes.js static/js/calendar.js static/js/
 static/js/gallery.js static/js/galleryEditor.js static/js/signature.js` prints nothing (0 paths),
 so every citation resolves at both revisions.
 
-**Read fully (8 files, 2,418 lines):** `static/js/emailInbox.js` (1,456),
-`static/js/emailLibrary/utils.js` (248), `static/js/emailLibrary/signatureFold.js` (339),
-`static/js/calendar/reminders.js` (114), `static/js/calendar/utils.js` (180),
-`static/js/emailLibrary/state.js` (35), `static/js/emailLibrary/replyRecipients.js` (27),
-`static/js/emailShared.js` (19).
+**Read fully (8 files, 2,418 lines):**
+
+| File | Lines |
+| --- | ---: |
+| `static/js/emailInbox.js` | 1,456 |
+| `static/js/emailLibrary/utils.js` | 248 |
+| `static/js/emailLibrary/signatureFold.js` | 339 |
+| `static/js/calendar/reminders.js` | 114 |
+| `static/js/calendar/utils.js` | 180 |
+| `static/js/emailLibrary/state.js` | 35 |
+| `static/js/emailLibrary/replyRecipients.js` | 27 |
+| `static/js/emailShared.js` | 19 |
 
 **Read partially (8 files, 40,403 lines):** the remaining assigned files are large and were read
 by sink, not end to end. For each one I enumerated every `innerHTML` / `insertAdjacentHTML` /
@@ -16505,14 +16564,17 @@ venv/bin/python -m pytest -q tests/test_calendar_event_contrast.py \
 24 passed, 1 warning in 0.80s
 ```
 
-337 tests pass. Beyond pytest, the render claims below were settled in a real browser: a
-read-only local HTTP server (`/tmp/audit-probe/serve.py`) serving the repo tree under `/repo/`
-and the probe pages under `/`, driven by headless Chromium
+337 tests pass. Beyond pytest, the render claims below were settled in a real browser: a read-only
+local HTTP server (`/tmp/audit-probe/serve.py`) serving the repo tree under `/repo/` and the probe
+pages under `/`, driven by headless Chromium
 (`/home/lhl/.cache/ms-playwright/chromium_headless_shell-1200/…`) through Playwright. The probes
 import the real modules (`static/js/emailLibrary/utils.js`) or replicate the cited function
 verbatim, and one probe page is served with the app's exact CSP header copied from
-`core/middleware.py:141-152`. The drivers are `/tmp/audit-probe/rerun.py` (all pages),
-`beacon.py`, `battery.py`, `csp_out.py` and `run_detached.py`.
+`core/middleware.py:141-152`. The drivers are in `/tmp/audit-probe/`:
+
+- `rerun.py`, which runs all pages
+- `beacon.py`, `battery.py`
+- `csp_out.py`, `run_detached.py`
 
 #### [SECURITY] A calendar event's location is only partly escaped, so a synced or imported event injects HTML and CSS into the calendar UI
 
@@ -16631,12 +16693,12 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
   render sink at `static/js/emailLibrary.js:5585` (`_safeRenderEmailBody`)
 - **Severity:** medium
 - **Disposition:** next
-- **Evidence:** `_sanitizeHtmlOnce` strips `src`/`href`/`srcset`/`poster`/`background` only when the
-  URL uses `javascript:`, `vbscript:` or `data:` (`utils.js:184`, `:199-202`), and
-  `STRIP_CSS_PROPS` covers `color`, `background`, `background-color`, `font*`, `position` and
-  `z-index` but not `background-image` or other URL-bearing properties (`utils.js:186-188`). Running
-  the real `_sanitizeHtml` over a sender-style body and inserting the result into a live element
-  (as the reader does at `:5585`) gave:
+- **Evidence:** `_sanitizeHtmlOnce` strips the URL attributes (`src`, `href`, `srcset`, then `poster` and
+  `background`) only when the URL uses `javascript:`, `vbscript:` or `data:` (`utils.js:184`, `:199-202`).
+  `STRIP_CSS_PROPS` covers `color`, `background`, `background-color` and `font*`, and
+  separately `position` and `z-index`, but not `background-image` or other URL-bearing properties (`utils.js:186-188`).
+  Running the real `_sanitizeHtml` over a sender-style body and inserting the result into a live
+  element (as the reader does at `:5585`) gave:
 
   ```
   { "sanitized": "<p>hello</p><div style=\"background-image:url(http://127.0.0.1:8765/px?css=1)\">css bg</div><img src=\"http://127.0.0.1:8765/px?img=1\"><video poster=\"http://127.0.0.1:8765/px?poster=1\"></video>" }
@@ -16647,16 +16709,21 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
   ```
 
   All three URLs survive the sanitizer and all three were fetched once the result was inserted (the
-  three loads complete in varying order between runs). The
-  `<img>` beacon is the one the app does block: `_prepareEmailInlineImages`
-  (`static/js/emailLibrary.js:5852-5889`) rewrites `root.querySelectorAll('img')` into a "Remote
-  image blocked" placeholder, and it returns early when the body has no `<img>` at all
-  (`if (!/<img[\s>]/i.test(raw)) return raw;`), so a CSS-only body never reaches even that pass. The
-  CSS and `poster` beacons have no guard and fire as soon as the reader renders. A 24-payload
-  battery through the same sanitizer (inline handlers, `javascript:` hrefs, `<svg>`/`<math>`,
-  `<template>`, `srcdoc`, `meta refresh`, `base`, `noscript` mutation-XSS, `srcset`, `data:` images,
-  `expression()`, entity-split quotes) set none of the 17 `window.__xss*` flags it checks and left no
-  dangerous URL alive, so the sanitizer is sound on the scheme axis; this is the residual gap.
+  three loads complete in varying order between runs). The `<img>` beacon is the one the app does
+  block: `_prepareEmailInlineImages` (`static/js/emailLibrary.js:5852-5889`) rewrites
+  `root.querySelectorAll('img')` into a "Remote image blocked" placeholder, and it returns early when
+  the body has no `<img>` at all (`if (!/<img[\s>]/i.test(raw)) return raw;`), so a CSS-only body
+  never reaches even that pass. The CSS and `poster` beacons have no guard and fire as soon as the
+  reader renders.
+
+  A 24-payload battery through the same sanitizer set none of the 17 `window.__xss*` flags it checks
+  and left no dangerous URL alive, so the sanitizer is sound on the scheme axis; this is the
+  residual gap. The payload classes were:
+
+  - inline handlers and `javascript:` hrefs
+  - `<svg>` and `<math>`, `<template>` and `srcdoc`
+  - `meta refresh` and `base`, `noscript` mutation-XSS
+  - `srcset`, `data:` images, `expression()` and entity-split quotes
 - **Impact:** any sender can tell when a message was opened, from which IP, and with a per-recipient
   token, defeating the "Remote image blocked" affordance the reader shows the user. It needs no
   click: opening the email is enough.
@@ -16790,14 +16857,15 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
 - **Disposition:** backlog
 - **Evidence:** the reply's `To:` is `data.from_address` (`static/js/emailInbox.js:901-903`; only a
   message that is itself the user's own falls back to the original `To`, then `Cc`, then `From`),
-  and no `Reply-To` header is consulted anywhere in the path. `grep -rn "Reply-To\|reply_to\b\|replyTo" routes/ static/js/ --include=*.py
-  --include=*.js` (filtering out `in_reply_to`/`In-Reply-To`) returns one line,
-  `routes/email_pollers.py:709: # (e.g. someone forging a Reply-To with our address as the` — a
-  comment about the `From` header, not an implementation. The read response dict built
-  in `_read_email_sync` (`routes/email_routes.py:3127-3145`) carries `from_name`, `from_address`,
-  `to`, `cc`, `in_reply_to` and `references` but no `Reply-To`. The `Cc:` for reply-all comes from
-  the raw `To`/`Cc` headers via `buildReplyAllCc` (`static/js/emailLibrary/replyRecipients.js:20-27`), which is
-  the standard behaviour.
+  and no `Reply-To` header is consulted anywhere in the path.
+  `grep -rn "Reply-To\|reply_to\b\|replyTo" routes/ static/js/ --include=*.py --include=*.js`
+  (filtering out `in_reply_to` and `In-Reply-To`) returns one line,
+  `routes/email_pollers.py:709: # (e.g. someone forging a Reply-To with our address as the`, a
+  comment about the `From` header, not an implementation. The read response dict built in
+  `_read_email_sync` (`routes/email_routes.py:3127-3145`) carries the sender, recipient and threading fields
+  (`from_name`, `from_address`, `to`, then `cc`, `in_reply_to`, `references`) but no `Reply-To`. The `Cc:` for reply-all comes from the raw
+  `To` and `Cc` headers via `buildReplyAllCc` (`static/js/emailLibrary/replyRecipients.js:20-27`),
+  which is the standard behaviour.
 - **Impact:** on any list that sets `Reply-To:` (Mailman, Google Groups, most ticketing systems) the
   user's reply is addressed to the individual who posted rather than to the list — the message lands
   in one person's mailbox instead of the thread the user meant to join. The direction is the safe
@@ -16812,28 +16880,53 @@ verbatim, and one probe page is served with the app's exact CSP header copied fr
 
 First-party client-side JavaScript for the Cookbook (model download, dependency install, serve and
 schedule flows), the admin panel, the model picker, the provider registry, and the Settings panel
-framework — 24 files under `static/js/`, about 24,800 lines. This section covers what the browser
-does with values it receives from the server and with what the user types into these panels. It does
-not cover the Python routes, helpers or agent tools those modules call (`routes-cookbook`,
-`routes-models`, `routes-shell`, `routes-rest-auth-admin` and `src-mcp` own those), nor
-`static/js/settings.js`, `tasks.js`, `ui.js` and the other static modules outside the list above
-(`static-js-rest` owns those), nor the memory/RAG panels (`static-js-research-memory-rag`).
+framework: 24 files under `static/js/`, about 24,800 lines. This section covers what the browser
+does with values it receives from the server and with what the user types into these panels.
+
+It does not cover the Python routes, helpers or agent tools those modules call. Five sections own
+those: `routes-cookbook`, `routes-models` and `routes-shell`, then `routes-rest-auth-admin` and
+`src-mcp`.
+`static-js-rest` owns `static/js/settings.js`, `tasks.js`, `ui.js` and the other static modules
+outside the list above, and `static-js-research-memory-rag` owns the memory and RAG panels.
 
 ### Coverage
 
-**Read in full:** `cookbookPorts.js` (19), `cookbookProgressSignal.js` (29), `model/matchKey.js`
-(19), `modelSort.js` (33), `settings/dom.js` (7), `settings/navigation.js` (57),
-`settings/lifecycle.js` (176), `settings/search.js` (172), `settings/registry.js` (237),
-`settings/sidebar.js` (238), `cookbook-deps-recipes.js` (189), `providerDeviceFlow.js` (128),
-`cookbookSchedule.js` (386).
+**Read in full:** 13 files.
 
-**Read in part:** `admin.js` (3197), `cookbook.js` (3677), `cookbookServe.js` (4305),
-`cookbookRunning.js` (4435), `cookbook-hwfit.js` (2826), `cookbookDownload.js` (670),
-`cookbook-diagnosis.js` (1079), `models.js` (642), `presets.js` (1151), `modelPicker.js` (958),
-`providers.js` (186). These were reviewed by targeted search — every `innerHTML`/`insertAdjacentHTML`
-sink, every serve/download command builder, every `fetch` URL and request body, and every place a
-secret is persisted — plus line-by-line reading of each range cited below. They were not read line
-by line, so a defect outside those areas could remain.
+| File | Lines |
+| --- | ---: |
+| `cookbookPorts.js` | 19 |
+| `cookbookProgressSignal.js` | 29 |
+| `model/matchKey.js` | 19 |
+| `modelSort.js` | 33 |
+| `settings/dom.js` | 7 |
+| `settings/navigation.js` | 57 |
+| `settings/lifecycle.js` | 176 |
+| `settings/search.js` | 172 |
+| `settings/registry.js` | 237 |
+| `settings/sidebar.js` | 238 |
+| `cookbook-deps-recipes.js` | 189 |
+| `providerDeviceFlow.js` | 128 |
+| `cookbookSchedule.js` | 386 |
+
+**Read in part:** 11 files, reviewed by targeted search. The search covered every
+`innerHTML` and `insertAdjacentHTML` sink, every serve and download command builder, every `fetch`
+URL and request body, and every place a secret is persisted, plus line-by-line reading of each
+range cited below. They were not read line by line, so a defect outside those areas could remain.
+
+| File | Lines |
+| --- | ---: |
+| `admin.js` | 3,197 |
+| `cookbook.js` | 3,677 |
+| `cookbookServe.js` | 4,305 |
+| `cookbookRunning.js` | 4,435 |
+| `cookbook-hwfit.js` | 2,826 |
+| `cookbookDownload.js` | 670 |
+| `cookbook-diagnosis.js` | 1,079 |
+| `models.js` | 642 |
+| `presets.js` | 1,151 |
+| `modelPicker.js` | 958 |
+| `providers.js` | 186 |
 
 **Not read:** none of the 24 assigned paths was skipped entirely.
 
@@ -17017,14 +17110,23 @@ by line, so a defect outside those areas could remain.
   ```
 
   That is the whole MCP (16 ids), RAG (9), API-token (8), webhook (7), CalDAV (6) and feature-toggle
-  (1) markup. The entry points are null-guarded and return immediately — `admin.js:2068`
-  (`if (!list) return;`), `:2795` (`if (!urlIn || !saveBtn) return;`) — and five of the functions are
-  never called at all: `loadRag` (`:2414`), `initRag` (`:2482`), `loadWebhooks` (`:2689`),
-  `initWebhookForm` (`:2740`) and `loadFeatures` (`:2768`) appear only in their own definitions and in
-  calls from inside the dead cluster; `refreshAll` (`:3169-3176`) calls `loadMcpServers` and
-  `loadTokens`, which return on the guard, and `initAll` (`:3155-3164`) calls `initMcpForm`,
-  `initCalDAV` and `initTokenForm`, which do the same. `loadRag`'s own error path dereferences the
-  same missing elements, so it would throw again inside the `catch`:
+  (1) markup. The entry points are null-guarded and return immediately: `admin.js:2068`
+  (`if (!list) return;`) and `:2795` (`if (!urlIn || !saveBtn) return;`). Five of the functions are
+  never called at all. They appear only in their own definitions and in calls from inside the dead
+  cluster:
+
+  | Function | Line |
+  | --- | ---: |
+  | `loadRag` | `:2414` |
+  | `initRag` | `:2482` |
+  | `loadWebhooks` | `:2689` |
+  | `initWebhookForm` | `:2740` |
+  | `loadFeatures` | `:2768` |
+
+  `refreshAll` (`:3169-3176`) calls `loadMcpServers` and `loadTokens`, which return on the guard,
+  and `initAll` (`:3155-3164`) calls `initMcpForm`, `initCalDAV` and `initTokenForm`, which do the
+  same. `loadRag`'s own error path dereferences the same missing elements, so it would throw again
+  inside the `catch`:
 
   ```js
   // static/js/admin.js:2455-2458
@@ -17114,9 +17216,17 @@ what these seven files do with that data, not whether the backend is sound.
 
 ### Coverage
 
-**Read fully:** all seven assigned files (3,872 lines): `memory.js` (1,550),
-`research/panel.js` (1,259), `research/jobs.js` (382), `researchSynapse.js` (225),
-`search-chat.js` (223), `rag.js` (177), `search.js` (56).
+**Read fully:** all seven assigned files, 3,872 lines.
+
+| File | Lines |
+| --- | ---: |
+| `memory.js` | 1,550 |
+| `research/panel.js` | 1,259 |
+| `research/jobs.js` | 382 |
+| `researchSynapse.js` | 225 |
+| `search-chat.js` | 223 |
+| `rag.js` | 177 |
+| `search.js` | 56 |
 
 **Read partially:** the modules and call sites each finding rests on — `static/js/markdown.js` at
 `renderContent` (`:933-943`), `mdToHtml` (`:609-700`) and `sanitizeAllowedHtml` (`:180-300`),
@@ -17130,13 +17240,15 @@ the `research_started` handler (`:145-190`); `routes/research/research_routes.py
 `_format_research_report` (`:52-150`, `:335-420`); and `src/deep_research.py` for the progress
 events the panel consumes (the `_emit` call sites, `:273-353`, `:613`).
 
-**Not read:** the rest of `markdown.js`, `ui.js`, `app.js`, `chat.js`, `chatRenderer.js`,
-`chatStream.js`, `documentLibrary.js` and `research_routes.py`; `static/index.html` beyond the
-element ids cited; `static/style.css`; and every other section's paths. Line numbers are the
-working tree at `2992bf6d368a`; `git diff 2992bf6d368a -- static/js/memory.js static/js/rag.js
-static/js/research/jobs.js static/js/research/panel.js static/js/researchSynapse.js
-static/js/search-chat.js static/js/search.js` is empty, so the citations match the reviewed
-commit.
+**Not read:**
+
+- the rest of `markdown.js`, `ui.js`, `app.js` and `chat.js`
+- the rest of `chatRenderer.js`, `chatStream.js`, `documentLibrary.js` and `research_routes.py`
+- `static/index.html` beyond the element ids cited, and `static/style.css`
+- every other section's paths
+
+Line numbers are the working tree at `2992bf6d368a`. `git diff 2992bf6d368a` over the seven assigned
+files is empty, so the citations match the reviewed commit.
 
 **Checks run:** `node --check` (the JS half of the `check` gate in `.github/workflows/ci.yml`) on
 all seven files — every one OK:
@@ -17599,41 +17711,73 @@ symbols are unused with no behavioural effect, so they are recorded here rather 
 
 ### Overview
 
-This section covers the 44 paths assigned to it — 42 first-party JavaScript modules plus
-`MODULE_SUMMARY.md` and `package.json` — that are left after the other `static/js` sections took
-their slices: the shared utilities (`ui.js`, `storage.js`, `platform.js`, `panels.js`, `init.js`,
-`workspace.js`, `section-management.js`, `sidebar-layout.js`, `toolWindowZOrder.js`, `ui_visibility.js`,
-`a11y.js`, `keyboard-shortcuts.js`, `dragSort.js`, `escMenuStack.js`, `tourHints.js`, `tourAutoplay.js`,
-`startupShell.js`, `appConfig.js`, `util/ordinal.js`, `color/hex.js`), the input and media helpers
-(`codeRunner.js`, `fileHandler.js`, `censor.js`, `markdown.js`, `markdown/tableRow.js`,
-`emojiPicker.js`, `emojiShortcodes.js`, `langIcons.js`, `voiceRecorder.js`, `tts-ai.js`), the window
-management layer (`modalManager.js`, `modalSnap.js`, `tileManager.js`, `windowDrag.js`,
-`windowResize.js`), the four large panels that have no section of their own (`settings.js`,
-`tasks.js`, `skills.js`, `group.js`), and `theme.js` with the colour picker.
+This section covers the 44 paths assigned to it: 42 first-party JavaScript modules plus
+`MODULE_SUMMARY.md` and `package.json`. They are what is left after the other `static/js` sections
+took their slices, in five groups:
 
-The boundary: `static-js-chat` owns `chat.js`, `chatStream.js`, `chatRenderer.js` and
-`slashCommands.js` — where the theme name of this section's first finding, and the spinner message
-that section reports, enter the client — and its findings are cross-referenced here, not restated;
-`static-js-cookbook-settings-models` owns `cookbook*`, `admin.js`, `models.js`, `modelPicker.js`,
-`providers.js` and the `settings/*.js` framework, and explicitly leaves `settings.js`, `tasks.js`
-and `ui.js` to this section; `static-js-documents-email` and `static-js-editor` own the library and editor modules that
-call into `windowDrag.js`, `modalSnap.js` and `tileManager.js`. The Python routes, services and
-agent tools these modules call are out of scope (`routes-*`, `src-*` and `src-mcp` own those), so
-this section reviews what the browser does with a value it already has — not whether the server
-should have sent it.
+| Group | Modules |
+| --- | --- |
+| Shared utilities | `ui.js`, `storage.js`, `platform.js`, `panels.js`, `init.js`, `workspace.js`, `section-management.js`, `sidebar-layout.js`, `toolWindowZOrder.js`, `ui_visibility.js`, `a11y.js`, `keyboard-shortcuts.js`, `dragSort.js`, `escMenuStack.js`, `tourHints.js`, `tourAutoplay.js`, `startupShell.js`, `appConfig.js`, `util/ordinal.js`, `color/hex.js` |
+| Input and media helpers | `codeRunner.js`, `fileHandler.js`, `censor.js`, `markdown.js`, `markdown/tableRow.js`, `emojiPicker.js`, `emojiShortcodes.js`, `langIcons.js`, `voiceRecorder.js`, `tts-ai.js` |
+| Window management | `modalManager.js`, `modalSnap.js`, `tileManager.js`, `windowDrag.js`, `windowResize.js` |
+| Large panels with no section of their own | `settings.js`, `tasks.js`, `skills.js`, `group.js` |
+| Theme | `theme.js` with the colour picker |
+
+The Python routes, services and agent tools these modules call are out of scope (`routes-*`,
+`src-*` and `src-mcp` own those). This section reviews what the browser does with a value it
+already has, not whether the server should have sent it. Three neighbours own the code on the
+other side:
+
+- `static-js-chat` owns `chat.js`, `chatStream.js`, `chatRenderer.js` and `slashCommands.js`. That
+  is where the theme name of this section's first finding, and the spinner message that section
+  reports, enter the client. Its findings are cross-referenced here, not restated.
+- `static-js-cookbook-settings-models` owns `cookbook*`, `admin.js`, `models.js` and `modelPicker.js`,
+  plus `providers.js` and the `settings/*.js` framework. It explicitly leaves `settings.js`,
+  `tasks.js` and `ui.js` to this section.
+- `static-js-documents-email` and `static-js-editor` own the library and editor modules that call
+  into `windowDrag.js`, `modalSnap.js` and `tileManager.js`.
 
 ### Coverage
 
-**Read fully:** the 32 modules at or under ~530 lines (7,537 lines) plus the section's two
-non-JavaScript paths — `util/ordinal.js` (13), `color/hex.js` (14), `markdown/tableRow.js` (19),
-`toolWindowZOrder.js` (46), `platform.js` (47), `panels.js` (53), `ui_visibility.js` (73),
-`appConfig.js` (86), `escMenuStack.js` (102), `storage.js` (125), `tourAutoplay.js` (133),
-`startupShell.js` (153), `a11y.js` (165), `tourHints.js` (179), `langIcons.js` (187),
-`workspace.js` (208), `windowResize.js` (233), `section-management.js` (260), `dragSort.js` (265),
-`voiceRecorder.js` (283), `keyboard-shortcuts.js` (292), `emojiPicker.js` (313), `windowDrag.js`
-(333), `censor.js` (356), `tileManager.js` (394), `codeRunner.js` (403), `init.js` (421),
-`colorPicker.js` (453), `emojiShortcodes.js` (458), `spinner.js` (463), `fileHandler.js` (483),
-`tts-ai.js` (524), `MODULE_SUMMARY.md` (229) and `package.json` (1).
+**Read fully:** the 32 modules at or under about 530 lines (7,537 lines), plus the section's two
+non-JavaScript paths.
+
+| File | Lines |
+| --- | ---: |
+| `util/ordinal.js` | 13 |
+| `color/hex.js` | 14 |
+| `markdown/tableRow.js` | 19 |
+| `toolWindowZOrder.js` | 46 |
+| `platform.js` | 47 |
+| `panels.js` | 53 |
+| `ui_visibility.js` | 73 |
+| `appConfig.js` | 86 |
+| `escMenuStack.js` | 102 |
+| `storage.js` | 125 |
+| `tourAutoplay.js` | 133 |
+| `startupShell.js` | 153 |
+| `a11y.js` | 165 |
+| `tourHints.js` | 179 |
+| `langIcons.js` | 187 |
+| `workspace.js` | 208 |
+| `windowResize.js` | 233 |
+| `section-management.js` | 260 |
+| `dragSort.js` | 265 |
+| `voiceRecorder.js` | 283 |
+| `keyboard-shortcuts.js` | 292 |
+| `emojiPicker.js` | 313 |
+| `windowDrag.js` | 333 |
+| `censor.js` | 356 |
+| `tileManager.js` | 394 |
+| `codeRunner.js` | 403 |
+| `init.js` | 421 |
+| `colorPicker.js` | 453 |
+| `emojiShortcodes.js` | 458 |
+| `spinner.js` | 463 |
+| `fileHandler.js` | 483 |
+| `tts-ai.js` | 524 |
+| `MODULE_SUMMARY.md` | 229 |
+| `package.json` | 1 |
 
 **Read in targeted ranges, or at structure level only:** the ten modules over 1,000 lines plus
 `sidebar-layout.js`. For these the section claims only what is listed, and every citation in the
@@ -17907,14 +18051,22 @@ finding is counted in that section.
   ```
 
   `_enterFs` (`:131-135`) is the only caller of `onEnterFullscreen`, so every `onEnterFullscreen`
-  passed by a caller is unreachable: `static/js/memory.js:131`, `static/js/notes.js:168`,
-  `static/js/theme.js:1475`, `static/js/emailLibrary.js:3420` and
-  `static/js/documentLibrary.js:1801`. Two fullscreen classes those callbacks add have no other
-  writer anywhere in the tree (`grep -rn "doclib-fullscreen" --include=*.js --include=*.html
-  --include=*.py` → only `documentLibrary.js:1763-1799` and `style.css`; the same for
-  `notes-window-fullscreen` → only `notes.js:164-185`), and `documentLibrary.js:1803` still passes
-  `enableFullscreen: false` as though the option were live. `git log -L 64,64:static/js/windowDrag.js`
-  shows the disable is deliberate and recent:
+  passed by a caller is unreachable:
+
+  | File | Line |
+  | --- | ---: |
+  | `static/js/memory.js` | `:131` |
+  | `static/js/notes.js` | `:168` |
+  | `static/js/theme.js` | `:1475` |
+  | `static/js/emailLibrary.js` | `:3420` |
+  | `static/js/documentLibrary.js` | `:1801` |
+
+  Two fullscreen classes those callbacks add have no other writer anywhere in the tree
+  (`grep -rn "doclib-fullscreen" --include=*.js --include=*.html --include=*.py` → only
+  `documentLibrary.js:1763-1799` and `style.css`; the same for `notes-window-fullscreen` → only
+  `notes.js:164-185`), and `documentLibrary.js:1803` still passes `enableFullscreen: false` as
+  though the option were live. `git log -L 64,64:static/js/windowDrag.js` shows the disable is
+  deliberate and recent:
 
   ```
   22bd77ee fix(windowDrag): disable duplicate top-edge fullscreen snap (#3495)
@@ -18076,21 +18228,40 @@ Line numbers refer to `2992bf6d368a` in the working tree; `git log --oneline -1`
 - `static/js/**` (other sections) except the lines cited below
 - `static/index.html` markup beyond the greps described above
 
-**Checks run:** a probe against the real ASGI app via `fastapi.testclient` (`GET /`, `/login`,
-`/static/sw.js`, `/static/{index,login,wave-variants,whirlpool-variants,modal-control-variants}.html`,
-`/static/manifest.json`, `/backgrounds`) recording status, `Location`, the
-`Content-Security-Policy` header and the response header name set; a script that extracts the URLs
-`index.html` actually requests and diffs them against `PRECACHE` in `sw.js`; a script that resolves
-the KaTeX `@font-face` URLs against `static/lib/katex/fonts/`; greps for `Service-Worker-Allowed`,
-`Content-Security-Policy`, `@import`, `url(http`, `qrcode`, `jsdelivr`, `createElement('script')`
-and remote `src=`/`href=` across the tree. Test suites were discovered with
+**Checks run:**
+
+- a probe against the real ASGI app via `fastapi.testclient`, recording status, `Location`, the
+  `Content-Security-Policy` header and the response header name set. It requested:
+  - `GET /`, `/login`, `/backgrounds`
+  - `/static/sw.js` and `/static/manifest.json`
+  - `index.html` and `login.html` under `/static/`
+  - the three prototype pages `wave-variants.html`, `whirlpool-variants.html` and
+    `modal-control-variants.html`
+- a script that extracts the URLs `index.html` actually requests and diffs them against `PRECACHE`
+  in `sw.js`
+- a script that resolves the KaTeX `@font-face` URLs against `static/lib/katex/fonts/`
+- greps across the tree for these strings:
+  - `Service-Worker-Allowed`, `Content-Security-Policy`, `@import`, `url(http`
+  - `qrcode`, `jsdelivr`, `createElement('script')`
+  - remote `src=` and `href=`
+
+Test suites were discovered with
 `ls tests | grep -iE 'static|sw|serve_html|nonce|security_header|font|markdown_lazy|panel_loader|app_config_shared'`
-and run as one command — `venv/bin/python -m pytest -q tests/test_serve_html_with_nonce.py
-tests/test_security_headers_middleware.py tests/test_security_headers_pdf_preview.py
-tests/test_app_static_mime.py tests/test_markdown_lazy_lib_loading_js.py tests/test_panel_loader_js.py
-tests/test_app_config_shared_fetch_js.py tests/test_font_routes.py tests/test_admin_device_flow_static.py
-tests/test_setup_device_auth_static.py tests/test_slash_autocomplete_static.py
-tests/test_document_render_pdf_iframe.py` — **64 passed, 1 warning**.
+and run as one command (`venv/bin/python -m pytest -q` over the twelve files below): **64 passed,
+1 warning**.
+
+- `tests/test_serve_html_with_nonce.py`
+- `tests/test_security_headers_middleware.py`
+- `tests/test_security_headers_pdf_preview.py`
+- `tests/test_app_static_mime.py`
+- `tests/test_markdown_lazy_lib_loading_js.py`
+- `tests/test_panel_loader_js.py`
+- `tests/test_app_config_shared_fetch_js.py`
+- `tests/test_font_routes.py`
+- `tests/test_admin_device_flow_static.py`
+- `tests/test_setup_device_auth_static.py`
+- `tests/test_slash_autocomplete_static.py`
+- `tests/test_document_render_pdf_iframe.py`
 
 **Out-of-scope observation, not counted as a finding:** `app.py:943` serves `/backgrounds` from
 `static/backgrounds.html`, which does not exist in the tree (`ls static/` has no such file), so an
@@ -18126,8 +18297,8 @@ authenticated `GET /backgrounds` reaches `serve_html_with_nonce` on a missing pa
   if (e.request.mode === 'navigate' && url.pathname === '/') {   // sw.js:196
   ```
 
-  `/`, `/notes`, `/calendar`, `/email`, `/library` and `/login` are all outside `/static/`
-  (`app.py:893-949`), and the only pages inside it are the unreferenced `*-variants.html`
+  The six app pages (root, notes, calendar, email, library and login) are all outside
+  `/static/` (`app.py:893-949`), and the only pages inside it are the unreferenced `*-variants.html`
   prototypes and `static/index.html` itself.
 - **Impact:** the PWA installs and the worker activates, but it intercepts nothing the app
   actually loads — no offline app shell, no cached HTML, no cached module responses for the real
@@ -19734,23 +19905,34 @@ working tree matches the reviewed commit for every path below.
 
 `tests/helpers/__init__.py` is empty (0 bytes) — it exists only to make `tests.helpers` a package.
 
-**Read partially — the code each finding rests on:** the 21 `scripts/odysseus-*` entry points each CLI
-test targets, at the function under test (`_text_len`, `_preview_text`, `_text_field`, `_mask_token`,
-`_recipient_list`, `_split_recipients`, `_memory_entries`, `_file_rows`, `_skill_entries`,
-`_contact_rows`, `_entry_or_fail`, `_json_list`, `_json_dict`, `_decode_png_data`, `_summarize`,
-`cmd_read`, `cmd_list`, `_resolve`, `_album_image_count`, `_calendar_name`, `_serialize`) and the
-imports they need; `static/js/markdown/tableRow.js` and `static/js/ui.js` (`esc`) for the streaming
-harness; `pyproject.toml` (`[tool.pytest.ini_options]`), `.github/workflows/ci.yml:104-146` (the
-pytest job) and `tests/test_docker_devops_hardening.py:26-30`, `:244-251` (the doc-interpreter guard);
-`tests/test_settings_shell_js_behavior.py` and `tests/test_streaming_segmenter_js.py`, which are the
-pytest entry points for two of this section's harness files.
+**Read partially:** the code each finding rests on.
 
-**Not read:** the ~800 remaining test modules and everything they cover — the other `tests-*` sections
-own those, and this section's claims are about the harness those modules run on, not about them.
-`tests/test_run_focus.py`, `tests/test_taxonomy.py`, `tests/test_run_order_report.py`,
-`tests/test_helpers_import_state.py`, `tests/test_db_stubs_helper.py` and the six
-`tests/test_embedding_lanes*.py` files are other sections' paths; they were read only as the
-consumers of this section's helpers.
+- the 21 `scripts/odysseus-*` entry points each CLI test targets, at the function under test, and
+  the imports they need. The functions are:
+  - text: `_text_len`, `_preview_text`, `_text_field`
+  - tokens and recipients: `_mask_token`, `_recipient_list`, `_split_recipients`
+  - row builders: `_memory_entries`, `_file_rows`, `_skill_entries`, `_contact_rows`
+  - JSON: `_entry_or_fail`, `_json_list`, `_json_dict`
+  - commands: `cmd_read`, `cmd_list`
+  - images and summaries: `_decode_png_data`, `_summarize`, `_serialize`
+  - lookups: `_resolve`, `_album_image_count`, `_calendar_name`
+- `static/js/markdown/tableRow.js` and `static/js/ui.js` (`esc`), for the streaming harness
+- `pyproject.toml` (`[tool.pytest.ini_options]`) and `.github/workflows/ci.yml:104-146` (the pytest
+  job)
+- `tests/test_docker_devops_hardening.py:26-30` and `:244-251` (the doc-interpreter guard)
+- `tests/test_settings_shell_js_behavior.py` and `tests/test_streaming_segmenter_js.py`, which are
+  the pytest entry points for two of this section's harness files
+
+**Not read:** the ~800 remaining test modules and everything they cover. The other `tests-*`
+sections own those, and this section's claims are about the harness those modules run on, not about
+them.
+
+Some of those are other sections' paths that were read only as the consumers of this section's
+helpers:
+
+- `tests/test_run_focus.py`, `tests/test_taxonomy.py` and `tests/test_run_order_report.py`
+- `tests/test_helpers_import_state.py` and `tests/test_db_stubs_helper.py`
+- the six `tests/test_embedding_lanes*.py` files
 
 **Checks run** (project venv, from the repository root):
 
@@ -19904,24 +20086,33 @@ that use them; no probe touched the target tree.
   security
   ```
 
-  `area_cli` is now 30 files, not 28, and two of them (`tests/test_calendar_cli_overlap.py`,
+  `area_cli` is now 30 files, not 28. Two of them (`tests/test_calendar_cli_overlap.py`,
   `tests/test_memory_cli_add_nondict.py`) are flat under `tests/` because `_taxonomy.py` matches the
   filename token `cli` (`tests/_taxonomy.py:26`, in the `KEYWORD_AREAS` priority order at `:42-48`)
-  and never looks at the directory — the same reason the inventory gives at `:94-98` for excluding
-  `tests/test_backup_cli_security.py`. So `tests/cli/` and `area_cli` no
-  longer agree, and the before/after count comparison the document prescribes (`:165-167`) cannot be
-  reproduced. The coupling claim is also stale: "every file imports only the script under test (via
-  `cli_loader`) plus `tests.helpers` stubs — no app, no routes, no real DB" (`:48-49`) is contradicted
-  by eight of the 28 files, which install stubs for production modules —
-  `tests/cli/test_mail_cli_recipients.py:9`, `:17` (`routes.email_helpers`, `routes.email_pollers`),
-  `tests/cli/test_mail_cli_read_empty_fetch.py:31`, `:38`, `tests/cli/test_contacts_cli_rows.py:9`
-  (`routes.contacts_routes`), `tests/cli/test_memory_cli_rows.py:9`, `tests/cli/test_skills_cli_rows.py:9`,
-  `tests/cli/test_skills_cli_preview.py:15` (`services.memory.*`), `tests/cli/test_personal_cli_rows.py:9`
-  (`src.personal_docs`), `tests/cli/test_signature_cli_export.py:8-11` (`sqlalchemy`, `core`,
-  `core.database`). The inventory's own coupling grep (`:137-138`) searches only for
+  and never looks at the directory. That is the same reason the inventory gives at `:94-98` for
+  excluding `tests/test_backup_cli_security.py`. So `tests/cli/` and `area_cli` no longer agree,
+  and the before and after count comparison the document prescribes (`:165-167`) cannot be
+  reproduced.
+
+  The coupling claim is also stale: "every file imports only the script under test (via
+  `cli_loader`) plus `tests.helpers` stubs — no app, no routes, no real DB" (`:48-49`) is
+  contradicted by eight of the 28 files, which install stubs for production modules:
+
+  | File | Lines | Stubbed |
+  | --- | --- | --- |
+  | `tests/cli/test_mail_cli_recipients.py` | `:9`, `:17` | `routes.email_helpers`, `routes.email_pollers` |
+  | `tests/cli/test_mail_cli_read_empty_fetch.py` | `:31`, `:38` | |
+  | `tests/cli/test_contacts_cli_rows.py` | `:9` | `routes.contacts_routes` |
+  | `tests/cli/test_memory_cli_rows.py` | `:9` | |
+  | `tests/cli/test_skills_cli_rows.py` | `:9` | |
+  | `tests/cli/test_skills_cli_preview.py` | `:15` | `services.memory.*` |
+  | `tests/cli/test_personal_cli_rows.py` | `:9` | `src.personal_docs` |
+  | `tests/cli/test_signature_cli_export.py` | `:8-11` | `sqlalchemy`, `core`, `core.database` |
+
+  The inventory's own coupling grep (`:137-138`) searches only for
   `TestClient|FastAPI|create_app|SessionLocal|sqlite|dependency_overrides`, so it would not have
-  surfaced any of them. `TESTING_STANDARD.md:55` was updated for the same move ("the current `area_cli`
-  set has moved to `tests/cli/`"); the inventory was not.
+  surfaced any of them. `TESTING_STANDARD.md:55` was updated for the same move ("the current
+  `area_cli` set has moved to `tests/cli/`"); the inventory was not.
 - **Impact:** the next refactor slice that trusts this document starts from a false baseline: the file
   list is wrong, the prescribed check prints `2`, and the "crisp, machine-checkable boundary" it uses
   to justify moving CLI tests ahead of everything else has already stopped being crisp. An agent or
@@ -20195,36 +20386,56 @@ that use them; no probe touched the target tree.
 
 ### Overview
 
-`tests/test_auth_config_lock_concurrency.py`, `tests/test_auth_disabled_document_access.py`, `tests/test_auth_event_loop.py`, `tests/test_auth_policy.py`, `tests/test_auth_regressions.py`, `tests/test_auth_require_privilege_nondict.py`, `tests/test_auth_root_path.py`, `tests/test_auth_session_revocation.py`, `tests/test_db_stubs_helper.py`, `tests/test_is_youtube_url_nonstring.py`, `tests/test_is_youtube_url_nonstring_svc.py`, `tests/test_pr_blocker_audit.py`, `tests/test_pr_description_check.py`, `tests/test_prompt_injection_audit.py`, `tests/test_prompt_security.py`, `tests/test_security_headers_middleware.py`, `tests/test_security_headers_pdf_preview.py`, `tests/test_security_regressions.py`, `tests/test_token_cache_atomic_swap.py`, `tests/test_vault_password_not_in_argv.py`, `tests/test_vault_routes_shim.py`.
-
 This section asks what these tests prove, not whether they pass. A test that passes without
 exercising the guard it names is worse than no test, because it is counted as coverage. The
 question for each file is therefore: what is the assertion, what is the fixture, and which
 behaviour would have to break for the assertion to fail?
 
-The boundary: the test harness itself (`tests/conftest.py`, `tests/helpers/*`,
-`tests/run_focus.py`, `tests/TESTING_STANDARD.md` as an artifact) belongs to `tests-harness`; it
-is cited here only as the repository's own rulebook for what a test is required to do. The
-production code these files pin belongs to the matching `src-*`, `routes-*`, `core-*` and
-`services-*` sections. Where a weak test maps onto a defect another section already reports, the
-finding cross-references it instead of restating it — `src-security` for the
-`require_privilege` fail-open, `services-media` for the `is_youtube_url` substring match,
-`repository-root` for the `X-Odysseus-Owner` override, `build-install-deploy` for the compose
-bind assertions.
+The boundary with the neighbouring sections:
+
+- `tests-harness` owns the test harness itself: `tests/conftest.py`, `tests/helpers/*`,
+  `tests/run_focus.py` and `tests/TESTING_STANDARD.md` as an artifact. It is cited here only as
+  the repository's own rulebook for what a test is required to do.
+- The production code these files pin belongs to the matching `src-`, `routes-`, `core-` and
+  `services-` sections.
+
+Where a weak test maps onto a defect another section already reports, the finding cross-references
+it instead of restating it:
+
+| Defect | Section |
+| --- | --- |
+| The `require_privilege` fail-open | `src-security` |
+| The `is_youtube_url` substring match | `services-media` |
+| The `X-Odysseus-Owner` override | `repository-root` |
+| The compose bind assertions | `build-install-deploy` |
 
 ### Coverage
 
-**Read fully:** all 21 assigned files, 5,731 lines — `tests/test_auth_config_lock_concurrency.py`
-(240), `tests/test_auth_disabled_document_access.py` (280), `tests/test_auth_event_loop.py` (118),
-`tests/test_auth_policy.py` (363), `tests/test_auth_regressions.py` (370),
-`tests/test_auth_require_privilege_nondict.py` (36), `tests/test_auth_root_path.py` (283),
-`tests/test_auth_session_revocation.py` (173), `tests/test_db_stubs_helper.py` (121),
-`tests/test_is_youtube_url_nonstring.py` (14), `tests/test_is_youtube_url_nonstring_svc.py` (13),
-`tests/test_pr_blocker_audit.py` (964), `tests/test_pr_description_check.py` (327),
-`tests/test_prompt_injection_audit.py` (261), `tests/test_prompt_security.py` (203),
-`tests/test_security_headers_middleware.py` (67), `tests/test_security_headers_pdf_preview.py`
-(36), `tests/test_security_regressions.py` (1,546), `tests/test_token_cache_atomic_swap.py` (188),
-`tests/test_vault_password_not_in_argv.py` (117), `tests/test_vault_routes_shim.py` (11).
+**Read fully:** all 21 assigned files, 5,731 lines.
+
+| File | Lines |
+| --- | ---: |
+| `tests/test_auth_config_lock_concurrency.py` | 240 |
+| `tests/test_auth_disabled_document_access.py` | 280 |
+| `tests/test_auth_event_loop.py` | 118 |
+| `tests/test_auth_policy.py` | 363 |
+| `tests/test_auth_regressions.py` | 370 |
+| `tests/test_auth_require_privilege_nondict.py` | 36 |
+| `tests/test_auth_root_path.py` | 283 |
+| `tests/test_auth_session_revocation.py` | 173 |
+| `tests/test_db_stubs_helper.py` | 121 |
+| `tests/test_is_youtube_url_nonstring.py` | 14 |
+| `tests/test_is_youtube_url_nonstring_svc.py` | 13 |
+| `tests/test_pr_blocker_audit.py` | 964 |
+| `tests/test_pr_description_check.py` | 327 |
+| `tests/test_prompt_injection_audit.py` | 261 |
+| `tests/test_prompt_security.py` | 203 |
+| `tests/test_security_headers_middleware.py` | 67 |
+| `tests/test_security_headers_pdf_preview.py` | 36 |
+| `tests/test_security_regressions.py` | 1,546 |
+| `tests/test_token_cache_atomic_swap.py` | 188 |
+| `tests/test_vault_password_not_in_argv.py` | 117 |
+| `tests/test_vault_routes_shim.py` | 11 |
 
 **Read partially — the code each finding rests on:** `app.py:376-396` (the internal-tool
 impersonation branch); `routes/mcp/mcp_routes.py` handler definitions and `require_admin` call
@@ -21289,47 +21500,65 @@ already describes at `tests/conftest.py:20`.
 Line numbers refer to `2992bf6d368a`; `git diff --stat 2992bf6d368a -- tests/` is empty, so the
 working tree matches the reviewed commit for every path below.
 
-**Read fully (59 of 112 files, 5,162 lines):** all 23 `tests/test_cookbook_*.py` files; the whole
-`tests/test_provider_endpoints_*.py` group and `test_provider_label_js.py`,
-`test_providers_mixtral_logo_js.py`, `test_provider_device_flow_js.py`; all three
-`tests/test_endpoint_resolver_*.py` files; `test_model_interaction_registry.py`,
-`test_model_helper_owner_scope.py`, `test_model_name_tooltip.py`, `test_model_sort_js.py`;
-`test_gpu_compose_standalone.py`; five of the seventeen `tests/test_hwfit_*.py` files
-(`bandwidth_nonstring`, `gpu_count_nonnumeric`, `models_nonstring_fields`, `params_b_malformed`,
-`remote_validation`); `test_llm_core_concurrency.py`, `test_llm_core_connect_timeout.py`,
-`test_llm_core_reasoning_content_fallback.py`, `test_llm_core_sanitize_tool_calls.py`;
-`test_embedding_cache_confinement.py`, `test_embedding_endpoint_config.py`; three of the four
-`tests/test_tts_*.py` files plus `test_stt_leak.py`; all five `tests/test_youtube_*.py` files.
+**Read fully (59 of 112 files, 5,162 lines):**
 
-**Sampled — the region each claim rests on, plus the whole test-name index (5 files, 2,732 lines):**
-every one of the 112 files was parsed to an AST index of its test-function names, so the *names* of
-all 929 test functions were read. Beyond that I opened: `tests/test_llm_core_fallback.py` (the
-fallback-eligibility region `:1400-1500`, plus greps over the whole file),
-`tests/test_model_capability_readers.py` (imports and `:1-80`, then the test-name index),
-`tests/test_endpoint_owner_scope_followup.py` (the three source-text tests at `:360-414`),
-`tests/test_tts_service_enforce_cache_limit.py` (`:19-96`),
-`tests/test_hwfit_container_visibility_warning.py` (`:1-47`). Selection rule: I read in full
-every file that is itself a source-text or JavaScript assertion (because that is this section's
-subject), every file named by the run brief's two priority surfaces (Cookbook shell-command
-construction, provider URL handling), and every file that a `grep` over the slice flagged as a
-`*_js.py` or `read_text` module. I sampled the remaining groups (`test_llm_core_*` transport,
-`test_hwfit_*` ranking, `test_embedding_lanes*`, `test_provider_classification*` /
-`test_provider_detection_*`) by reading their test names and grepping them for the failure shapes
-this section hunts, rather than by reading their bodies.
+- all 23 `tests/test_cookbook_*.py` files
+- the whole `tests/test_provider_endpoints_*.py` group, plus `test_provider_label_js.py`,
+  `test_providers_mixtral_logo_js.py` and `test_provider_device_flow_js.py`
+- all three `tests/test_endpoint_resolver_*.py` files
+- `test_model_interaction_registry.py`, `test_model_helper_owner_scope.py`,
+  `test_model_name_tooltip.py` and `test_model_sort_js.py`
+- `test_gpu_compose_standalone.py`
+- five of the seventeen `tests/test_hwfit_*.py` files, named by their suffix: bandwidth_nonstring,
+  gpu_count_nonnumeric, models_nonstring_fields, params_b_malformed and remote_validation
+- `test_llm_core_concurrency.py`, `test_llm_core_connect_timeout.py`,
+  `test_llm_core_reasoning_content_fallback.py` and `test_llm_core_sanitize_tool_calls.py`
+- `test_embedding_cache_confinement.py` and `test_embedding_endpoint_config.py`
+- three of the four `tests/test_tts_*.py` files, plus `test_stt_leak.py`
+- all five `tests/test_youtube_*.py` files
 
-**Not read at all (48 files, 8,363 lines):** the six `tests/test_embedding_lanes*.py` files and
-`test_embeddings.py` / `test_embeddings_client.py`; `tests/test_endpoint_probing.py`; eleven
-`tests/test_hwfit_*.py` files (`amd`, `apple_bandwidth`, `cpu_arch_detection`, `cpu_only_fallback`,
-`gemma4_12b`, `macos`, `manual_backend`, `native_quant_labels`, `quant_formats`, `unified_nvidia`,
-`windows`); seventeen `tests/test_llm_core_*.py` files (Anthropic cache/temperature, Mistral content,
-Ollama, reasoning, streaming, SSE, usage deltas, thinking models); five `tests/test_model_*.py` files
-(`capabilities`, `context`, `defaults`, `discovery_status`, `routes` — the last is 2,179 lines and is
-the largest single gap in this section); the six `tests/test_provider_classification*.py` /
-`test_provider_detection_*.py` files. For these I can say only that the collection succeeded and the
-tests passed; I make no claim about what they prove, and the counts below should be read with that
-caveat. The provider **rejection**-path question the brief raises is answered from the
-`test_provider_endpoints_*` and `test_endpoint_resolver_*` files, which I did read fully — the
-unread `test_provider_classification*` / `test_provider_detection_*` files are the classification
+**Sampled: the region each claim rests on, plus the whole test-name index (5 files, 2,732 lines).**
+Every one of the 112 files was parsed to an AST index of its test-function names, so the *names* of
+all 929 test functions were read. Beyond that I opened:
+
+- `tests/test_llm_core_fallback.py`: the fallback-eligibility region `:1400-1500`, plus greps over
+  the whole file
+- `tests/test_model_capability_readers.py`: imports and `:1-80`, then the test-name index
+- `tests/test_endpoint_owner_scope_followup.py`: the three source-text tests at `:360-414`
+- `tests/test_tts_service_enforce_cache_limit.py`: `:19-96`
+- `tests/test_hwfit_container_visibility_warning.py`: `:1-47`
+
+Selection rule: I read in full every file that is itself a source-text or JavaScript assertion
+(because that is this section's subject), every file named by the run brief's two priority surfaces
+(Cookbook shell-command construction, provider URL handling), and every file that a `grep` over the
+slice flagged as a `*_js.py` or `read_text` module. I sampled the remaining groups by reading
+their test names and grepping them for the failure shapes this section hunts, rather than by
+reading their bodies:
+
+- `test_llm_core_*` transport
+- `test_hwfit_*` ranking
+- `test_embedding_lanes*`
+- `test_provider_classification*` and `test_provider_detection_*`
+
+**Not read at all (48 files, 8,363 lines):**
+
+- the six `tests/test_embedding_lanes*.py` files, `test_embeddings.py` and `test_embeddings_client.py`
+- `tests/test_endpoint_probing.py`
+- eleven `tests/test_hwfit_*.py` files, named by their suffix: amd, apple_bandwidth,
+  cpu_arch_detection, cpu_only_fallback, gemma4_12b, macos, manual_backend, native_quant_labels,
+  quant_formats, unified_nvidia and windows
+- seventeen `tests/test_llm_core_*.py` files (Anthropic cache and temperature, Mistral content,
+  Ollama, reasoning, streaming, SSE, usage deltas, thinking models)
+- five `tests/test_model_*.py` files, named by their suffix: capabilities, context, defaults,
+  discovery_status and routes. The last is 2,179 lines and is the largest single gap in this
+  section.
+- the six `tests/test_provider_classification*.py` and `test_provider_detection_*.py` files
+
+For these I can say only that the collection succeeded and the tests passed; I make no claim about
+what they prove, and the counts below should be read with that caveat. The provider **rejection**-path
+question the brief raises is answered from the `test_provider_endpoints_*` and
+`test_endpoint_resolver_*` files, which I did read fully. The unread
+`test_provider_classification*` and `test_provider_detection_*` files are the classification
 tables, not the URL builders.
 
 **Checks run** (project venv, from the repository root):
@@ -21387,10 +21616,11 @@ onto several lines, because `assert lines` at `:23` catches the empty selection 
   ```
 
   `tests/test_llm_core_sanitize_tool_calls.py:23-30` is the same loop with the same names. The root
-  conftest pre-imports only `sqlalchemy`, `sqlalchemy.orm`, `core.database`, `src.database` and
-  `core.models` (`tests/conftest.py:25-31`, `:53-57`), so `src.agent_tools` is not protected: if it
-  has not been imported by the time either file is collected, the guard fires and the stub stays in
-  `sys.modules` for the rest of the session. `tests/test_model_interaction_registry.py:17` binds
+  conftest pre-imports only five modules: `sqlalchemy` and `sqlalchemy.orm`, then `core.database`,
+  `src.database`, `core.models` (`tests/conftest.py:25-31`, `:53-57`), so `src.agent_tools` is
+  not protected. If it has not been imported by the time either file is collected, the guard fires
+  and the stub stays in `sys.modules` for the rest of the session.
+  `tests/test_model_interaction_registry.py:17` binds
   `from src.agent_tools import model_interaction_tools as mit`, so it then tests a mock. Measured:
 
   ```
@@ -21753,11 +21983,15 @@ onto several lines, because `assert lines` at `:23` catches the empty selection 
 ### Overview
 
 This section covers the 121 test modules that pin the agent loop, the tool surface and the LLM call
-path: `tests/test_agent_loop*`, `tests/test_action_intents*`, `tests/test_tool_*`,
-`tests/test_skill*`, `tests/test_search_*`, `tests/test_research_*`, `tests/test_task*`,
-`tests/test_scheduler*` and the MCP tests. Its job is not to describe what the tests are named
-after, but to establish what they prove: whether a file drives the real loop or a transcription of
-it, and whether its assertions would fail if the behaviour under test changed.
+path. They are the modules matching these name patterns, plus the MCP tests:
+
+- `tests/test_agent_loop*`, `tests/test_action_intents*`, `tests/test_tool_*`
+- `tests/test_skill*`, `tests/test_search_*`, `tests/test_research_*`
+- `tests/test_task*`, `tests/test_scheduler*`
+
+Its job is not to describe what the tests are named after, but to establish what they prove: whether
+a file drives the real loop or a transcription of it, and whether its assertions would fail if the
+behaviour under test changed.
 
 Boundary: the implementation defects those tests are meant to catch belong to `src-agent-loop`,
 `src-tools-parse-exec`, `src-tools-capabilities-policy` and `src-tools-schema-index`; the route that
@@ -21788,26 +22022,80 @@ Three surfaces the brief asked about, answered up front:
 
 ### Coverage
 
-**Read fully (46 of 121).** Every line of:
-`test_agent_loop.py`, `test_agent_loop_tool_output_truncation.py`, `test_action_intents.py`,
-`test_action_intents_shell_verbs.py`, `test_agent_rounds_exhausted.py`, `test_agent_bash_windows.py`,
-`test_agent_migration_manifest.py`, `test_agent_round_model_provenance_ui.py`,
-`test_agent_tool_budget_nonnumeric.py`, `test_agent_tools_truncate_nonstring.py`,
-`test_ask_user_persistence.py`, `test_bg_jobs_store.py`, `test_bg_monitor_stream.py`,
-`test_compaction_summary_failure.py`, `test_loop_breaker_runaway.py`, `test_mcp_common_truncate.py`,
-`test_mcp_dependency_compatibility.py`, `test_mcp_routes_shim.py`, `test_research_routes_shim.py`,
-`test_research_session_id_validation.py`, `test_research_source_link_xss.py`,
-`test_search_analytics_defaults.py`, `test_search_content_extraction_parity.py`,
-`test_search_content_url_guards.py`, `test_search_module_consolidation.py`, `test_search_query.py`,
-`test_search_routes_shim.py`, `test_skill_edit_no_collapse_on_outside_click_js.py`,
-`test_skill_extractor_rows.py`, `test_skill_format_timestamp.py`, `test_skill_index_toolset_gating.py`,
-`test_task_routes_shim.py`, `test_task_session_folder.py`, `test_tool_approval_frontend_routing.py`,
-`test_tool_approval_single_action_scope.py`, `test_tool_implementations_shim.py`,
-`test_tool_index_keyword_boundaries.py`, `test_tool_index_schema_parity.py`,
-`test_tool_output_prompt_injection.py`, `test_tool_parsing_bare_end_marker.py`,
-`test_tool_parsing_hermes_json.py`, `test_tool_parsing_nonstring.py`,
-`test_tool_task_cancelled_on_disconnect.py`, `test_tool_utils_import_clean.py`, `test_tool_policy.py`,
-`tests/conftest.py`.
+**Read fully (46 of 121).** Every line of these files, grouped by area. All are under `tests/`:
+
+**Agent loop**
+
+- `test_agent_loop.py`
+- `test_agent_loop_tool_output_truncation.py`
+- `test_agent_rounds_exhausted.py`
+- `test_agent_bash_windows.py`
+- `test_agent_migration_manifest.py`
+- `test_agent_round_model_provenance_ui.py`
+- `test_agent_tool_budget_nonnumeric.py`
+- `test_agent_tools_truncate_nonstring.py`
+- `test_loop_breaker_runaway.py`
+
+**Action intents**
+
+- `test_action_intents.py`
+- `test_action_intents_shell_verbs.py`
+
+**Background jobs and compaction**
+
+- `test_ask_user_persistence.py`
+- `test_bg_jobs_store.py`
+- `test_bg_monitor_stream.py`
+- `test_compaction_summary_failure.py`
+
+**MCP**
+
+- `test_mcp_common_truncate.py`
+- `test_mcp_dependency_compatibility.py`
+- `test_mcp_routes_shim.py`
+
+**Research**
+
+- `test_research_routes_shim.py`
+- `test_research_session_id_validation.py`
+- `test_research_source_link_xss.py`
+
+**Search**
+
+- `test_search_analytics_defaults.py`
+- `test_search_content_extraction_parity.py`
+- `test_search_content_url_guards.py`
+- `test_search_module_consolidation.py`
+- `test_search_query.py`
+- `test_search_routes_shim.py`
+
+**Skills and tasks**
+
+- `test_skill_edit_no_collapse_on_outside_click_js.py`
+- `test_skill_extractor_rows.py`
+- `test_skill_format_timestamp.py`
+- `test_skill_index_toolset_gating.py`
+- `test_task_routes_shim.py`
+- `test_task_session_folder.py`
+
+**Tools**
+
+- `test_tool_approval_frontend_routing.py`
+- `test_tool_approval_single_action_scope.py`
+- `test_tool_implementations_shim.py`
+- `test_tool_index_keyword_boundaries.py`
+- `test_tool_index_schema_parity.py`
+- `test_tool_output_prompt_injection.py`
+- `test_tool_parsing_bare_end_marker.py`
+- `test_tool_parsing_hermes_json.py`
+- `test_tool_parsing_nonstring.py`
+- `test_tool_task_cancelled_on_disconnect.py`
+- `test_tool_utils_import_clean.py`
+- `test_tool_policy.py`
+
+**Harness**
+
+- `tests/conftest.py`
 
 **Read partially (3).** `test_agent_state_dir_confinement.py` — the module docstring, all 47 test
 names, the default-roots block (`:60-160`) and three bodies (`:108-140`, `:487-506`, `:573-590`); it
@@ -21823,19 +22111,17 @@ counts, module-scope `sys.modules` stubbing, source-file reads, `monkeypatch` us
 `inspect` use and whether the file calls `stream_agent_loop`. That scan chose the files above; it is
 not a coverage claim for the rest.
 
-**Not opened (72).** Named so the shape of the gap is visible: the MCP group
-(`test_mcp_add_server_args_validation`, `test_mcp_cache_invalidation`, `test_mcp_email_decode_header_spaces`,
-`test_mcp_manager`, `test_mcp_memory_owner_scope`, `test_mcp_oauth`, `test_mcp_param_hint_hardening`,
-`test_mcp_reconnect_args`, `test_mcp_tool_params_in_prompt`), the research group (15 files, including
-`test_research_routes_path_confinement`, `test_research_owner_scope_routes`, `test_research_service`,
-`test_research_utils`), the search group (13 files, including `test_search_ranking*`,
-`test_search_config_no_key_leak`, `test_search_query_nonstring`), the skills group (14 files,
-including `test_skill_importer_security`, `test_skill_importer_ssrf_redirect`,
-`test_skills_manager_owner_isolation`, `test_skill_index_prompt_injection`), the task/scheduler group
-(11 files), `test_tool_approvals`, `test_tool_approval_task_scope`, `test_tool_path_confinement`'s
-remainder, `test_tool_rag_*`, `test_tool_support_heuristic`, `test_ask_user_tool`, `test_bg_job_tools`
-and the three remaining `test_app_*` files. Their absence from the findings below is an absence of
-evidence, not evidence of quality.
+**Not opened (72).** Named so the shape of the gap is visible. Their absence from the findings below
+is an absence of evidence, not evidence of quality.
+
+| Group | Files |
+| --- | --- |
+| MCP | `test_mcp_add_server_args_validation`, `test_mcp_cache_invalidation`, `test_mcp_email_decode_header_spaces`, `test_mcp_manager`, `test_mcp_memory_owner_scope`, `test_mcp_oauth`, `test_mcp_param_hint_hardening`, `test_mcp_reconnect_args`, `test_mcp_tool_params_in_prompt` |
+| Research (15 files) | Including `test_research_routes_path_confinement`, `test_research_owner_scope_routes`, `test_research_service`, `test_research_utils` |
+| Search (13 files) | Including `test_search_ranking*`, `test_search_config_no_key_leak`, `test_search_query_nonstring` |
+| Skills (14 files) | Including `test_skill_importer_security`, `test_skill_importer_ssrf_redirect`, `test_skills_manager_owner_isolation`, `test_skill_index_prompt_injection` |
+| Tasks and scheduler | 11 files |
+| Other | `test_tool_approvals`, `test_tool_approval_task_scope`, the remainder of `test_tool_path_confinement`, `test_tool_rag_*`, `test_tool_support_heuristic`, `test_ask_user_tool`, `test_bg_job_tools` and the three remaining `test_app_*` files |
 
 **Checks run.** All 121 assigned files, and separately the 57 files that mention `web_search`,
 `SOURCES`, `web_sources` or `stream_agent_loop`; a line tracer over `src/agent_loop.py` for three of
@@ -22140,51 +22426,73 @@ and their `if mod not in sys.modules` guard never fires. Cross-referenced, not r
 
 ### Overview
 
-`tests/test_chat_attachment_picker.py`, `tests/test_chat_cached_model_normalization.py`, `tests/test_chat_helpers.py`, `tests/test_chat_helpers_bg_tasks_tracked.py`, `tests/test_chat_image_routing.py`, `tests/test_chat_metrics.py`, `tests/test_chat_model_provenance_js.py`, `tests/test_chat_preprocess_tool_policy.py`, `tests/test_chat_processor_pinned_memory.py`, `tests/test_chat_processor_web_search.py`, `tests/test_chat_route_tool_policy.py`, `tests/test_chat_stream_errors_js.py`, `tests/test_chat_stream_scope.py`, `tests/test_chat_tool_screenshot_xss.py`, `tests/test_chat_upload_limit_config.py`, `tests/test_chat_url_prefetch_failure_context.py`, `tests/test_chatgpt_subscription_routes.py`, `tests/test_chroma_client.py`, `tests/test_context_budget.py`, `tests/test_context_cache_per_endpoint.py`, `tests/test_context_compactor.py`, `tests/test_context_compactor_nonstring.py`, `tests/test_memory_add_submit_regression.py`, `tests/test_memory_audit_timeout.py`, `tests/test_memory_bullet_extraction.py`, `tests/test_memory_cli_add_nondict.py`, `tests/test_memory_extract_chat_nondict.py`, `tests/test_memory_extraction_parse.py`, `tests/test_memory_extractor_rows.py`, `tests/test_memory_extractor_vector_cross_tenant.py`, `tests/test_memory_extractor_vector_degraded.py`, `tests/test_memory_fallback_dislike.py`, `tests/test_memory_imports.py`, `tests/test_memory_owner_isolation.py`, `tests/test_memory_provider.py`, `tests/test_memory_recall_nondict_rows.py`, `tests/test_memory_routes_session_owner.py`, `tests/test_memory_routes_shim.py`, `tests/test_memory_store_unreadable_no_wipe.py`, `tests/test_memory_validate_entries_nondict.py`, `tests/test_personal_delete_file_confinement.py`, `tests/test_personal_dir_symlink_escape.py`, `tests/test_personal_docs_exclusions.py`, `tests/test_personal_docs_keyword_nondict.py`, `tests/test_personal_docs_lists.py`, `tests/test_personal_docs_office_index.py`, `tests/test_personal_docs_pdf_index.py`, `tests/test_personal_docs_state_store.py`, `tests/test_personal_index_hidden_dirs.py`, `tests/test_personal_remove_dir_confinement.py`, `tests/test_personal_upload_isolation.py`, `tests/test_personal_upload_privilege.py`, `tests/test_rag_index_hidden_dirs.py`, `tests/test_rag_keyword_fallback_owner.py`, `tests/test_rag_manager_owner_compat.py`, `tests/test_rag_remove_directory_scope.py`, `tests/test_rag_search_signature.py`, `tests/test_rag_server_directory_nonstring.py`, `tests/test_rag_vector_id_stability.py`, `tests/test_rag_vector_rename_owner.py`, `tests/test_searchservice_search_call.py`, `tests/test_session_actions_cleanup.py`, `tests/test_session_concurrent.py`, `tests/test_session_context_excludes_slash.py`, `tests/test_session_discovery_message_count.py`, `tests/test_session_endpoint_owner_scope.py`, `tests/test_session_export_filename.py`, `tests/test_session_export_nonstring_content.py`, `tests/test_session_ghost_delete.py`, `tests/test_session_image_cleanup.py`, `tests/test_session_list_owner_scope.py`, `tests/test_session_manager.py`, `tests/test_session_manager_cleanup.py`, `tests/test_session_manager_persist_guard.py`, `tests/test_session_mode_helpers.py`, `tests/test_session_owner_attribution.py`, `tests/test_session_routes_utcnow.py`, `tests/test_session_search.py`, `tests/test_session_search_batch_fetch.py`, `tests/test_session_tools_registry.py`, `tests/test_topic_analyzer.py`.
-
 This section asks what these 81 modules prove, not whether they pass. Most of them are
 regression pins written against a specific reported bug, so the question for each is: what is
 the assertion, what is the fixture, and which edit to the production code would make it fail?
 The two answers this section spends its findings on are "the assertion is a substring of the
 production source" and "the fixture is a re-implementation of the production logic".
 
-The boundary: the test harness itself (`tests/conftest.py`, `tests/helpers/*`,
-`tests/TESTING_STANDARD.md` as an artifact) belongs to `tests-harness`; it is cited here only
-as the repository's own rulebook. The production code these files pin belongs to
-`src-chat-session`, `src-memory-rag`, `src-llm-core`, `core-auth-session`, `services-memory`,
-`routes-chat-session`, `routes-rest-memory-personal-research`, `static-js-chat` and the other
-matching sections. Where a weak test sits on top of a defect another section already reports,
-this section names the test and cross-references the defect rather than restating it.
+The boundary with the neighbouring sections:
+
+- `tests-harness` owns the test harness itself: `tests/conftest.py`, `tests/helpers/*` and
+  `tests/TESTING_STANDARD.md` as an artifact. It is cited here only as the repository's own
+  rulebook.
+- The production code these files pin belongs to the matching sections:
+  - `src-chat-session`, `src-memory-rag`, `src-llm-core`
+  - `core-auth-session`, `services-memory`
+  - `routes-chat-session`, `routes-rest-memory-personal-research`
+  - `static-js-chat`
+
+Where a weak test sits on top of a defect another section already reports, this section names the
+test and cross-references the defect rather than restating it.
 
 ### Coverage
 
-**Read fully:** all 81 assigned files, 7,682 lines. The largest are `tests/test_chat_helpers.py`
-(582), `tests/test_chat_route_tool_policy.py` (344), `tests/test_session_search.py` (298),
-`tests/test_context_compactor.py` (294), `tests/test_memory_routes_session_owner.py` (289),
-`tests/test_chatgpt_subscription_routes.py` (280), `tests/test_memory_store_unreadable_no_wipe.py`
-(255), `tests/test_chat_metrics.py` (214), `tests/test_chat_model_provenance_js.py` (203),
-`tests/test_session_tools_registry.py` (198), `tests/test_session_manager.py` (194); the
-remainder are between 6 and 181 lines each. Nothing in the assigned list was left unopened.
+**Read fully:** all 81 assigned files, 7,682 lines. Nothing in the assigned list was left unopened.
+The largest files are below; the remainder are between 6 and 181 lines each.
 
-**Read partially — the production code each finding rests on:** `routes/chat_routes.py`
-`:305-317` (`_BROWSER_MCP_TOOLS`), `:428-441` (`_clear_orphaned_session_endpoint`), `:493-510`,
-`:541-575`, `:1478-1620` (the `disabled_tools` block) and the four `owner_filter(q,
-ModelEndpoint, owner)` sites; `routes/chat_helpers.py:520-580` (`_match_cached_model_id`,
-`_normalize_model_id_from_cache`) and `:752`; `routes/session_routes.py:260-290` (the incognito
-purge); `src/agent_loop.py:4225-4250` (the hard-max read); `src/llm_core.py:3335-3345` (the
-end-of-stream block); `src/memory.py:261-280` (`save`); `static/js/chat.js:2790-2796`,
-`:3975-3990`; `static/js/chatRenderer.js:33-54`; `static/js/chatStreamErrors.js` (whole, 23
-lines); `tests/TESTING_STANDARD.md:88-133` (the determinism and behavioral-first rules);
-`tests/pr6020`-style Node harness idioms in `tests/test_pr6020_browser_review_regressions.py`
-`:26-56`. Line numbers are the working tree at `2992bf6d368a`.
+| File | Lines |
+| --- | ---: |
+| `tests/test_chat_helpers.py` | 582 |
+| `tests/test_chat_route_tool_policy.py` | 344 |
+| `tests/test_session_search.py` | 298 |
+| `tests/test_context_compactor.py` | 294 |
+| `tests/test_memory_routes_session_owner.py` | 289 |
+| `tests/test_chatgpt_subscription_routes.py` | 280 |
+| `tests/test_memory_store_unreadable_no_wipe.py` | 255 |
+| `tests/test_chat_metrics.py` | 214 |
+| `tests/test_chat_model_provenance_js.py` | 203 |
+| `tests/test_session_tools_registry.py` | 198 |
+| `tests/test_session_manager.py` | 194 |
 
-**Not read:** the production modules these tests cover beyond the ranges above — `src/memory.py`
-beyond `save`/`load_all_for_update`, `src/personal_docs.py`, `src/rag_vector.py`,
-`src/rag_manager.py`, `src/context_compactor.py`, `src/topic_analyzer.py`, `core/session_manager.py`,
-`core/database.py` beyond `get_db_session`/`get_session_mode`/`set_session_mode`,
-`mcp_servers/memory_server.py`, `mcp_servers/rag_server.py`, and every other section's paths.
-`static/js/chat.js` and `static/js/chatRenderer.js` were read only at the cited ranges. The
-81 test files are the coverage claim; the code they exercise is the other sections' claim.
+**Read partially:** the production code each finding rests on. Line numbers are the working tree at
+`2992bf6d368a`.
+
+| File | Regions read |
+| --- | --- |
+| `routes/chat_routes.py` | `:305-317` (`_BROWSER_MCP_TOOLS`), `:428-441` (`_clear_orphaned_session_endpoint`), `:493-510`, `:541-575`, `:1478-1620` (the `disabled_tools` block), and the four `owner_filter(q, ModelEndpoint, owner)` sites |
+| `routes/chat_helpers.py` | `:520-580` (`_match_cached_model_id`, `_normalize_model_id_from_cache`) and `:752` |
+| `routes/session_routes.py` | `:260-290` (the incognito purge) |
+| `src/agent_loop.py` | `:4225-4250` (the hard-max read) |
+| `src/llm_core.py` | `:3335-3345` (the end-of-stream block) |
+| `src/memory.py` | `:261-280` (`save`) |
+| `static/js/chat.js` | `:2790-2796`, `:3975-3990` |
+| `static/js/chatRenderer.js` | `:33-54` |
+| `static/js/chatStreamErrors.js` | Whole (23 lines) |
+| `tests/TESTING_STANDARD.md` | `:88-133` (the determinism and behavioral-first rules) |
+| `tests/test_pr6020_browser_review_regressions.py` | `:26-56`, for the `tests/pr6020`-style Node harness idioms |
+
+**Not read:** the production modules these tests cover beyond the ranges above, and every other
+section's paths. `static/js/chat.js` and `static/js/chatRenderer.js` were read only at the cited
+ranges. The 81 test files are the coverage claim; the code they exercise is the other sections'
+claim.
+
+- `src/memory.py` beyond `save` and `load_all_for_update`
+- `src/personal_docs.py`, `src/rag_vector.py`, `src/rag_manager.py`
+- `src/context_compactor.py`, `src/topic_analyzer.py`
+- `core/session_manager.py`
+- `core/database.py` beyond `get_db_session`, `get_session_mode` and `set_session_mode`
+- `mcp_servers/memory_server.py`, `mcp_servers/rag_server.py`
 
 **Checks run:** the assigned set in one process, and the probes quoted in the findings:
 
@@ -22692,16 +23000,28 @@ routes, and the image-model ranking helper — 256 tests in total. This section 
 those tests prove: each finding quotes the assertion and the fixture and says which behaviour is
 left untested.
 
-The boundary: the production code these suites exercise belongs to other sections — `src-documents`
-(the processor, actions, agent tools and `attachment_refs`), `routes-gallery-document` and
-`routes-rest-media-files` (the gallery, upload and document routes), `static-js-documents-email` and
-`static-js-editor` (document.js, documentLibrary.js, notes.js, fileHandler.js) and `services-media`.
-Where the code itself is at fault, those sections are cross-referenced in prose rather than
-restated; everything reported below is a defect in a test. On the test side the neighbours are
-`tests-security.md` (auth and security regressions), `tests-session-chat-memory.md` (chat, session
-and memory suites), `tests-rest.md`, `tests-llm-tools.md`, `tests-cookbook-models.md`,
-`tests-email-calendar.md` and `tests-harness.md` (conftest, helpers, taxonomy, run tooling). This
-section owns exactly the 57 `tests/` paths listed for `tests-documents-media` in `run.toml`.
+The boundary with the neighbouring sections. Where the code itself is at fault, those sections are
+cross-referenced in prose rather than restated; everything reported below is a defect in a test.
+
+The production code these suites exercise belongs to:
+
+| Section | What it owns |
+| --- | --- |
+| `src-documents` | The processor, actions, agent tools and `attachment_refs` |
+| `routes-gallery-document`, `routes-rest-media-files` | The gallery, upload and document routes |
+| `static-js-documents-email`, `static-js-editor` | `document.js`, `documentLibrary.js`, `notes.js`, `fileHandler.js` |
+| `services-media` | The media services |
+
+On the test side the neighbours are:
+
+| Section | What it owns |
+| --- | --- |
+| `tests-security` | Auth and security regressions |
+| `tests-session-chat-memory` | Chat, session and memory suites |
+| `tests-harness` | conftest, helpers, taxonomy, run tooling |
+| `tests-rest`, `tests-llm-tools`, `tests-cookbook-models`, `tests-email-calendar` | The remaining test groups |
+
+This section owns exactly the 57 `tests/` paths listed for `tests-documents-media` in `run.toml`.
 
 ### Coverage
 
@@ -22739,11 +23059,13 @@ Line numbers are the working tree at `2992bf6d368a`.
 **Not read:** the modules under test outside the regions above, and the other 57 sections' paths.
 The coverage claim here is about the test files; the code they exercise was reviewed by the owning
 sections and is not re-reviewed. The sibling suites for this surface that belong to other sections'
-assignments — `test_build_user_content_pdf_marker.py`, `test_owned_document_query.py`,
-`test_replace_messages_upload_reservations.py`, `test_security_headers_pdf_preview.py`,
-`test_active_document_clear.py`, `test_auth_disabled_document_access.py`,
-`test_personal_upload_*.py`, `test_generated_image_confinement.py` and the rest of `tests/` — were
-opened only where a finding cross-references them.
+assignments were opened only where a finding cross-references them:
+
+- `test_build_user_content_pdf_marker.py`, `test_owned_document_query.py`
+- `test_replace_messages_upload_reservations.py`, `test_security_headers_pdf_preview.py`
+- `test_active_document_clear.py`, `test_auth_disabled_document_access.py`
+- `test_personal_upload_*.py`, `test_generated_image_confinement.py`
+- the rest of `tests/`
 
 **Checks run:** the 57 files as one suite, plus throwaway probes under `/tmp/probe` (two pytest
 plugins — one that swaps a module for a textually mutated copy, one that raises from `find_spec`
@@ -22760,19 +23082,23 @@ The one skip is the only behavioural assertion in `tests/test_upload_content_det
 
 #### What these tests are made of
 
-21 of the 57 files assert on the text of a source file rather than on behaviour: 12 have no
-behavioural assertion at all (`test_doc_library_open_orphaned.py`,
-`test_document_ai_preview_refresh_js.py`, `test_document_deeplink.py`,
-`test_document_diff_discard_on_update_js.py`, `test_document_editor_scroll.py`,
-`test_document_library_delete_counters.py`, `test_gallery_album_owner_scope.py`,
-`test_gallery_image_privileges.py`, `test_notes_dom_xss_helpers.py`,
-`test_notes_search_reset_on_reopen_js.py`, `test_notes_select_esc_listener_js.py`,
-`test_upload_error_surfaced.py`) and 9 mix source-text assertions with behavioural ones. The
-repository's own standard discourages this and permits it only when the invariant cannot be driven
-at runtime, with the reason stated in the docstring (`tests/TESTING_STANDARD.md:118-132`). Most of
-the JS files state that reason ("document.js is browser-coupled and not importable in pytest"),
-which the Node-driven `tests/test_notes_z_order_js.py` shows is not true of every module in this
-set but is true of the ones making the claim. Three do not state a reason
+21 of the 57 files assert on the text of a source file rather than on behaviour. 12 have no
+behavioural assertion at all, and 9 mix source-text assertions with behavioural ones.
+
+The 12 with no behavioural assertion:
+
+- `test_doc_library_open_orphaned.py`, `test_document_ai_preview_refresh_js.py`
+- `test_document_deeplink.py`, `test_document_diff_discard_on_update_js.py`
+- `test_document_editor_scroll.py`, `test_document_library_delete_counters.py`
+- `test_gallery_album_owner_scope.py`, `test_gallery_image_privileges.py`
+- `test_notes_dom_xss_helpers.py`, `test_notes_search_reset_on_reopen_js.py`
+- `test_notes_select_esc_listener_js.py`, `test_upload_error_surfaced.py`
+
+The repository's own standard discourages this and permits it only when the invariant cannot be
+driven at runtime, with the reason stated in the docstring (`tests/TESTING_STANDARD.md:118-132`).
+Most of the JS files state that reason ("document.js is browser-coupled and not importable in
+pytest"), which the Node-driven `tests/test_notes_z_order_js.py` shows is not true of every module
+in this set but is true of the ones making the claim. Three do not state a reason
 (`test_document_ai_preview_refresh_js.py`, `test_gallery_image_privileges.py`,
 `test_notes_dom_xss_helpers.py`), and one states a reason the repository's own tests contradict
 (finding 1). The findings below are the individual cases where the source-text shortcut, or a
@@ -22781,24 +23107,33 @@ fixture, leaves a named behaviour unverified.
 #### Upload retention and attachment references
 
 These tests do cover the retention and reference machinery, and mostly by behaviour rather than by
-text. `tests/test_upload_handler_cleanup.py` (13 tests) drives `cleanup_old_uploads` and the
-`manual_cleanup` route endpoint against seeded upload indexes and a real temporary SQLite database,
-and covers: retention of an upload referenced from chat content and metadata, from
-`Document.current_content`, `DocumentVersion.content`, `Note.image_url`/`color`,
-`CalendarCal.color` and `CalendarEvent.color`/`description`/`location`, and from a gallery row's
-stored content hash; retention when two index rows disagree; retention when a row has no
-authoritative lifecycle metadata; fail-closed behaviour for a missing or corrupt index; index
-restore when file removal fails; and a 503 when reference discovery raises.
-`tests/test_upload_handler_atomicity.py` covers the `uploads.json` read-modify-write race and `.bak`
-recovery (though one of its two concurrency tests is finding 2 below).
-`tests/test_attachment_refs.py` exercises `persistable_message_content`, `search_index_text` and
-`attachment_ref` (including its hash aliases) on real inputs, and `tests/test_upload_routes_owner_scope.py` pins the
-owner gate and symlink confinement on the download/vision endpoints. What is *not* covered by these
-files: `persistable_message_content` with a string or scalar argument, and the `owner` argument of
-`UploadHandler.resolve_upload` — the attachment-budget and media-subtype tests replace the real
-handler with a stub whose `resolve_upload(self, fid, owner=None)` ignores `owner`, so no test in
-this set proves an attachment cannot be pulled into a turn by an id belonging to another user. The
-`src-documents` and `routes-rest-media-files` sections own the corresponding code.
+text. Four files carry it:
+
+- `tests/test_upload_handler_cleanup.py` (13 tests) drives `cleanup_old_uploads` and the
+  `manual_cleanup` route endpoint against seeded upload indexes and a real temporary SQLite
+  database. It covers:
+  - retention of an upload referenced from chat content and metadata
+  - retention of an upload referenced from `Document.current_content` or `DocumentVersion.content`
+  - retention of an upload referenced from `Note.image_url` or `color`
+  - retention of an upload referenced from `CalendarCal.color`, or from `CalendarEvent.color`,
+    `description` or `location`
+  - retention of an upload referenced from a gallery row's stored content hash
+  - retention when two index rows disagree, or when a row has no authoritative lifecycle metadata
+  - fail-closed behaviour for a missing or corrupt index
+  - index restore when file removal fails, and a 503 when reference discovery raises
+- `tests/test_upload_handler_atomicity.py` covers the `uploads.json` read-modify-write race and
+  `.bak` recovery (though one of its two concurrency tests is finding 2 below).
+- `tests/test_attachment_refs.py` exercises `persistable_message_content`, `search_index_text` and
+  `attachment_ref` (including its hash aliases) on real inputs.
+- `tests/test_upload_routes_owner_scope.py` pins the owner gate and symlink confinement on the
+  download and vision endpoints.
+
+What is *not* covered by these files: `persistable_message_content` with a string or scalar
+argument, and the `owner` argument of `UploadHandler.resolve_upload`. The attachment-budget and
+media-subtype tests replace the real handler with a stub whose `resolve_upload(self, fid,
+owner=None)` ignores `owner`, so no test in this set proves an attachment cannot be pulled into a
+turn by an id belonging to another user. The `src-documents` and `routes-rest-media-files`
+sections own the corresponding code.
 
 #### [BUG] The gallery album owner-scope tests assert on source text, and an unfiltered count and cover pass all five
 
@@ -23182,8 +23517,6 @@ this set proves an attachment cannot be pulled into a turn by an id belonging to
 
 ### Overview
 
-`tests/bombadil-spec.ts`, `tests/live_thinking_scheduler.test.mjs`, `tests/markdown_codefence_placeholder_regression.mjs`, `tests/test_active_document_clear.py`, `tests/test_active_email_reply_guard.py`, `tests/test_add_directory_event_loop.py`, `tests/test_admin_device_flow_static.py`, `tests/test_admin_tools_registry.py`, `tests/test_admin_wipe_gallery.py`, `tests/test_admin_wipe_routes_shim.py`, `tests/test_amd_gpu_check_args.py`, `tests/test_anthropic_response_parse.py`, `tests/test_api_call_integration_routing.py`, `tests/test_api_chat_security.py`, `tests/test_api_key_file_permissions.py`, `tests/test_api_key_manager_atomic_save.py`, `tests/test_api_key_manager_corrupt_load.py`, `tests/test_api_key_manager_resilience.py`, `tests/test_api_token_routes.py`, `tests/test_api_token_tool_authority.py`, `tests/test_api_token_user_route_gate.py`, `tests/test_app.py`, `tests/test_approved_replay_message_shape.py`, `tests/test_archived_sessions_model_filter.py`, `tests/test_atomic_io.py`, `tests/test_aux_llm_owner_scope.py`, `tests/test_backup_cli_security.py`, `tests/test_backup_import_cross_user_dedup.py`, `tests/test_backup_import_skills.py`, `tests/test_backup_import_skills_dedup.py`, `tests/test_blind_compare_redaction.py`, `tests/test_budget_auto_sentinel.py`, `tests/test_build_user_content_pdf_marker.py`, `tests/test_builtin_actions_cookbook_serve_state.py`, `tests/test_builtin_actions_nonstring.py`, `tests/test_builtin_actions_owner_scope.py`, `tests/test_builtin_mcp_bg_tasks.py`, `tests/test_builtin_mcp_npx_cache.py`, `tests/test_builtin_mcp_pythonpath.py`, `tests/test_builtin_memory_consolidation.py`, `tests/test_cache_affinity_local_only.py`, `tests/test_canvas_coords_empty_touches_js.py`, `tests/test_carddav_password_encryption.py`, `tests/test_censor_pref_js.py`, `tests/test_cerebras_cache_affinity.py`, `tests/test_check_outbound_url_nonstring.py`, `tests/test_checkin_digest_owner_scope.py`, `tests/test_ci_authoritative_validation.py`, `tests/test_claim_ownerless_json.py`, `tests/test_classify_events_memory_text.py`, `tests/test_cleanup_owner_scope.py`, `tests/test_cleanup_routes_shim.py`, `tests/test_cleanup_service_utcnow.py`, `tests/test_code_nav_tools.py`, `tests/test_codex_cookbook_admin_gate.py`, `tests/test_codex_ssh_host_validation.py`, `tests/test_compact_truncate_tool_call_args.py`, `tests/test_companion_pairing.py`, `tests/test_companion_readonly.py`, `tests/test_compare_ask_user_routing.py`, `tests/test_compare_endpoint_owner_scope.py`, `tests/test_compare_js.py`, `tests/test_compare_routes_shim.py`, `tests/test_compare_stop_disconnect_poll.py`, `tests/test_composer_arrow_up_recall_js.py`, `tests/test_compute_next_run_monthly_clamp.py`, `tests/test_consolidate_memory_explicit_drops.py`, `tests/test_copilot.py`, `tests/test_copilot_routes.py`, `tests/test_copy_message_strips_thinking_js.py`, `tests/test_cors_preflight.py`, `tests/test_database_utcnow.py`, `tests/test_ddg_redirect_resolution.py`, `tests/test_deep_research_date_context.py`, `tests/test_deep_research_extraction_controls.py`, `tests/test_deep_research_parse_json_array_echo.py`, `tests/test_deep_research_search_error.py`, `tests/test_deep_research_synthesis_resilience.py`, `tests/test_delete_message_no_session.py`, `tests/test_delete_user_invalidates_token_cache.py`, `tests/test_delete_user_revokes_api_tokens.py`, `tests/test_deleted_session_sidebar_regression.py`, `tests/test_derive_title_nonstring.py`, `tests/test_device_flow_routes.py`, `tests/test_dialog_aria.py`, `tests/test_diffusion_server_security.py`, `tests/test_digest_windows.py`, `tests/test_direct_upload_limits.py`, `tests/test_docker_devops_hardening.py`, `tests/test_docs_no_orphan_images.py`, `tests/test_docs_query_nondict_rows.py`, `tests/test_edit_file.py`, `tests/test_editor_draft_payload.py`, `tests/test_emoji_shortcodes_js.py`, `tests/test_emoji_svg_hardening.py`, `tests/test_esc_menu_stack_js.py`, `tests/test_estimate_tokens_tool_calls.py`, `tests/test_external_context_tool_gate.py`, `tests/test_extract_quotes.py`, `tests/test_extract_skill_json_nonstring.py`, `tests/test_extract_statistics.py`, `tests/test_extract_urls.py`, `tests/test_fastembed_cache_path.py`, `tests/test_fenced_example_not_executed_for_native_models.py`, `tests/test_fenced_inline_args.py`, `tests/test_fenced_invoke_no_raw_xml.py`, `tests/test_focused_test_guidance.py`, `tests/test_font_routes.py`, `tests/test_foreground_model_routing.py`, `tests/test_fork_session_metadata.py`, `tests/test_form_markdown_roundtrip.py`, `tests/test_forwarded_message_divider.py`, `tests/test_function_call_non_object_args.py`, `tests/test_function_model_tool_call.py`, `tests/test_gemma_tool_call_parsing.py`, `tests/test_generated_image_confinement.py`, `tests/test_gmail_quote_attribution_js.py`, `tests/test_group_character_dropdown.py`, `tests/test_group_chat_storage.py`, `tests/test_harmonize_masks_invalid_layers_js.py`, `tests/test_harmony_tool_aliasing.py`, `tests/test_helpers_import_state.py`, `tests/test_hex_to_rgb_js.py`, `tests/test_history_compact_tool_calls.py`, `tests/test_history_db_fallback_hidden.py`, `tests/test_history_display_model_hydration.py`, `tests/test_history_order_by_timestamp_regression.py`, `tests/test_history_routes_shim.py`, `tests/test_history_topics_owner_scope.py`, `tests/test_icloud_imap_full_fetch.py`, `tests/test_inside_base_dir_nonstring.py`, `tests/test_integration_api_call_ssrf.py`, `tests/test_integrations_api_call_truncation.py`, `tests/test_integrations_store_shape.py`, `tests/test_integrations_url_join.py`, `tests/test_interactive_gate_passive_paths.py`, `tests/test_internal_api_base.py`, `tests/test_issue_description_check.py`, `tests/test_keybind_altgr_js.py`, `tests/test_kimi_code_hosts.py`, `tests/test_kimi_code_user_agent.py`, `tests/test_kokoro_optional_requirements.py`, `tests/test_kv_cache_invalidation_2927.py`, `tests/test_lang_icon_null_opts_js.py`, `tests/test_launcher.py`, `tests/test_legacy_default_fallback_ui.py`, `tests/test_live_fallback_round_attribution.py`, `tests/test_live_strip_email_tool_fences.py`, `tests/test_live_thinking_chat_integration.py`, `tests/test_live_thinking_scheduler_js.py`, `tests/test_llama_server_models_url.py`, `tests/test_llamacpp_discovery.py`, `tests/test_lmstudio_discovery.py`, `tests/test_lmstudio_models_url.py`, `tests/test_lmstudio_vision.py`, `tests/test_local_endpoint_api_key_js.py`, `tests/test_local_endpoint_js.py`, `tests/test_log_safety.py`, `tests/test_manage_mcp_command_allowlist.py`, `tests/test_manage_memory_blank_id.py`, `tests/test_manage_memory_list.py`, `tests/test_manage_notes_owner_gate.py`, `tests/test_manage_settings_token_budget.py`, `tests/test_manage_skills_action_required.py`, `tests/test_manage_tasks_owner_scope.py`, `tests/test_markdown_dom_xss_helpers.py`, `tests/test_markdown_lazy_lib_loading_js.py`, `tests/test_markdown_rendering_js.py`, `tests/test_markdown_table_row_js.py`, `tests/test_markitdown_format_nonstring.py`, `tests/test_markitdown_runtime.py`, `tests/test_match_model_key_js.py`, `tests/test_matchescombo_nonstring_js.py`, `tests/test_merge_last_assistant_rows.py`, `tests/test_migrate_faiss_to_chroma.py`, `tests/test_misfenced_read_file_tool_call.py`, `tests/test_mlx_image_server_security.py`, `tests/test_modal_dock_composer_clearance.py`, `tests/test_multiple_mcp_servers_timeout.py`, `tests/test_native_tool_result_threading.py`, `tests/test_new_chat_clears_input.py`, `tests/test_new_chat_model_preference.py`, `tests/test_nix_upload_text.py`, `tests/test_null_owner_gates.py`, `tests/test_odysseus_dispatcher.py`, `tests/test_odysseus_doc_fence_normalization.py`, `tests/test_og_image_extraction.py`, `tests/test_ollama_multimodal.py`, `tests/test_ollama_port_detection.py`, `tests/test_ollama_runner_hint.py`, `tests/test_ordinal_suffix_js.py`, `tests/test_owned_document_query.py`, `tests/test_owner_identity.py`, `tests/test_panel_loader_js.py`, `tests/test_parse_due_time_first.py`, `tests/test_parse_msg_content_jsonlike_string.py`, `tests/test_plain_ui_control_open_panel.py`, `tests/test_plan_mode.py`, `tests/test_platform_compat.py`, `tests/test_poll_endpoint_no_task_interrupt.py`, `tests/test_popup_opener_isolation_js.py`, `tests/test_portal_dropdown_z_js.py`, `tests/test_pr6020_browser_review_regressions.py`, `tests/test_pr6020_rebase_regressions.py`, `tests/test_prefs_atomic_write.py`, `tests/test_prefs_routes.py`, `tests/test_prefs_single_user_no_clobber.py`, `tests/test_preset_atomic_save.py`, `tests/test_preset_expand_owner_scope.py`, `tests/test_preset_fill_missing_defaults.py`, `tests/test_preset_local_storage_js.py`, `tests/test_preset_store_shape.py`, `tests/test_promote_image_fields.py`, `tests/test_public_blocked_tool_nonstring.py`, `tests/test_question_type_detection.py`, `tests/test_rate_limiter.py`, `tests/test_readiness.py`, `tests/test_readme_ascii_fenced.py`, `tests/test_realesrgan_torchvision_compat.py`, `tests/test_redos_cal_extract.py`, `tests/test_redos_llm_parsers.py`, `tests/test_redos_think_blocks.py`, `tests/test_redos_verdict_continuation.py`, `tests/test_redos_xml_tool_parsers.py`, `tests/test_reminder_ntfy_ssrf.py`, `tests/test_rename_user_case_insensitive.py`, `tests/test_rename_user_owner_sync.py`, `tests/test_rename_user_token_cache.py`, `tests/test_replace_messages_multimodal.py`, `tests/test_replace_messages_upload_reservations.py`, `tests/test_reply_all_cc_nonstring_js.py`, `tests/test_reply_recipients_js.py`, `tests/test_resend_message_nondestructive.py`, `tests/test_reserved_username_admin_escalation.py`, `tests/test_resolve_endpoint_fallbacks.py`, `tests/test_resolve_model_offloaded.py`, `tests/test_resolve_session_auth_chatgpt.py`, `tests/test_resolve_upload_path_nondict.py`, `tests/test_retired_settings_interfaces.py`, `tests/test_review_regressions.py`, `tests/test_rewrite_persist_column.py`, `tests/test_route_validators.py`, `tests/test_run_focus.py`, `tests/test_run_order_report.py`, `tests/test_runtime_paths.py`, `tests/test_sanitize_multimodal_merge.py`, `tests/test_sanitize_preserves_reasoning.py`, `tests/test_scheduled_poll_race.py`, `tests/test_searxng_image_pinned.py`, `tests/test_searxng_settings_migration.py`, `tests/test_select_dropdown_theme_css.py`, `tests/test_sender_signature_skip_roles.py`, `tests/test_serve_html_with_nonce.py`, `tests/test_serve_profiles.py`, `tests/test_service_health_chromadb.py`, `tests/test_service_health_collect.py`, `tests/test_service_health_email.py`, `tests/test_service_health_ntfy.py`, `tests/test_service_health_providers.py`, `tests/test_service_health_search.py`, `tests/test_service_search_provider_guards.py`, `tests/test_services_research_low_quality_sources.py`, `tests/test_services_search_analytics_defaults.py`, `tests/test_set_admin.py`, `tests/test_settings_error_paths.py`, `tests/test_settings_scrub.py`, `tests/test_settings_shell_js_behavior.py`, `tests/test_settings_store_shape.py`, `tests/test_setup_admin_user.py`, `tests/test_setup_device_auth_static.py`, `tests/test_setup_llamacpp_hint_js.py`, `tests/test_shell_routes.py`, `tests/test_shell_service.py`, `tests/test_signature_fold_js.py`, `tests/test_signature_fold_self_closing_br_js.py`, `tests/test_signature_route_hardening.py`, `tests/test_signature_settings_dom_xss.py`, `tests/test_slash_autocomplete_static.py`, `tests/test_slash_setup_provider_aliases.py`, `tests/test_snap_other_layers_nonarray_js.py`, `tests/test_speech_service_toggles.py`, `tests/test_spinner_stops_when_never_attached_js.py`, `tests/test_split_chunks_no_duplicate_tail.py`, `tests/test_sqlite_foreign_keys.py`, `tests/test_src_search_query_nonstring.py`, `tests/test_startup_session_bootstrap_js.py`, `tests/test_startup_shell_js.py`, `tests/test_streaming_segmenter_js.py`, `tests/test_strip_reasoning_prose_dataloss.py`, `tests/test_strip_think.py`, `tests/test_svc_research_sources_nondict.py`, `tests/test_tailscale_discovery_cache.py`, `tests/test_taxonomy.py`, `tests/test_teacher_audit_owner_scope.py`, `tests/test_teacher_eval_nonstring_reply.py`, `tests/test_teacher_eval_tier2.py`, `tests/test_tidy_research_owner_scope.py`, `tests/test_tile_manager_snap_zones_js.py`, `tests/test_tls_overrides_scope.py`, `tests/test_toast_dismiss_pointer_events.py`, `tests/test_totp_failclosed.py`, `tests/test_truncate_message_count_regression.py`, `tests/test_ui_control_rag_toggle.py`, `tests/test_ui_visibility_js.py`, `tests/test_unknown_tool_calls.py`, `tests/test_update_database_script.py`, `tests/test_update_plan_tool.py`, `tests/test_url_safety.py`, `tests/test_user_time.py`, `tests/test_vcard_unfolding.py`, `tests/test_venice_hosts.py`, `tests/test_vision_model_detection.py`, `tests/test_vision_owner_scope.py`, `tests/test_visual_report.py`, `tests/test_visual_report_icon_url.py`, `tests/test_visual_report_nonstring.py`, `tests/test_visual_report_slug_unique.py`, `tests/test_visual_report_toc_code_fence.py`, `tests/test_warmup_ping_urls.py`, `tests/test_windows_update_script.py`, `tests/test_workspace_confine.py`, `tests/test_write_file_empty_body.py`.
-
 This is the catch-all test section: the 322 paths that belong to no other `tests-*` section,
 three of which are not Python at all. It asks of each one what the
 sibling test sections ask of theirs — not whether it passes, but which edit to the production
@@ -23191,15 +23524,19 @@ code would make it fail. Two answers carry almost every finding below: the asser
 substring of a production source file rather than an observation of behaviour, and the fixture
 replaces the code under test with something that cannot disagree with it.
 
-The boundary: the harness itself (`tests/conftest.py`, `tests/helpers/*`, `tests/run_focus.py`,
-`tests/run_order_report.py`, `tests/_taxonomy.py`, `tests/streaming/*`, `tests/cli/*`,
-`tests/TESTING_STANDARD.md` and the other `tests/*.md` artifacts) belongs to `tests-harness`; it
-is cited here only as the repository's own rulebook. The security, prompt-injection and
-auth-guard group belongs to `tests-security`; the email/calendar, cookbook/models, LLM/tools,
-session/chat/memory and documents/media groups belong to their own sections. The production code
-these files pin belongs to the matching `src-*`, `routes-*`, `core-*`, `services-*` and
-`static-js-*` sections, so where a weak test sits on top of a defect another section already
-reports, this section names the test and cross-references the defect instead of restating it.
+The boundary with the neighbouring sections:
+
+- `tests-harness` owns the harness itself. It is cited here only as the repository's own rulebook.
+  - `tests/conftest.py`, `tests/helpers/*`, `tests/streaming/*` and `tests/cli/*`
+  - `tests/run_focus.py`, `tests/run_order_report.py` and `tests/_taxonomy.py`
+  - `tests/TESTING_STANDARD.md` and the other `tests/*.md` artifacts
+- `tests-security` owns the security, prompt-injection and auth-guard group. The email and calendar,
+  cookbook and models, LLM and tools, session, chat and memory, and documents and media groups
+  belong to their own sections.
+- The production code these files pin belongs to the matching sections: the src, routes, core,
+  services and static-js families. Where a weak test sits on top of a defect another section
+  already reports, this section names the test and cross-references the defect instead of
+  restating it.
 
 ### Coverage
 
@@ -23207,12 +23544,14 @@ reports, this section names the test and cross-references the defect instead of 
 were read end to end, 8 more were read in the regions a finding or a cross-check rests on, and
 267 were not opened.** The sample was chosen by risk, in this order:
 
-1. **Files whose name promises a security property** (`*_security`, `*_auth*`, `*_xss*`,
-   `*_owner*`, `*_scope*`, `*_confinement*`, `*_ssrf*`, `*_allowlist*`, `*_gate*`, `*_hardening*`,
-   `*_permissions*`, `*_redaction*`, `*_totp*`, `*_cors*`) — 42 files, rising to 68 once
-   `*_token*`, `*_admin*`, `*_inject*`, `*_sanitiz*`, `*_path*` and `*_revoke*` are added. These
-   are where a test that passes without exercising its guard costs the most, so most of them were
-   at least scanned for the anti-patterns below.
+1. **Files whose name promises a security property.** 42 files match one of fourteen name patterns,
+   rising to 68 once six more are added. These are where a test that passes without exercising its
+   guard costs the most, so most of them were at least scanned for the anti-patterns below.
+
+   | Set | Name patterns |
+   | --- | --- |
+   | The 42 files | `*_security`, `*_auth*`, `*_xss*`, `*_owner*`, `*_scope*`, `*_confinement*`, `*_ssrf*`, `*_allowlist*`, `*_gate*`, `*_hardening*`, `*_permissions*`, `*_redaction*`, `*_totp*`, `*_cors*` |
+   | Added, for 68 | `*_token*`, `*_admin*`, `*_inject*`, `*_sanitiz*`, `*_path*`, `*_revoke*` |
 2. **Files that pin a route this run already reported a defect in.** `tests/test_focused_test_guidance.py`
    (a `build-install-deploy` finding), `tests/test_blind_compare_redaction.py` (the `[CMP]` blind-mode
    contract that `static-js-compare` deliberately left to another section),
@@ -23228,55 +23567,98 @@ were read end to end, 8 more were read in the regions a finding or a cross-check
    test files that import no project module at all (96 files, most of them Node wrappers that
    legitimately import nothing).
 
-**Read fully (47):** `tests/bombadil-spec.ts` (107), `tests/markdown_codefence_placeholder_regression.mjs`
-(69), `tests/test_active_email_reply_guard.py` (13), `tests/test_add_directory_event_loop.py` (394),
-`tests/test_admin_wipe_routes_shim.py` (25), `tests/test_amd_gpu_check_args.py` (21),
-`tests/test_api_chat_security.py` (404), `tests/test_api_key_file_permissions.py` (51),
-`tests/test_api_token_tool_authority.py` (327), `tests/test_app.py` (98),
-`tests/test_aux_llm_owner_scope.py` (72), `tests/test_blind_compare_redaction.py` (92),
-`tests/test_builtin_mcp_pythonpath.py` (22), `tests/test_cerebras_cache_affinity.py` (27),
-`tests/test_checkin_digest_owner_scope.py` (70), `tests/test_ci_authoritative_validation.py` (35),
-`tests/test_claim_ownerless_json.py` (24), `tests/test_cleanup_owner_scope.py` (191),
-`tests/test_cors_preflight.py` (30), `tests/test_direct_upload_limits.py` (61),
-`tests/test_emoji_svg_hardening.py` (54), `tests/test_focused_test_guidance.py` (148),
-`tests/test_generated_image_confinement.py` (72), `tests/test_group_chat_storage.py` (13),
-`tests/test_live_thinking_scheduler_js.py` (29), `tests/test_manage_mcp_command_allowlist.py` (168),
-`tests/test_manage_memory_list.py` (7), `tests/test_manage_notes_owner_gate.py` (120),
-`tests/test_markdown_dom_xss_helpers.py` (38), `tests/test_migrate_faiss_to_chroma.py` (36),
-`tests/test_odysseus_dispatcher.py` (13), `tests/test_owner_identity.py` (102),
-`tests/test_retired_settings_interfaces.py` (119), `tests/test_searxng_image_pinned.py` (26),
-`tests/test_setup_admin_user.py` (72), `tests/test_setup_device_auth_static.py` (42),
-`tests/test_settings_error_paths.py` (94), `tests/test_signature_settings_dom_xss.py` (26),
-`tests/test_taxonomy.py` (151), `tests/test_teacher_audit_owner_scope.py` (72),
-`tests/test_tidy_research_owner_scope.py` (159), `tests/test_tls_overrides_scope.py` (149),
-`tests/test_totp_failclosed.py` (21), `tests/test_update_database_script.py` (8),
-`tests/test_url_safety.py` (117), `tests/test_vision_owner_scope.py` (101),
-`tests/test_windows_update_script.py` (18).
+**Read fully (47 files, 4,108 lines):**
 
-**Read partially (8):** `tests/test_truncate_message_count_regression.py` (`:1-40` of 78, the
-fixture the finding rests on), `tests/live_thinking_scheduler.test.mjs` (`:1-60` of 277, enough to
-see that it drives the real module), `tests/test_history_topics_owner_scope.py` (`:140-280` of 280;
-the first half was skimmed for its fixtures), `tests/test_compare_endpoint_owner_scope.py`
-(`:1-50` of 104, the query stub), `tests/test_rename_user_owner_sync.py` (the 22 `read_text()`
-call sites and their assertions, of 752), `tests/test_api_token_user_route_gate.py` (`:1-27` of 62),
-`tests/test_builtin_mcp_npx_cache.py` (`:1-76` of 185),
-`tests/test_docker_devops_hardening.py` (`:240-255` of 255, the `TEST_DOCS` venv guard).
+| File | Lines |
+| --- | ---: |
+| `tests/bombadil-spec.ts` | 107 |
+| `tests/markdown_codefence_placeholder_regression.mjs` | 69 |
+| `tests/test_active_email_reply_guard.py` | 13 |
+| `tests/test_add_directory_event_loop.py` | 394 |
+| `tests/test_admin_wipe_routes_shim.py` | 25 |
+| `tests/test_amd_gpu_check_args.py` | 21 |
+| `tests/test_api_chat_security.py` | 404 |
+| `tests/test_api_key_file_permissions.py` | 51 |
+| `tests/test_api_token_tool_authority.py` | 327 |
+| `tests/test_app.py` | 98 |
+| `tests/test_aux_llm_owner_scope.py` | 72 |
+| `tests/test_blind_compare_redaction.py` | 92 |
+| `tests/test_builtin_mcp_pythonpath.py` | 22 |
+| `tests/test_cerebras_cache_affinity.py` | 27 |
+| `tests/test_checkin_digest_owner_scope.py` | 70 |
+| `tests/test_ci_authoritative_validation.py` | 35 |
+| `tests/test_claim_ownerless_json.py` | 24 |
+| `tests/test_cleanup_owner_scope.py` | 191 |
+| `tests/test_cors_preflight.py` | 30 |
+| `tests/test_direct_upload_limits.py` | 61 |
+| `tests/test_emoji_svg_hardening.py` | 54 |
+| `tests/test_focused_test_guidance.py` | 148 |
+| `tests/test_generated_image_confinement.py` | 72 |
+| `tests/test_group_chat_storage.py` | 13 |
+| `tests/test_live_thinking_scheduler_js.py` | 29 |
+| `tests/test_manage_mcp_command_allowlist.py` | 168 |
+| `tests/test_manage_memory_list.py` | 7 |
+| `tests/test_manage_notes_owner_gate.py` | 120 |
+| `tests/test_markdown_dom_xss_helpers.py` | 38 |
+| `tests/test_migrate_faiss_to_chroma.py` | 36 |
+| `tests/test_odysseus_dispatcher.py` | 13 |
+| `tests/test_owner_identity.py` | 102 |
+| `tests/test_retired_settings_interfaces.py` | 119 |
+| `tests/test_searxng_image_pinned.py` | 26 |
+| `tests/test_setup_admin_user.py` | 72 |
+| `tests/test_setup_device_auth_static.py` | 42 |
+| `tests/test_settings_error_paths.py` | 94 |
+| `tests/test_signature_settings_dom_xss.py` | 26 |
+| `tests/test_taxonomy.py` | 151 |
+| `tests/test_teacher_audit_owner_scope.py` | 72 |
+| `tests/test_tidy_research_owner_scope.py` | 159 |
+| `tests/test_tls_overrides_scope.py` | 149 |
+| `tests/test_totp_failclosed.py` | 21 |
+| `tests/test_update_database_script.py` | 8 |
+| `tests/test_url_safety.py` | 117 |
+| `tests/test_vision_owner_scope.py` | 101 |
+| `tests/test_windows_update_script.py` | 18 |
 
-**Not read (267).** The shape of what was skipped. **Sixteen of them are over 400 lines** and
-were grepped for the anti-patterns above and otherwise left alone, because evaluating them
-properly needs fixture work this section's budget did not cover:
-`tests/test_foreground_model_routing.py` (3,649), `tests/test_external_context_tool_gate.py`
-(1,473), `tests/test_review_regressions.py` (1,449),
-`tests/test_pr6020_browser_review_regressions.py` (933), `tests/test_api_token_routes.py` (578),
-`tests/test_history_display_model_hydration.py` (549), `tests/test_shell_routes.py` (538),
-`tests/test_workspace_confine.py` (533), `tests/test_markdown_lazy_lib_loading_js.py` (510),
-`tests/test_run_focus.py` (492), `tests/test_companion_readonly.py` (484),
-`tests/test_kv_cache_invalidation_2927.py` (463), `tests/test_compare_stop_disconnect_poll.py`
-(463), `tests/test_companion_pairing.py` (448), `tests/test_helpers_import_state.py` (426) and
-`tests/test_teacher_eval_tier2.py` (406). A few of those are named in the section's own boundary
-as another section's subject (`test_run_focus.py`, `test_helpers_import_state.py` to
-`tests-harness`; `test_compare_stop_disconnect_poll.py` to `static-js-compare`) and are listed
-here only because the mechanical sweeps still ran over them.
+**Read partially (8):**
+
+| File | Region read | Why |
+| --- | --- | --- |
+| `tests/test_truncate_message_count_regression.py` | `:1-40` of 78 | The fixture the finding rests on |
+| `tests/live_thinking_scheduler.test.mjs` | `:1-60` of 277 | Enough to see that it drives the real module |
+| `tests/test_history_topics_owner_scope.py` | `:140-280` of 280 | The first half was skimmed for its fixtures |
+| `tests/test_compare_endpoint_owner_scope.py` | `:1-50` of 104 | The query stub |
+| `tests/test_rename_user_owner_sync.py` | The 22 `read_text()` call sites and their assertions, of 752 | |
+| `tests/test_api_token_user_route_gate.py` | `:1-27` of 62 | |
+| `tests/test_builtin_mcp_npx_cache.py` | `:1-76` of 185 | |
+| `tests/test_docker_devops_hardening.py` | `:240-255` of 255 | The `TEST_DOCS` venv guard |
+
+**Not read (267).** Sixteen of them are over 400 lines. They were grepped for the anti-patterns
+above and otherwise left alone, because evaluating them properly needs fixture work this section's
+budget did not cover:
+
+| File | Lines |
+| --- | ---: |
+| `tests/test_foreground_model_routing.py` | 3,649 |
+| `tests/test_external_context_tool_gate.py` | 1,473 |
+| `tests/test_review_regressions.py` | 1,449 |
+| `tests/test_pr6020_browser_review_regressions.py` | 933 |
+| `tests/test_api_token_routes.py` | 578 |
+| `tests/test_history_display_model_hydration.py` | 549 |
+| `tests/test_shell_routes.py` | 538 |
+| `tests/test_workspace_confine.py` | 533 |
+| `tests/test_markdown_lazy_lib_loading_js.py` | 510 |
+| `tests/test_run_focus.py` | 492 |
+| `tests/test_companion_readonly.py` | 484 |
+| `tests/test_kv_cache_invalidation_2927.py` | 463 |
+| `tests/test_compare_stop_disconnect_poll.py` | 463 |
+| `tests/test_companion_pairing.py` | 448 |
+| `tests/test_helpers_import_state.py` | 426 |
+| `tests/test_teacher_eval_tier2.py` | 406 |
+
+A few of those are named in the section's own boundary as another section's subject
+(`test_run_focus.py` and `test_helpers_import_state.py` belong to `tests-harness`;
+`test_compare_stop_disconnect_poll.py` to `static-js-compare`). They are listed here only because
+the mechanical sweeps still ran over them.
 
 **The other 251 unread files are all under 400 lines**, and most are under 100. 50 of them match
 `*_nonstring.py`, `*_js.py` or `*_shim.py` — the small pins that assert one helper's behaviour —
@@ -23303,19 +23685,22 @@ odysseus-odysseus:latest`) and `tests/test_markitdown_runtime.py:64` (`could not
 'markitdown': No module named 'markitdown'`). **Zero failures, zero xfail** — every finding below
 is about a test that passes.
 
-`node v24.16.0` is on PATH here, so no JS wrapper skipped. The probes live under `/tmp/audit-probe/`
-and are not part of the target tree. Three of them matter enough to name: `block_modules.py` (a
-pytest plugin whose `find_spec` raises `ModuleNotFoundError` for a `BLOCK_MODULES` list, plus
-`control_blocked.py`, which fails unless the block actually took effect), `mutate_read_text.py`
-(a plugin that serves mutated production text to `pathlib.Path.read_text`, so a source-grep test
-can be run against a behaviourally-changed tree), and `probe_db_state.py` (reports the process's
-`DATABASE_URL` and engine URL). Running the suite left the tracked tree untouched: `git status
---porcelain` shows only `audit/`, and `sha256sum` of `data/auth.json` and `data/features.json` is
-unchanged. `data/app.db` is not a counterexample to that — `data/` is gitignored
-(`.gitignore:28`), and that file's hash did change, at 20:57 JST, after this section's last
-measured run and while the sibling sections' suites were running in the same working tree. Any
-pytest process here can rewrite it, which is the point of the finding below about
-`tests/test_truncate_message_count_regression.py`.
+`node v24.16.0` is on PATH here, so no JS wrapper skipped. The probes live under
+`/tmp/audit-probe/` and are not part of the target tree. Three of them matter enough to name:
+
+- `block_modules.py`: a pytest plugin whose `find_spec` raises `ModuleNotFoundError` for a
+  `BLOCK_MODULES` list, plus `control_blocked.py`, which fails unless the block actually took
+  effect
+- `mutate_read_text.py`: a plugin that serves mutated production text to `pathlib.Path.read_text`,
+  so a source-grep test can be run against a behaviourally-changed tree
+- `probe_db_state.py`: reports the process's `DATABASE_URL` and engine URL
+
+Running the suite left the tracked tree untouched: `git status --porcelain` shows only `audit/`, and
+`sha256sum` of `data/auth.json` and `data/features.json` is unchanged. `data/app.db` is not a
+counterexample to that. `data/` is gitignored (`.gitignore:28`), and that file's hash did change,
+at 20:57 JST, after this section's last measured run and while the sibling sections' suites were
+running in the same working tree. Any pytest process here can rewrite it, which is the point of the
+finding below about `tests/test_truncate_message_count_regression.py`.
 
 #### [BUG] The blind-mode naming scan passes with the blind guard inverted
 
@@ -24138,10 +24523,12 @@ closed it.
   `tests/test_external_context_tool_gate.py:357` asserts.
 - **"A fence-callable tool can be missing from both the plan-mode denylist and the
   allowlist."** Computed `TOOL_TAGS - plan_mode_disabled_tools() - PLAN_MODE_READONLY_TOOLS` at
-  the snapshot: empty (77 fence tags, 54 denied, the rest allowlisted). The seven
-  fence-taggable tools with no native schema (`draft_email`, `draft_email_reply`,
-  `ai_draft_email_reply`, `download_attachment`, `generate_image`, `manage_research`,
-  `search_emails`) are all covered by the static mutator backstop or the allowlist.
+  the snapshot: empty (77 fence tags, 54 denied, the rest allowlisted). Seven fence-taggable tools
+  have no native schema, and all seven are covered by the static mutator backstop or the allowlist:
+
+  - `draft_email`, `draft_email_reply`, `ai_draft_email_reply`
+  - `download_attachment`, `generate_image`
+  - `manage_research`, `search_emails`
 - **"Every fence-callable tool with no native schema is reachable another way."** The
   seven names in the plan-mode bullet were re-checked for native reachability in
   `src-tools-schema-index.md`. Six are XML-only by design or have a native substitute
@@ -24162,9 +24549,13 @@ closed it.
   not a defense against it.
 - **"The other multiplexed tools' enums drift from their handlers the way
   `manage_documents` and `manage_session` do."** Compared each enum with its handler's
-  `action ==` / `action in (...)` branches: `manage_notes`, `manage_memory`, `manage_tasks`,
-  `manage_calendar`, `manage_contact`, `manage_skills`, `manage_research`, `ui_control` and
-  `edit_image` all match exactly. Only the two reported tools drift.
+  `action ==` / `action in (...)` branches. Nine tools match exactly:
+
+  - `manage_notes`, `manage_memory`, `manage_tasks`
+  - `manage_calendar`, `manage_contact`, `manage_skills`
+  - `manage_research`, `ui_control`, `edit_image`
+
+  Only the two reported tools drift.
 - **"A `tail_serve_output` native call reaches the dispatcher by some other route."**
   `function_call_to_tool_block` is the only native-to-`ToolBlock` converter (every parser
   entry point delegates to it), it returns `None` for a name outside `TOOL_TAGS` before the
@@ -24245,9 +24636,9 @@ closed it.
   the report *says* about the stragglers, and `ex.shutdown(wait=False)` returns without waiting
   for them. The thread count stays bounded by the probe concurrency.
 - **"The front-end persona list has drifted from `src/reminder_personas.py`."** Not today: the
-  five IDs in `static/js/presets.js:32-69` (`socrates`, `razor`, `nietzsche`, `spark`,
-  `odysseus`) are exactly the five keys of `PERSONAS`. No test pins the parity, so the next edit
-  to either list is unguarded — a hazard, not a defect.
+  five IDs in `static/js/presets.js:32-69` are exactly the five keys of `PERSONAS` (socrates, razor,
+  nietzsche, spark and odysseus). No test pins the parity, so the next edit to either list is
+  unguarded: a hazard, not a defect.
 - **"The unused helpers in `src/app_helpers.py` are a reachable path."** They are not reachable:
   `read_if_exists` and `file_to_data_url` have no caller anywhere in `src/ routes/ core/ services/
   app.py`, so the unbounded `f.read()` inside `file_to_data_url` has no consumer. Noted as dead
@@ -24399,8 +24790,9 @@ closed it.
   documents interleave — and no measurement produced a user-visible ordering error, so it is not a
   finding.
 - **"`VectorRAG._embed` disagreeing with `_collection` is a live defect."** It is latent, not live,
-  and is reported as a `FOOTGUN` for that reason: `grep` over `routes/`, `src/`, `mcp_servers/`,
-  `core/` and `app.py` finds no external caller of either, and `_embed` has no caller at all.
+  and is reported as a `FOOTGUN` for that reason: `grep` over `routes/`, `src/`, `mcp_servers/` and
+  `core/`, and over `app.py`, finds no external caller of either, and `_embed` has no caller at
+  all.
 - **"The memory store's non-atomic write is already covered, so the concurrent-write defect is a
   duplicate."** The two are different halves of one file. `core-data-platform` reports the hourly
   owner sweep rewriting `memory.json` with a plain truncating write
